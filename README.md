@@ -1343,7 +1343,7 @@ Objects in S3 are stored in a specific region.
 - Default AWS storage class that's used in S3, should be user default as well.
 - S3 Standard is region resilient, and can tolerate the failure of an AZ.
 - Objects are replicated to at least 3+ AZs when they are uploaded.
-- 99999999999% durability
+- 99.999999999% durability
 - 99.99% availability
 - Offers low latency and high throughput.
 - No minimums, delays, or penalties.
@@ -1400,6 +1400,7 @@ Retrieval methods:
 
 - Designed for long term backups and as a tape-drive replacement.
 - 4.3% of the base cost of S3 standard
+- 40kb minimum billable size per object
 - 180 days minimum storage duration charge.
 - Standard retrieval within 12 hours, bulk retrieval in 48 hours.
 - Cannot use to make data public or download normally.
@@ -1409,7 +1410,10 @@ Retrieval methods:
 - Combination of standard and standard IA.
 - Uses automation to remove overhead of moving objects.
 - Additional fee of $0.0025 per 1,000 objects tracked.
-- If an object is not accessed for 30 days, it will move into Standard-IA.
+- If an object is not accessed for 
+  - 30 days, it will move into Standard-IA.
+  - 90 days move to Archive (Glacier)
+  - 180 days move to Deep Archive (Glacier Deep Archive)
 
 This is good for objects that are unknown their access pattern.
 
@@ -1422,11 +1426,13 @@ A lifecycle configuration is a set of **rules** that consists of **actions**.
 
 Change the storage class over time such as:
 
-- Move an object from S3 to IA after 90 days
-- After 180 days move to Glacier
-- After one year move to Deep Archive
+- Change the storage class over time such as:
 
-Objects must flow downwards, they can't flow in the reverse direction.
+  - Move an object from S3 to IA after 90 days
+  - After 180 days move to Glacier
+  - After one year move to Deep Archive
+
+  Objects must flow downwards, they can't flow in the reverse direction.
 
 #### 1.4.10.2. Expiration Actions
 
