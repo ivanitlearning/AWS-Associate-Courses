@@ -29,10 +29,8 @@
 
 Cloud computing provides
 
-1. On-Demand Self-Service: Provision and terminate using a UI/CLI without
-human interaction.
-2. Broad Network Access: Access services over any networks on any devices using
-standard protocols and methods.
+1. On-Demand Self-Service: Provision and terminate using a UI/CLI without human interaction.
+2. Broad Network Access: Access services over any networks on any devices using standard protocols and methods.
 3. Resource Pooling: Economies of scale, cheaper service.
 4. Rapid Elasticity: Scale up and down automatically in response to system load.
 5. Measured Service: Usage is measured. Pay only for what you consume.
@@ -47,27 +45,15 @@ standard protocols and methods.
 
 ### 1.1.2. Cloud Service Models
 
-The *Infrastructure Stack* or *Application Stack* contains multiple components
-that make up the total service. There are parts that **you** manage as well
-as portions the **vendor** manages. The portions the vendor manages and you
-are charged for is the **unit of consumption**
+The *Infrastructure Stack* or *Application Stack* contains multiple components that make up the total service. There are parts that **you** manage as well as portions the **vendor** manages. The portions the vendor manages and you are charged for is the **unit of consumption**
 
-1. On-Premises: The individual manages all components from data to facilities.
-Provides the most flexibility, but also most IT intensive.
-2. Data Center Hosting: Place equipment in a building managed by a vendor.
-You pay for the facilities only.
-3. Infrastructure as a Service (IaaS): Vendor manages facilities and everything
-else related to servers up to the OS. You pay per second or minute for the OS
-used to the vendor. Lose some flexibility, but big risk reductions.
-4. Platform as a Service (PaaS): Good for running an application only. The
-unit of consumption is the runtime environment. You manage the application
-and the data, but the vendor manges all else.
-5. Software as a Service (SaaS): You consume the software as a service. This
-can be Outlook or Netflix. There are almost no risks or additional costs, but
-very little control.
+1. On-Premises: The individual manages all components from data to facilities. Provides the most flexibility, but also most IT intensive.
+2. Data Center Hosting: Place equipment in a building managed by a vendor. You pay for the facilities only.
+3. Infrastructure as a Service (IaaS): Vendor manages facilities and everything else related to servers up to the OS. You pay per second or minute for the OS used to the vendor. Lose some flexibility, but big risk reductions.
+4. Platform as a Service (PaaS): Good for running an application only. The unit of consumption is the runtime environment. You manage the application and the data, but the vendor manges all else.
+5. Software as a Service (SaaS): You consume the software as a service. This can be Outlook or Netflix. There are almost no risks or additional costs, but very little control.
 
-There are additional services such as *Function as a Service*,
-*Container as a Service*, and *DataBase as a Service* which be explained later.
+There are additional services such as *Function as a Service*, *Container as a Service*, and *DataBase as a Service* which be explained later.
 
 ---
 
@@ -85,24 +71,16 @@ There are additional services such as *Function as a Service*,
 
 Refers to the networking only, not permissions.
 
-- Public Internet: AWS is a public cloud platform and connected to the public
-internet. It is not on the public internet, but is next to it.
-- AWS Public Zone: Attached to the Public Internet.
-S3 Bucket is hosted in the Public Zone, not all services are.
-Just because you connect to a public service,
-that does not mean you have permissions to access it.
-- AWS Private Zone: No direct connectivity is allowed between the AWS Private
-Zone and the public cloud unless this is configured for that service.
-This is done by taking a part of the private service and projecting it into the
-AWS public zone which allows public internet to make inbound or outbound
-connections.
+- Public Internet: AWS is a public cloud platform and connected to the public internet. It is not on the public internet, but is next to it.
+- AWS Public Zone: Attached to the Public Internet. S3 Bucket is hosted in the Public Zone, not all services are.
+Just because you connect to a public service, that does not mean you have permissions to access it.
+- AWS Private Zone: No direct connectivity is allowed between the AWS Private Zone and the public cloud unless this is configured for that service. This is done by taking a part of the private service and projecting it into the AWS public zone which allows public internet to make inbound or outbound connections.
 
 ### 1.2.2. AWS Global Infrastructure
 
 #### 1.2.2.1. Regions
 
-AWS Region is an area of the world they have selected for a full deployment of
-AWS infrastructure.
+AWS Region is an area of the world they have selected for a full deployment of AWS infrastructure.
 
 Areas such as countries or states
 
@@ -113,16 +91,13 @@ Areas such as countries or states
 - London
 - Paris
 
-AWS can only deploy regions as fast as their planning allows.
-Regions are often not near their customers.
+AWS can only deploy regions as fast as their planning allows. Regions are often not near their customers.
 
 #### 1.2.2.2. AWS Edge Locations
 
-Local distribution points. Useful for services such as Netflix so they can store
-data closer to customers for low latency high speed transfers.
+Local distribution points. Useful for services such as Netflix so they can store data closer to customers for low latency high speed transfers.
 
-If a customer wants to access data stored in Brisbane, they will stream data
-from the Sydney Region through an Edge Location hosted in Brisbane.
+If a customer wants to access data stored in Brisbane, they will stream data from the Sydney Region through an Edge Location hosted in Brisbane.
 
 #### 1.2.2.3. AWS Management
 
@@ -148,21 +123,16 @@ Some services are global such as IAM
 Region Name: Asia Pacific (Sydney)
 Region Code: ap-southeast-2
 
-AWS will provide between 2 and 6 AZs per region.
-AZs are isolated compute, storage, networking, power, and facilities.
+AWS will provide between 2 and 6 AZs per region. AZs are isolated compute, storage, networking, power, and facilities.
 Components are allowed to distribute load and resilience by using multiple zones.
 
 AZs are connected to each other with high speed redundant networks.
 
 #### 1.2.3.1. Service Resilience
 
-1. Globally Resilient: IAM or Route 53. No way for them to go down. Data is
-replicated throughout multiple regions.
-2. Region Resilient: Operate as separate services in each region. Generally
-replicate data to multiple AZs in that region.
-3. AZ Resilient: Run from a single AZ. It is possible for hardware to fail in an
-AZ and the service to keep running because of redundant equipment, but should
-not be relied on.
+1.  Globally Resilient: IAM or Route 53. No way for them to go down. Data isreplicated throughout multiple regions.
+2. Region Resilient: Operate as separate services in each region. Generally replicate data to multiple AZs in that region.
+3. AZ Resilient: Run from a single AZ. It is possible for hardware to fail in an AZ and the service to keep running because of redundant equipment, but should not be relied on.
 
 ### 1.2.4. AWS Default VPC
 
@@ -258,9 +228,7 @@ Contains:
 
 - Root Volume: contains the **Boot Volume**
 
-- Block Device Mapping: links the volumes that the AMI has and
-how they're presented to the operating system. Determines which volume is a
-boot volume and which volume is a data volume.
+- Block Device Mapping: links the volumes that the AMI has and how they're presented to the operating system. Determines which volume is a boot volume and which volume is a data volume.
 
 
 #### 1.2.5.6. Connecting to EC2
@@ -421,8 +389,7 @@ Anytime CPU Utilization is reported, the **datapoint** will report:
 - Timestamp = 2019-12-03
 - Value = 98.3
 
-**Dimensions** could be used to get metrics for a specific instance or type of instance, among others. They separate data points for different **things** or
-**perspectives** within the same metric.
+**Dimensions** could be used to get metrics for a specific instance or type of instance, among others. They separate data points for different **things** or **perspectives** within the same metric.
 
 #### 1.2.9.3. Alarms
 
@@ -439,8 +406,7 @@ Customer: Responsible for security **IN** the cloud
 
 #### 1.2.11.1. High Availability (HA)
 
-- Aims to **ensure** an agreed level of operational **performance**, usually
-**uptime**, for a **higher than normal period**
+- Aims to **ensure** an agreed level of operational **performance**, usually **uptime**, for a **higher than normal period**
 - Instead of diagnosing the issue, if you have a process ready to replace it, it can be fixed quickly and probably in an automated way.
 - Spare infrastructure ready to switch customers over to in the event of a disaster to minimize downtime
 - User disruption is not ideal, but is allowed
@@ -451,25 +417,18 @@ Customer: Responsible for security **IN** the cloud
 
 #### 1.2.11.2. Fault-Tolerance (FT)
 
-- System can **continue operating properly**
-in the event of the **failure of some** (one or more faults within) of its
+- System can **continue operating properly** in the event of the **failure of some** (one or more faults within) of its
 **components**
-- Fault tolerance is much more complicated than high availability and more
-expensive. Outages must be minimized and the system needs levels of
-redundancy.
-- An airplane is an example of system that needs Fault Tolerance. It has
-more engines than it needs so it can operate through failure.
+- Fault tolerance is much more complicated than high availability and more expensive. Outages must be minimized and the system needs levels of redundancy.
+- An airplane is an example of system that needs Fault Tolerance. It has more engines than it needs so it can operate through failure.
 
 Example:
-A patient is waiting for a life saving surgery and is under anesthetic.
-While being monitored, the life support system is dosing medicine.
-This type of system cannot only be highly available, even a movement of
-interruption is deadly.
+
+A patient is waiting for a life saving surgery and is under anesthetic. While being monitored, the life support system is dosing medicine. This type of system cannot only be highly available, even a movement of interruption is deadly.
 
 #### 1.2.11.3. Disaster Recovery (DR)
 
-- Set of policies, tools and procedures to **enable the recovery** or
-**continuation** of **vital** technology infrastructure and systems
+- Set of policies, tools and procedures to **enable the recovery** or **continuation** of **vital** technology infrastructure and systems
 **following a natural or human-induced disaster**.
 - DR can largely be automated to eliminate the time for recovery and errors.
 
@@ -481,15 +440,11 @@ This involves:
 - DR Processes
   - Cloud machines ready when needed
 
-This is designed to keep the crucial and non replaceable parts of the
-system in place.
-
-Used when HA and FT don't work.
+This is designed to keep the crucial and non replaceable parts of the system in place. Used when HA and FT don't work.
 
 ### 1.2.12. Domain Name System (DNS)
 
-DNS is a discovery service. Translates machines into humans and vice-versa.
-It is a huge database and has to be distributed.
+DNS is a discovery service. Translates machines into humans and vice-versa. It is a huge database and has to be distributed.
 
 Parts of the DNS system
 
@@ -504,9 +459,7 @@ Parts of the DNS system
 
 Steps:
 
-Find the Nameserver which hosts a particular zone file.
-Query that Nameserver for a record that is in that zone file.
-It then passes the information back to the DNS client.
+Find the Nameserver which hosts a particular zone file. Query that Nameserver for a record that is in that zone file. It then passes the information back to the DNS client.
 
 #### 1.2.12.1. DNS Root
 
@@ -534,8 +487,7 @@ of the DNS system because they control the root zone.
 
 #### 1.2.12.2. DNS Hierarchy
 
-Assuming a laptop is querying DNS directly for www.amazon.com and using
-a root hints file to know how to access a root server and query the root zone.
+Assuming a laptop is querying DNS directly for www.amazon.com and using a root hints file to know how to access a root server and query the root zone.
 
 - When something is trusted in DNS, it is an **authority**.
 - One piece can be authoritative for root.
@@ -550,8 +502,7 @@ The top level domains are the only thing immediately to the left of the root in 
 - `.com` or `.org` are generic top level domains (gTLD)
 - `.uk` is a country code top level domain (ccTLD)
 
-**Registry** maintains the zones for a TLD (e.g .ORG)
-**Registrar** has relationships with the .org TLD zone manager
+**Registry** maintains the zones for a TLD (e.g .ORG) **Registrar** has relationships with the .org TLD zone manager
 allowing domain registration
 
 ### 1.2.13. Route53 Fundamentals
@@ -572,8 +523,7 @@ Has relationships with all major registries (registrar)
   - Generally four of these for one individual zone
   - This is a hosted zone
   - The zone file will be put on these four managed nameservers
-- Route 53 will communicate with the `.org` registry and add the nameserver records 
-  into the zone file for that top level domain.
+- Route 53 will communicate with the `.org` registry and add the nameserver records into the zone file for that top level domain.
   - This is done with a nameserver record (NS).
 
 #### 1.2.13.2. Route53 Details
@@ -593,18 +543,15 @@ CNAMES cannot point directly to an IP address, only another name.
 - MX records: How emails are sent. They have two main parts:
   - Priority: Lower values for the priority field are higher priority.
   - Value
-    - If it is just a host, it will not have a dot on the right. It is assumed
-    to be part of the same zone as the host.
+    - If it is just a host, it will not have a dot on the right. It is assumed to be part of the same zone as the host.
     - If you include a dot on the right, it is a ***fully qualified domain name***
 - TXT Record: Allows you to add arbitrary text to a domain.
 One common usage is to prove domain ownership.
 
 #### 1.2.14.1. TTL - Time To Live
 
-This is a numeric setting on DNS records in seconds.
-Allows the admin to specify how long the query can be stored
-at the resolver server.
-If you need to upgrade the records, it is smart to lower the TTL value first.
+This is a numeric setting on DNS records in seconds. Allows the admin to specify how long the query can be stored
+at the resolver server. If you need to upgrade the records, it is smart to lower the TTL value first.
 
 Getting the answer from an Authoritative Source is known as an
 **Authoritative Answer**.
@@ -618,13 +565,9 @@ If another client queries the same thing, they will get back a
 
 ### 1.3.1. IAM Identity Policies
 
-Identity Policies are attached to AWS Identities which are
-IAM users, IAM groups, and IAM roles. These are a set of security statements
-that ALLOW or DENY access to AWS resources.
+Identity Policies are attached to AWS Identities which are IAM users, IAM groups, and IAM roles. These are a set of security statements that ALLOW or DENY access to AWS resources.
 
-When an identity attempts to access AWS resources, that identity needs
-to prove who it is to AWS, a process known as **Authentication**.
-Once authenticated, that identity is known as an **authenticated identity**
+When an identity attempts to access AWS resources, that identity needs to prove who it is to AWS, a process known as **Authentication**. Once authenticated, that identity is known as an **authenticated identity**
 
 #### 1.3.1.1. Statement Components
 
@@ -660,8 +603,7 @@ Identity used for anything requiring **long-term** AWS access
 
 If you can name a thing to use the AWS account, this is an IAM user.
 
-When a **principal** wants to **request** to perform an action,
-it will **authenticate** against an identity within IAM. An IAM user is an
+When a **principal** wants to **request** to perform an action, it will **authenticate** against an identity within IAM. An IAM user is an
 identity which can be used in this way.
 
 There are two ways to authenticate:
@@ -710,8 +652,7 @@ These two ARNs do not overlap
 
 ### 1.3.3. IAM Groups
 
-Containers for users. **You cannot login to IAM groups** They have no
-credentials of their own. Used solely for management of IAM users.
+Containers for users. **You cannot login to IAM groups** They have no credentials of their own. Used solely for management of IAM users.
 
 Groups bring two benefits
 
@@ -732,8 +673,7 @@ It does so by referencing the identity using an ARN (Amazon Reference Name).
 A policy on a resource can reference IAM users and IAM roles by the ARN.
 A bucket can give access to one or more users or one or more roles.
 
-**GROUPS ARE NOT A TRUE IDENTITY**
-**THEY CAN'T BE REFERENCED AS A PRINCIPAL IN A POLICY**
+**GROUPS ARE NOT A TRUE IDENTITY THEY CAN'T BE REFERENCED AS A PRINCIPAL IN A POLICY**
 
 An S3 Resource cannot grant access to a group, it is not an identity.
 Groups are used to allow permissions to be assigned to IAM users.
@@ -742,15 +682,13 @@ Groups are used to allow permissions to be assigned to IAM users.
 
 A single thing that uses an identity is an IAM User.
 
-IAM Roles are also identities that are used by large groups of individuals.
-If have more than 5000 principals, it could be a candidate for an IAM Role.
+IAM Roles are also identities that are used by large groups of individuals. If have more than 5000 principals, it could be a candidate for an IAM Role.
 
 IAM Roles are **assumed** you become that role.
 
 This can be used short term by other identities.
 
-IAM Users can have inline or managed policies which control which permissions
-the identity gets within AWS
+IAM Users can have inline or managed policies which control which permissions the identity gets within AWS
 
 Policies which grant, allow or deny, permissions based on their associations.
 
@@ -759,41 +697,31 @@ IAM Roles have two types of roles can be attached.
 - Trust Policy: Specifies which identities are allowed to assume the role.
 - Permissions Policy: Specifies what the role is allowed to do.
 
-If an identity is allowed on the **Trust Policy**, it is given a set
-of **Temporary Security Credentials**. Similar to access keys except they
-are time limited to expire. The identity will need to renew them by
-reassuming the role.
+If an identity is allowed on the **Trust Policy**, it is given a set of **Temporary Security Credentials**. Similar to access keys except they are time limited to expire. The identity will need to renew them by reassuming the role.
 
-Every time the **Temporary Security Credentials** are used, the access
-is checked against the **Permissions Policy**. If you change the policy, the
-permissions of the temp credentials also change.
+Every time the **Temporary Security Credentials** are used, the access is checked against the **Permissions Policy**. If you change the policy, the permissions of the temp credentials also change.
 
 Roles are real identities and can be referenced within resource policies.
 
-Secure Token Service (sts:AssumeRole) this is what generates the temporary
-security credentials (TSC).
+Secure Token Service (sts:AssumeRole) this is what generates the temporary security credentials (TSC).
 
 ### 1.3.5. When to use IAM Roles
 
 Lambda Execution Role.
-For a given lambda function, you cannot determine the number of principals
-which suggested a Role might be the ideal identity to use.
+For a given lambda function, you cannot determine the number of principals which suggested a Role might be the ideal identity to use.
 
 - Trust Policy: to trust the Lambda Service
 - Permission Policy: to grant access to AWS services.
 
-When this is run, it uses the sts:AssumeRole to generate keys to
-CloudWatch and S3.
+When this is run, it uses the sts:AssumeRole to generate keys to CloudWatch and S3.
 
 It is better when possible to use an IAM Role versus attaching a policy.
 
 #### 1.3.5.1. Emergency or out of the usual situations
 
-Break Glass Situation - There is a key for something the team does not
-normally have access to. When you break the glass, you must have a reason
-to do.
-A role can have an Emergency Role which will allow further access if
-its really needed.
+Break Glass Situation - There is a key for something the team does not normally have access to. When you break the glass, you must have a reason to do.
+
+A role can have an Emergency Role which will allow further access if its really needed.
 
 #### 1.3.5.2. Adding AWS into existing corp environment
 
@@ -801,17 +729,14 @@ You may have an existing identity provider you are trying to allow access to.
 This may offer SSO (Single Sign On) or over 5000 identities.
 This is useful to reuse your existing identities for AWS.
 External accounts can't be used to access AWS directly.
-To solve this, you allow an IAM role in the AWS account to be assumed
-by one of the active directories.
+To solve this, you allow an IAM role in the AWS account to be assumed by one of the active directories.
 **ID Federation** allowing an external service the ability to assume a role.
 
 #### 1.3.5.3. Making an app with 1,000,000 users
 
 **Web Identity Federation** uses IAM roles to allow broader access.
-These allow you to use an existing web identity such as google, facebook, or
-twitter to grant access to the app.
-We can trust these web identities and allow those identities to assume
-an IAM role to access web resources such as DynamoDB.
+These allow you to use an existing web identity such as google, facebook, or twitter to grant access to the app.
+We can trust these web identities and allow those identities to assume an IAM role to access web resources such as DynamoDB.
 No AWS Credentials are stored on the application.
 Can scale quickly and beyond.
 
@@ -822,39 +747,31 @@ to AWS resources.
 
 ### 1.3.6. AWS Organizations
 
-Without an organization, each AWS account needs it's own set of IAM users
-as well as individual payment methods.
+Without an organization, each AWS account needs it's own set of IAM users as well as individual payment methods.
 If you have more than 5 to 10 accounts, you would want to use an org.
 
 Take a single AWS account **standard AWS account** and create an org.
 The standard AWS account then becomes the **master account**.
-The master account can invite other existing standard AWS accounts. They will
-need to approve their joining to the org.
+The master account can invite other existing standard AWS accounts. They will need to approve their joining to the org.
 
-When standard AWS accounts become part of the org, they
-become **member accounts**.
-Organizations can only have one **master accounts** and zero or more
-**member accounts**
+When standard AWS accounts become part of the org, they become **member accounts**.
+Organizations can only have one **master accounts** and zero or more **member accounts**
 
 #### 1.3.6.1. Organization Root
 
 This is a container that can hold AWS member accounts or the master account.
-It could also contain **organizational units** which can contain other
-units or member accounts.
+It could also contain **organizational units** which can contain other units or member accounts.
 
 #### 1.3.6.2. Consolidated billing
 
-The individual billing for the member accounts is removed and they pass their
-billing to the master account.
-Inside an AWS organization, you get a single monthly bill for the master
-account which covers all the billing for each users.
+The individual billing for the member accounts is removed and they pass their billing to the master account.
+Inside an AWS organization, you get a single monthly bill for the master account which covers all the billing for each users.
 Can offer a discount with consolidation of reservations and volume discounts
 
 #### 1.3.6.3. Create new accounts in an org
 
 Adding accounts in an organization is easy with only an email needed.
-You no longer need IAM users in each accounts. You can use IAM roles
-to change these.
+You no longer need IAM users in each accounts. You can use IAM roles to change these.
 It is best to have a single AWS account only used for login.
 Some enterprises may use an AWS account while smaller ones may use the master.
 
@@ -872,8 +789,7 @@ JSON policy document that can be attached:
 - A specific Organizational Unit
 - A specific member only.
 
-The master account cannot be restricted by SCPs which means this
-should not be used because it is a security risk.
+The master account cannot be restricted by SCPs which means this should not be used because it is a security risk.
 
 SCPs limit what the account, **including root** can do inside that account.
 They don't grant permissions themselves, just act as a barrier.
@@ -897,8 +813,7 @@ by themselves.
 }
 ```
 
-SCPs by themselves don't grant permissions. When SCPs are enabled,
-there is an implicit deny.
+SCPs by themselves don't grant permissions. When SCPs are enabled, there is an implicit deny.
 
 You must then add any services you want to Deny such as `DenyS3`
 
@@ -913,8 +828,7 @@ You must then add any services you want to Deny such as `DenyS3`
 }
 ```
 
-**Deny List** is a good default because it allows for the use of growing
-services offered by AWS. A lot less admin overhead.
+**Deny List** is a good default because it allows for the use of growing services offered by AWS. A lot less admin overhead.
 
 **Allow List** allows you to be conscience of your costs.
 
@@ -940,8 +854,7 @@ services offered by AWS. A lot less admin overhead.
 
 ### 1.3.8. CloudWatch Logs
 
-This is a public service, this can be used from AWS VPC or on premise
-environment.
+This is a public service, this can be used from AWS VPC or on premise environment.
 
 This allows to **store**, **monitor** and **access** logging data.
 
@@ -956,16 +869,12 @@ Can generate metrics based on logs **metric filter**
 
 It is a regional service `us-east-1`
 
-Need logging sources such as external APIs or databases. This sends
-information as **log events**. These are stored in **log streams**. This is a
-sequence of log events from the same source.
+Need logging sources such as external APIs or databases. This sends information as **log events**. These are stored in **log streams**. This is a sequence of log events from the same source.
 
-**Log Groups** are containers for multiple logs streams of the same
-type of logging. This also stores configuration settings such as
+**Log Groups** are containers for multiple logs streams of the same type of logging. This also stores configuration settings such as
 retention settings and permissions.
 
-Once the settings are defined on a log group, they apply to all log streams
-in that log group. Metric filters are also applied on the log groups.
+Once the settings are defined on a log group, they apply to all log streams in that log group. Metric filters are also applied on the log groups.
 
 ### 1.3.9. CloudTrail Essentials
 
@@ -973,19 +882,16 @@ Concerned with who did what.
 
 Logs API calls or activities as **CloudTrail Event**
 
-Stores the last 90 days of events in the **Event History**. This is enabled
-by default and is no additional cost.
+Stores the last 90 days of events in the **Event History**. This is enabled by default and is no additional cost.
 
 To customize the service you need to create a new **trail**.
 Two types of events. Default only logs Management Events
 
 - Management Events:
-Provide information about management operations performed on resources
-in the AWS account. Create an EC2 instance or terminating one.
+Provide information about management operations performed on resources in the AWS account. Create an EC2 instance or terminating one.
 
 - Data Events:
-Objects being uploaded to S3 or a Lambda function being invoked. This is not
-enabled by default and must be enabled for that trail.
+Objects being uploaded to S3 or a Lambda function being invoked. This is not enabled by default and must be enabled for that trail.
 
 #### 1.3.9.1. CloudTrail Trail
 
@@ -998,24 +904,19 @@ Once created, it can operate in two ways
   - Collection of trails in all regions
   - When new regions are added, they will be added to this trail automatically
 
-Most services log events in the region they occur. The trail then must be
-a one region trail in that region or an all region trail to log that event.
+Most services log events in the region they occur. The trail then must be a one region trail in that region or an all region trail to log that event.
 
-A small number of services log events globally to one region. Global services
-such as IAM or STS or CloudFront always log their events to `us-east-1`
+A small number of services log events globally to one region. Global services such as IAM or STS or CloudFront always log their events to `us-east-1`
 
 A trail must have this enabled to have this logged.
 
 AWS services are largely split into regional services or global services.
 
-When the services log, they log in the region they are created or
-to `us-east-1` if they are a global service.
+When the services log, they log in the region they are created or to `us-east-1` if they are a global service.
 
-A trail can store events in an S3 bucket as a compressed JSON file. It can
-also use CloudWatch Logs to output the data.
+A trail can store events in an S3 bucket as a compressed JSON file. It can also use CloudWatch Logs to output the data.
 
-CloudTrail products can create an organizational trail. This allows a single
-management point for all the APIs and management events for that org.
+CloudTrail products can create an organizational trail. This allows a single management point for all the APIs and management events for that org.
 
 #### 1.3.9.2. CloudTrail Exam PowerUp
 
@@ -1036,9 +937,7 @@ management point for all the APIs and management events for that org.
 
 ### 1.4.1. S3 Security
 
-**S3 is private by default!** The only identity which has any initial
-access to an S3 bucket is the account root user of the account which owns that
-bucket.
+**S3 is private by default!** The only identity which has any initial access to an S3 bucket is the account root user of the account which owns that bucket.
 
 #### 1.4.1.1. S3 Bucket Policy
 
@@ -1059,9 +958,7 @@ Each bucket can only have one policy, but it can have multiple statements.
 
 #### 1.4.1.2. ACLs (Legacy)
 
-A way to apply a subresource to objects and buckets.
-These are legacy and AWS does not recommend their use.
-They are inflexible and allow simple permissions.
+A way to apply a subresource to objects and buckets. These are legacy and AWS does not recommend their use. They are inflexible and allow simple permissions.
 
 #### 1.4.1.3. S3 Exam PowerUp
 
@@ -1096,22 +993,17 @@ When you enable static website hosting you need two HTML files:
 
 Static website hosting creates a **website endpoint**.
 
-This is influenced by the bucket name and region it is in.
-This cannot be changed.
+This is influenced by the bucket name and region it is in. This cannot be changed.
 
-You can use a custom domain for a bucket, but then the bucket name matters.
-The name of the bucket must match the domain.
+You can use a custom domain for a bucket, but then the bucket name matters. The name of the bucket must match the domain.
 
 #### 1.4.2.1. Offloading
 
-Instead of using EC2 to host an entire website, the compute service
-can generate a HTML file which points to the resources hosted on a static
-bucket. This ensures the media is retrieved from S3 and not EC2.
+Instead of using EC2 to host an entire website, the compute service can generate a HTML file which points to the resources hosted on a static bucket. This ensures the media is retrieved from S3 and not EC2.
 
 #### 1.4.2.2. Out-of-band pages
 
-This may be an error page to display maintenance if the server goes offline.
-We could then change our DNS and move customers to a backup website on S3.
+This may be an error page to display maintenance if the server goes offline. We could then change our DNS and move customers to a backup website on S3.
 
 #### 1.4.2.3. S3 Pricing
 
@@ -1139,15 +1031,11 @@ Versioning
 - This allows for multiple versions of objects within a bucket.
 - Objects which would modify objects **generate a new version** instead.
 
-The latest or current version is always returned when an object version
-is not requested.
+The latest or current version is always returned when an object version is not requested.
 
-When an object is deleted, AWS puts a **delete marker** on the object
-and hides all previous versions. You could delete this marker to enable
-the item.
+When an object is deleted, AWS puts a **delete marker** on the object and hides all previous versions. You could delete this marker to enable the item.
 
-To delete an object, you must delete all the versions of that object
-using their version marker.
+To delete an object, you must delete all the versions of that object using their version marker.
 
 #### 1.4.3.1. MFA Delete
 
@@ -1155,9 +1043,7 @@ Enabled within version configuration in a bucket.
 This means MFA is required to change bucket versioning state.
 MFA is required to delete versions of an object.
 
-In order to change a version state or delete a particular version of an object,
-you need to provide the serial number of your MFA token as well as the code
-it generates. These are concatenated and passed with any API calls.
+In order to change a version state or delete a particular version of an object, you need to provide the serial number of your MFA token as well as the code it generates. These are concatenated and passed with any API calls.
 
 ### 1.4.4. S3 Performance Optimization
 
@@ -1193,8 +1079,7 @@ S3 Accelerated Transfer
 
 - An example is a password on a laptop
   - If the laptop is stolen, the data is already encrypted and useless.
-- Commonly within cloud environments. Even if someone could
-find and access the base storage device, they can't do anything with it.
+- Commonly within cloud environments. Even if someone could find and access the base storage device, they can't do anything with it.
 - Only one entity involved
 
 #### 1.4.5.2. Encryption in Transit
@@ -1237,15 +1122,11 @@ Encryption by itself does not prove who encrypted the data.
 
 #### 1.4.5.7. Steganography
 
-Encryption is obvious when used. There is no denying that the
-data was encrypted. Someone could force you to decrypt the data packet.
+Encryption is obvious when used. There is no denying that the data was encrypted. Someone could force you to decrypt the data packet.
 
-A file can be hidden in an image or other file. If it difficult
-to find the message unless you know what to look for.
+A file can be hidden in an image or other file. If it difficult to find the message unless you know what to look for.
 
-One party would take another party's public key and encrypt some data to create
-ciphertext. That ciphertext can be hidden in another file so long as both
-parties know how the data will be hidden.
+One party would take another party's public key and encrypt some data to create ciphertext. That ciphertext can be hidden in another file so long as both parties know how the data will be hidden.
 
 ### 1.4.6. Key Management Service (KMS)
 
@@ -1282,20 +1163,16 @@ It is logical and contains
 
 - Generated by KMS using the CMK and `GenerateDataKey` operation.
 - Used to encrypt data larger than 4KB in size.
-- Linked to a specific CMK so KMS can tell that a specific DEK was
-generated with a specific CMK.
+- Linked to a specific CMK so KMS can tell that a specific DEK was generated with a specific CMK.
 
-KMS does not store the DEK, once provided to a user or service, it is
-discarded. KMS doesn't actually perform the encryption or decryption
-of data using the DEK or anything past generating them.
+KMS does not store the DEK, once provided to a user or service, it is discarded. KMS doesn't actually perform the encryption or decryption of data using the DEK or anything past generating them.
 
 When the DEK is generated, KMS provides two version.
 
 - Plaintext Version - This can be used immediately.
 - Ciphertext Version - Encrypted version of the DEK.
   - This is encrypted by the CMK that generated it.
-  - In the future it can be decrypted by KMS using the CMK assuming
-  you have the permissions.
+  - In the future it can be decrypted by KMS using the CMK assuming you have the permissions.
 
 Architecture
 
@@ -1328,9 +1205,7 @@ CMK itself contains:
 - Previous backing keys created from rotating that material
 
 KMS can create an alias which is a shortcut to a particular CMK.
-Aliases are also per region. You can create a `MyApp1` alias in all regions
-but they would be separate aliases, and in each region it would be pointing
-potentially at a different CMK.
+Aliases are also per region. You can create a `MyApp1` alias in all regions but they would be separate aliases, and in each region it would be pointing potentially at a different CMK.
 
 #### 1.4.6.4. Key Policy (resource policy)
 
@@ -1339,13 +1214,9 @@ potentially at a different CMK.
 - Unlike other policies, KMS has to be explicitly told that keys trust the AWS
 account that they're in.
 - The trust isn't automatic so be careful when adjusting key policies.
-- You always need a key policy in place so the key trusts the account and so
-that the account can manage it by applying IAM permission policies to IAM users
-in that account.
-- In order for IAM to work, IAM is trusted by the account, and the account
-needs to be trusted by the key.
-- It sets up this chain of trust from the key to the account to IAM and then
-to an IAM user, if they're granted any identity permissions.
+- You always need a key policy in place so the key trusts the account and so that the account can manage it by applying IAM permission policies to IAM users in that account.
+- In order for IAM to work, IAM is trusted by the account, and the account needs to be trusted by the key.
+- It sets up this chain of trust from the key to the account to IAM and then to an IAM user, if they're granted any identity permissions.
 
 ### 1.4.7. KMS Key Demo
 
@@ -1375,8 +1246,7 @@ Buckets aren't encrypted, **objects are**.
 Multiple objects in a bucket can use a different encryption methods.
 
 Two main methods of encryption S3 is capable of supporting.
-Both types are encryption at rest. Data sent from a user to S3 is automatically
-encrypted in transit outside of these methods.
+Both types are encryption at rest. Data sent from a user to S3 is automatically encrypted in transit outside of these methods.
 
 Client-Side encryption
 
@@ -1410,24 +1280,18 @@ The hash can identify if the specific key was used to encrypt the object.
 4. The key is then discarded after the hash is taken.
 5. The encrypted and one-way hash are stored persistently on storage.
 
-To decrypt the object, you must tell S3 which object to decrypt and provide
-it with the key used to encrypt it. If the key that you supply is correct,
-the proper hash, S3 will decrypt the object, discard the key, and return the
-plaintext version of the object.
+To decrypt the object, you must tell S3 which object to decrypt and provide it with the key used to encrypt it. If the key that you supply is correct, the proper hash, S3 will decrypt the object, discard the key, and return the plaintext version of the object.
 
 #### 1.4.8.2. SSE-S3 AES256 (Server-side encryption w/ Amazon S3 managed keys)
 
-AWS handles both the encryption and decryption process as well as the
-key generation and management. This provides very little control over how
-the keys are used, but has little admin overhead.
+AWS handles both the encryption and decryption process as well as the key generation and management. This provides very little control over how the keys are used, but has little admin overhead.
 
 SSE-S3 Encryption Steps
 
 1. When putting data into S3, only need to provide plaintext.
 2. S3 generates fully managed and rotated **master key** automatically.
 3. Object generates a key specific for each object that is uploaded.
-4. The master key is used to encrypt the specific object key, and the
-unencrypted version of that key is discarded.
+4. The master key is used to encrypt the specific object key, and the unencrypted version of that key is discarded.
 5. The encrypted file and encrypted key are stored side by side in S3.
 
 Three Problems with this method:
@@ -1440,11 +1304,9 @@ Three Problems with this method:
 
 Much like SSE-S3, where AWS handles both the keys and encryption process.
 KMS handles the master key and not S3. The first time an object is uploaded,
-S3 works with KMS to create an AWS managed CMK. This is the default key
-which gets used in the future.
+S3 works with KMS to create an AWS managed CMK. This is the default key which gets used in the future.
 
-Every time an object is uploaded, S3 uses a dedicated key to encrypt that object
-and that key is a data encryption key which KMS generates using the CMK.
+Every time an object is uploaded, S3 uses a dedicated key to encrypt that object and that key is a data encryption key which KMS generates using the CMK.
 The CMK does not need to be managed by AWS and can be a customer managed CMK.
 
 SSE-KMS Encryption Steps
@@ -1456,9 +1318,7 @@ as an encrypted version.
 
 When uploading an object, you can create and use a customer managed CMK. This allows the user to control the permissions and the usage of the key material. In regulated industries, this is reason enough to use SSE-KMS You can also add logging and see any calls against this key from CloudTrail.
 
-The best benefit is the role separation. To decrypt any object, you need
-access to the CMK that was used to generate the unique key that encrypted them.
-The CMK is used to decrypt the data encryption key for that object.
+The best benefit is the role separation. To decrypt any object, you need access to the CMK that was used to generate the unique key that encrypted them. The CMK is used to decrypt the data encryption key for that object.
 That decrypted data encryption key is used to decrypt the object itself.
 If you don't have access to KMS, you don't have access to the object.
 
@@ -1503,8 +1363,7 @@ need it quickly.
 - Retrieval fee for every GB of data retrieved from this class.
 - 99.9% availability, slightly lower than standard S3.
 
-Designed for data that isn't accessed often, long term storage, backups,
-disaster recovery files. The requirement for data to be safe is most important.
+Designed for data that isn't accessed often, long term storage, backups, disaster recovery files. The requirement for data to be safe is most important.
 
 #### 1.4.9.3. One Zone-IA
 
@@ -1516,8 +1375,7 @@ disaster recovery files. The requirement for data to be safe is most important.
 
 Great choice for secondary copies of primary data or backup copies.
 
-If data is easily creatable from a primary data set, this would be a great
-place to store the output from another data set.
+If data is easily creatable from a primary data set, this would be a great place to store the output from another data set.
 
 #### 1.4.9.4. S3 Glacier
 
@@ -1572,19 +1430,16 @@ Objects must flow downwards, they can't flow in the reverse direction.
 
 #### 1.4.10.2. Expiration Actions
 
-Once an object has been uploaded and changed, you can purge older versions
-after 90 days to keep costs down.
+Once an object has been uploaded and changed, you can purge older versions after 90 days to keep costs down.
 
 ### 1.4.11. S3 Replication
 
 There are two types of S3 replication available.
 
 - Cross-Region Replication (CRR)
-  - Allows the replication of objects from a source bucket to a destination
-  bucket in **different** AWS regions.
+  - Allows the replication of objects from a source bucket to a destination bucket in **different** AWS regions.
 - Same-Region Replication (SRR)
-  - Allows the replication of objects from a source bucket to a destination
-  bucket in the **same** AWS region.
+  - Allows the replication of objects from a source bucket to a destination bucket in the **same** AWS region.
 
 Architecture for both is similar, only difference is if both buckets are
 in the same account or different accounts.
@@ -4515,6 +4370,7 @@ Public service that provides fully managed highly available message queues.
   - Messages are guaranteed in the order they were received
   - Provides FIFO with best effort, but no guarantee
 - Messages up to 256KB in size.
+  
   - Should link to larger sets of data if needed.
 - Polling is checking for any messages on the queue.
 - **Visibility timeout**
