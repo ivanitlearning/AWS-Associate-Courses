@@ -573,7 +573,7 @@ Has relationships with all major registries (registrar)
   - This is a hosted zone
   - The zone file will be put on these four managed nameservers
 - Route 53 will communicate with the `.org` registry and add the nameserver records 
-into the zone file for that top level domain.
+  into the zone file for that top level domain.
   - This is done with a nameserver record (NS).
 
 #### 1.2.13.2. Route53 Details
@@ -594,7 +594,7 @@ CNAMES cannot point directly to an IP address, only another name.
   - Priority: Lower values for the priority field are higher priority.
   - Value
     - If it is just a host, it will not have a dot on the right. It is assumed
-to be part of the same zone as the host.
+    to be part of the same zone as the host.
     - If you include a dot on the right, it is a ***fully qualified domain name***
 - TXT Record: Allows you to add arbitrary text to a domain.
 One common usage is to prove domain ownership.
@@ -723,7 +723,7 @@ AWS merges all of the policies from all groups the user is in together.
 - The 5000 IAM user limit applies to groups.
 - There is **no all users** IAM group.
   - You can create a group and add all users into that group, but it needs to be
-created and managed on your own.
+  created and managed on your own.
 - No Nesting: You cannot have groups within groups.
 - 300 Group Limit per account. This can be fixed with a support ticket.
 
@@ -1454,16 +1454,21 @@ as an encrypted version.
 2. The data is encrypted with the plaintext key and the key discarded.
 3. The encrypted key is stored alongside the encrypted object.
 
-When uploading an object, you can create and use a customer managed CMK. This
-allows the user to control the permissions and the usage of the key material.
-In regulated industries, this is reason enough to use SSE-KMS
-You can also add logging and see any calls against this key from CloudTrail.
+When uploading an object, you can create and use a customer managed CMK. This allows the user to control the permissions and the usage of the key material. In regulated industries, this is reason enough to use SSE-KMS You can also add logging and see any calls against this key from CloudTrail.
 
 The best benefit is the role separation. To decrypt any object, you need
 access to the CMK that was used to generate the unique key that encrypted them.
 The CMK is used to decrypt the data encryption key for that object.
 That decrypted data encryption key is used to decrypt the object itself.
 If you don't have access to KMS, you don't have access to the object.
+
+#### Summary table
+| Method      | Key Management | Encryption Processing | Extras                                |
+| ----------- | -------------- | --------------------- | ------------------------------------- |
+| Client-side | YOU            | YOU                   |                                       |
+| SSE-C       | YOU            | S3                    |                                       |
+| SSE-S3      | S3             | S3                    |                                       |
+| SSE-KMS     | S3 and KMS     | S3                    | Rotation Control<br />Role Separation |
 
 ### 1.4.9. S3 Object Storage Classes
 
@@ -1576,10 +1581,10 @@ There are two types of S3 replication available.
 
 - Cross-Region Replication (CRR)
   - Allows the replication of objects from a source bucket to a destination
-bucket in **different** AWS regions.
+  bucket in **different** AWS regions.
 - Same-Region Replication (SRR)
   - Allows the replication of objects from a source bucket to a destination
-bucket in the **same** AWS region.
+  bucket in the **same** AWS region.
 
 Architecture for both is similar, only difference is if both buckets are
 in the same account or different accounts.
@@ -1619,9 +1624,9 @@ the source account access to the bucket.
 - It is a one way replication process only.
 - Replication by default can handle objects that are unencrypted or SSE-S3.
   - With configuration it can handle SSE-KMS, but KMS requires more
-configuration to work.
+  configuration to work.
   - It cannot replicate objects with SSE-C because AWS does not have the keys
-necessary.
+  necessary.
 - Source bucket owner needs permissions to objects. If you grant cross-account
 access to a bucket. It is possible the source bucket account will not own
 some of those objects.
@@ -2221,7 +2226,7 @@ EC2 host contains
   - If instance moves hosts, the storage is lost.
 - Can use remote storage, Elastic Block Store (EBS).
   - EBS allows you to allocate volumes of persistent storage to instances
-within the same AZ.
+  within the same AZ.
 - 2 types of networking
   - Storage networking
   - Data networking
@@ -2568,8 +2573,8 @@ data encryption key.
   - The OS does not see any encryption. It simply writes data out and reads
   data in from a disk.
   - If an exam question does not use AES256, or it suggests you need an OS to
-encrypt or hold the keys, then you need to perform full disk encryption
-at the operating system level.
+  encrypt or hold the keys, then you need to perform full disk encryption
+  at the operating system level.
 
 ### 1.6.9. EC2 Network Interfaces, Instance IPs and DNS
 
@@ -2595,24 +2600,24 @@ Has these properties
 - 0 or more secondary private IP addresses
 - 0 or 1 public IPv4 address
   - The instance must manually be set to receive an IPv4 address or spun into a
-subnet which automatically allocates an IPv4.
-This is a dynamic IP that is not fixed.
-If you stop an instance the address is removed.
-When you start up again, it is given a brand new IPv4 address.
-Restarting the instance will not change the IP address.
-Changing between EC2 hosts will change the address.
-This will be allocated a public DNS name. The Public DNS name will resolve to
-the primary private IPv4 address of the instance.
-Outside of the VPC, the DNS will resolve to the public IP address.
-This allows one single DNS name for an instance, and allows traffic to resolve
-to an internal address inside the VPC and the public will resolve to a public
-IP address.
+  subnet which automatically allocates an IPv4.
+  This is a dynamic IP that is not fixed.
+  If you stop an instance the address is removed.
+  When you start up again, it is given a brand new IPv4 address.
+  Restarting the instance will not change the IP address.
+  Changing between EC2 hosts will change the address.
+  This will be allocated a public DNS name. The Public DNS name will resolve to
+  the primary private IPv4 address of the instance.
+  Outside of the VPC, the DNS will resolve to the public IP address.
+  This allows one single DNS name for an instance, and allows traffic to resolve
+  to an internal address inside the VPC and the public will resolve to a public
+  IP address.
 - 1 elastic IP per private IPv4 address
   - Can have 1 public elastic interface per private IP address on this interface.
-This is allocated to your AWS account.
-Can associate with a private IP on the primary interface or secondary interface.
-If you are using a public IPv4 and assign an elastic IP, the original IPv4
-address will be lost. There is no way to recover the original address.
+  This is allocated to your AWS account.
+  Can associate with a private IP on the primary interface or secondary interface.
+  If you are using a public IPv4 and assign an elastic IP, the original IPv4
+  address will be lost. There is no way to recover the original address.
 - 0 or more IPv6 address on the interface
   - These are by default public addresses.
 - Security groups
@@ -2632,7 +2637,7 @@ you can detach interfaces and move them to other EC2 instances.
 
 - Legacy software is licensed using a mac address.
   - If you provision a secondary ENI to a specific license, you can move
-around the license to different EC2 instances.
+  around the license to different EC2 instances.
 - Multi homed (subnets) management and data.
 - Different security groups are attached to different interfaces.
 - The OS doesn't see the IPv4 public address.
@@ -2740,7 +2745,7 @@ Every instance has two high level status checks
 
 - System Status Checks
   - Failure of this check could indicate SW or HW problems of the EC2
-service or the host.
+  service or the host.
 - Instance Status Checks
   - Specific to the file system or has a corrupted Kernel.
 
@@ -5154,7 +5159,7 @@ requests to your website.
   - $3000 per month
   - Includes EC2, ELB, CloudFront, Global Acceleration and R53
   - Provides access to DDoS advanced response team and financial insurance
-against increased costs.
+  against increased costs.
 
 - WAF (web application firewall)
   - Layer 7 firewall (HTTP/s) firewall
