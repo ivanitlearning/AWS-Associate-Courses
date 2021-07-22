@@ -1311,16 +1311,13 @@ The CMK does not need to be managed by AWS and can be a customer managed CMK.
 
 SSE-KMS Encryption Steps
 
-1. S3 is provided a plaintext version of the data encryption key as well
-as an encrypted version.
+1. S3 is provided a plaintext version of the data encryption key as well as an encrypted version.
 2. The data is encrypted with the plaintext key and the key discarded.
 3. The encrypted key is stored alongside the encrypted object.
 
 When uploading an object, you can create and use a customer managed CMK. This allows the user to control the permissions and the usage of the key material. In regulated industries, this is reason enough to use SSE-KMS You can also add logging and see any calls against this key from CloudTrail.
 
-The best benefit is the role separation. To decrypt any object, you need access to the CMK that was used to generate the unique key that encrypted them. The CMK is used to decrypt the data encryption key for that object.
-That decrypted data encryption key is used to decrypt the object itself.
-If you don't have access to KMS, you don't have access to the object.
+The best benefit is the role separation. To decrypt any object, you need access to the CMK that was used to generate the unique key that encrypted them. The CMK is used to decrypt the data encryption key for that object. That decrypted data encryption key is used to decrypt the object itself. If you don't have access to KMS, you don't have access to the object.
 
 #### Summary table
 | Method      | Key Management | Encryption Processing | Extras                                |
@@ -1384,7 +1381,7 @@ If data is easily creatable from a primary data set, this would be a great place
   - Retrieval time anywhere from 1 min - 12 hrs
 - Secure, durable, and low cost storage for archival data.
 - 17% of the base cost of S3 standard
-- 99999999999% durability
+- 99.999999999% durability
 - 99.99% availability
 - 3+ AZ replication
 - 40KB minimum object capacity charge
@@ -1422,9 +1419,11 @@ This is good for objects that are unknown their access pattern.
 Intelligent-Tiering is used for objects where access patterns is unknown.
 A lifecycle configuration is a set of **rules** that consists of **actions**.
 
-#### 1.4.10.1. Transition Actions
+#### Priority:
 
-Change the storage class over time such as:
+Standard -> IA -> Intelligent-Tiering -> OneZone-IA -> Glacier -> Glacier Deep Archive
+
+#### 1.4.10.1. Transition Actions
 
 - Change the storage class over time such as:
 
@@ -1433,6 +1432,13 @@ Change the storage class over time such as:
   - After one year move to Deep Archive
 
   Objects must flow downwards, they can't flow in the reverse direction.
+  
+- For single rules only:
+
+  - Objects must spend 30 days in S3-Standard before transitioning automatically to S3-IA.
+  - Objects must spend another separate 30 days in S3-IA before transitioning to Glacier.
+
+  You can't transition directly to Glacier without first spending minimum duration in the intermediate stages.
 
 #### 1.4.10.2. Expiration Actions
 
@@ -1447,20 +1453,12 @@ There are two types of S3 replication available.
 - Same-Region Replication (SRR)
   - Allows the replication of objects from a source bucket to a destination bucket in the **same** AWS region.
 
-Architecture for both is similar, only difference is if both buckets are
-in the same account or different accounts.
+Architecture for both is similar, only difference is if both buckets are in the same account or different accounts.
 
-The replication configuration is applied to the source bucket and configures
-S3 to replicate from this source bucket to a destination bucket.
-It also configures the IAM role to use for the replication process.
-The role is configured to allow the S3 service to assume it based on
-its trust policy. The role's permission policy allows it to read objects on the
-source bucket and replicate them to the destination bucket.
+The replication configuration is applied to the source bucket and configures S3 to replicate from this source bucket to a destination bucket.
+It also configures the IAM role to use for the replication process. The role is configured to allow the S3 service to assume it based on its trust policy. The role's permission policy allows it to read objects on the source bucket and replicate them to the destination bucket.
 
-When different accounts are used, the role is not by default trusted
-by the destination account. If configuring between accounts, you must
-add a bucket policy on the destination account to allow the IAM role from
-the source account access to the bucket.
+When different accounts are used, the role is not by default trusted by the destination account. If configuring between accounts, you must add a bucket policy on the destination account to allow the IAM role from the source account access to the bucket.
 
 #### 1.4.11.1. S3 Replication Options
 
@@ -1469,29 +1467,23 @@ the source account access to the bucket.
 - Select which storage class the destination bucket will use.
   - Default is the same type of storage, but this can be changed.
 - Define the ownership of the objects.
-  - The default is they will be owned by the same account as the source bucket.
-  - If the buckets are in different accounts, the objects in the destination
-  could be owned by the source account and not allowed access.
+  - The default is they will be owned by the same account as the source bucket (may be inaccessible to dest account user)
+  - If the buckets are in different accounts, the objects in the destination could be owned by the source account and not allowed access.
 - Replication Time Control (RTC)
-  - Adds a guaranteed level of SLA within 15 minutes for extra cost.
+  - Adds a guaranteed level of SLA within 15 minutes interval (ie. dest buckets is never >15 min out-of-sync with source) for extra cost.
   - This is useful for buckets that must be in sync the whole time.
 
 #### 1.4.11.2. Important Replication Tips
 
 - Replication is not retroactive.
-  - If you enable replication on a bucket that already has objects, the old
-  objects will not be replicated.
+  - If you enable replication on a bucket that already has objects, the old objects will not be replicated.
 - Both buckets must have versioning enabled.
 - It is a one way replication process only.
 - Replication by default can handle objects that are unencrypted or SSE-S3.
-  - With configuration it can handle SSE-KMS, but KMS requires more
-  configuration to work.
-  - It cannot replicate objects with SSE-C because AWS does not have the keys
-  necessary.
-- Source bucket owner needs permissions to objects. If you grant cross-account
-access to a bucket. It is possible the source bucket account will not own
-some of those objects.
-- Will not replicate system events, glacier, or glacier deep archive.
+  - With configuration it can handle SSE-KMS, but KMS requires more configuration to work.
+  - It cannot replicate objects with SSE-C because AWS does not have the keys (held by user) necessary.
+- Source bucket owner needs permissions to objects. If you grant cross-account access to a bucket. It is possible the source bucket account will not own some of those objects.
+- Will not replicate system events (eg. objects created by lifecycle management), glacier, or glacier deep archive.
 - No deletes are replicated.
 
 #### 1.4.11.3. Why use replication
@@ -1504,8 +1496,7 @@ CRR - Latency reduction
 
 ### 1.4.12. S3 Presigned URL
 
-A way to give another person or application access to a object inside an S3
-bucket using your credentials in a safe way.
+A way to give another person or application access to a object inside an S3 bucket using your credentials in a safe way.
 
 IAM admin can make a request to S3 to generate a presigned URL by providing:
 
@@ -1515,16 +1506,12 @@ IAM admin can make a request to S3 to generate a presigned URL by providing:
 - expiry date and time
 - indicate how the object or bucket will be accessed
 
-S3 will create a presigned URL and return it. This URL will have encoded inside
-it the details that IAM admin provided. It will be configured to expire at
-a certain date and time as requested by the IAM admin user.
+S3 will create a presigned URL and return it. This URL will have encoded inside it the details that IAM admin provided. It will be configured to expire at a certain date and time as requested by the IAM admin user.
 
 #### 1.4.12.1. S3 Presigned URL Exam PowerUp
 
-- You can create a presigned URL for an object you have do not have access to.
-The object will not allow access because your user does not have access.
-- When using the URL the permission that you have access to, match the identity
-that generated it at the moment the item is being accessed.
+- You can create a presigned URL for an object you have do not have access to. The object will not allow access because your user does not have access.
+- When using the URL the permission that you have access to, match the identity that generated it at the moment the item is being accessed.
 - If you get an access deny it means the ID never had access, or lost it.
 - Don't generate presigned URLs with an IAM role.
   - The role will likely expire before the URL does.
