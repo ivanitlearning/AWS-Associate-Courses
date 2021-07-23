@@ -249,13 +249,9 @@ Public Key - AWS places this key on the instance.
 
 ### 1.2.6. S3 (Default Storage Service)
 
-Global Storage platform. Runs from all regions and is a public service.
-Can be accessed anywhere from the internet with an unlimited amount of users.
+Global Storage platform. Runs from all regions and is a public service. Can be accessed anywhere from the internet with an unlimited amount of users.
 
-This should be the default storage platform
-
-S3 is an object storage, not file, or block storage.
-You can't mount an S3 Bucket.
+This should be the default storage platform. S3 is an object storage, not file, or block storage. You can't mount an S3 Bucket.
 
 #### 1.2.6.1. Objects
 
@@ -281,8 +277,9 @@ Other components:
 - Name is globally unique
 - All objects are stored within the bucket at the same level.
 
-If the objects name starts with a slash such as `/old/Koala1.jpg` the UI will
-present this as a folder. In actuality this is not true, there are no folders.
+If the objects name starts with a slash such as `/old/Koala1.jpg` the UI will present this as a folder. In actuality this is not true, there are no folders.
+
+Default limit of 100 buckets per AWS account, can increase up to 1000 by service request.
 
 ### 1.2.7. CloudFormation Basics
 
@@ -937,7 +934,7 @@ CloudTrail products can create an organizational trail. This allows a single man
 
 ### 1.4.1. S3 Security
 
-**S3 is private by default!** The only identity which has any initial access to an S3 bucket is the account root user of the account which owns that bucket.
+**S3 is private by default!** Although it resides in the AWS public zone. The only identity which has any initial access to an S3 bucket is the account root user of the account which owns that bucket.
 
 #### 1.4.1.1. S3 Bucket Policy
 
@@ -980,22 +977,17 @@ ACLs: NEVER - unless you must.
 
 ### 1.4.2. S3 Static Hosting
 
-Normal access is via AWS APIs.
-This allows access via HTTP using a web browser.
+Normal access is via AWS APIs. This allows access via HTTP using a web browser.
 
 When you enable static website hosting you need two HTML files:
 
 - index document
-  - default page returned from a website
-  - entry point for most websites
 - error document
-  - similar to index, but only when something goes wrong
 
-Static website hosting creates a **website endpoint**.
+Static website hosting creates a **website endpoint**. This is influenced by the bucket name and region it is in. This cannot be changed. You can use a custom domain for a bucket, but then the bucket name matters. The name of the bucket must match the domain. You also need to
 
-This is influenced by the bucket name and region it is in. This cannot be changed.
-
-You can use a custom domain for a bucket, but then the bucket name matters. The name of the bucket must match the domain.
+- Disable block public access setting
+- Configure bucket policy to allow all principals "*" to access.
 
 #### 1.4.2.1. Offloading
 
@@ -1096,21 +1088,16 @@ S3 Accelerated Transfer
 
 #### 1.4.5.4. Symmetric Encryption
 
-The key is handed from one entity to another before the data.
-This is difficult because the key needs to be transferred securely.
-If the data is time sensitive, the key needs to be arranged beforehand.
+The key is handed from one entity to another before the data. This is difficult because the key needs to be transferred securely. If the data is time sensitive, the key needs to be arranged beforehand.
 
 #### 1.4.5.5. Asymmetric Encryption
 
 - public key: cannot decrypt data but can generate ciphertext
 - private key: can decrypt data encrypted by the public key
 
-The public key is uploaded to cloud storage.
-The data is encrypted and sent back to the original entity.
-The private key can decrypt the data.
+The public key is uploaded to cloud storage. The data is encrypted and sent back to the original entity. The private key can decrypt the data.
 
-This is secure because stolen public keys can only encrypt data.
-Private keys must be handled securely.
+This is secure because stolen public keys can only encrypt data. Private keys must be handled securely.
 
 #### 1.4.5.6. Signing
 
@@ -1211,8 +1198,7 @@ Aliases are also per region. You can create a `MyApp1` alias in all regions but 
 
 - Every CMK has one.
 - Customer managed CMKs can adjust the policy.
-- Unlike other policies, KMS has to be explicitly told that keys trust the AWS
-account that they're in.
+- Unlike other policies, KMS has to be explicitly told that keys trust the AWS account that they're in.
 - The trust isn't automatic so be careful when adjusting key policies.
 - You always need a key policy in place so the key trusts the account and so that the account can manage it by applying IAM permission policies to IAM users in that account.
 - In order for IAM to work, IAM is trusted by the account, and the account needs to be trusted by the key.
@@ -1248,14 +1234,14 @@ Multiple objects in a bucket can use a different encryption methods.
 Two main methods of encryption S3 is capable of supporting.
 Both types are encryption at rest. Data sent from a user to S3 is automatically encrypted in transit outside of these methods.
 
-Client-Side encryption
+#### 1.4.8.1 Client-Side encryption
 
 - Objects being encrypted by the client before they leave.
-- Data being sent the whole time it is sent as cypher text.
-- AWS has no way to see into the data.
+- Data being sent the whole time it is sent as ciphertext.
+- AWS has no way to view the data.
 - The encryption burden is on the customer and not AWS.
 
-Server-Side encryption
+#### 1.4.8.2 Server-Side encryption
 
 - Data is encrypted in transit using HTTPS
 - Data inside the tunnel is still in its original unencrypted form.
@@ -1263,7 +1249,7 @@ Server-Side encryption
 - After S3 sees the data, it is then encrypted.
 - AWS will handle some or all of these processes.
 
-#### 1.4.8.1. SSE-C (Server-side encryption with customer provided keys)
+#### 1.4.8.3 SSE-C (Server-side encryption with customer provided keys)
 
 - Customer is responsible for the keys themselves.
 - S3 services manages the actual encryption and decryption
@@ -1282,7 +1268,7 @@ The hash can identify if the specific key was used to encrypt the object.
 
 To decrypt the object, you must tell S3 which object to decrypt and provide it with the key used to encrypt it. If the key that you supply is correct, the proper hash, S3 will decrypt the object, discard the key, and return the plaintext version of the object.
 
-#### 1.4.8.2. SSE-S3 AES256 (Server-side encryption w/ Amazon S3 managed keys)
+#### 1.4.8.4 SSE-S3 AES256 (Server-side encryption w/ Amazon S3 managed keys)
 
 AWS handles both the encryption and decryption process as well as the key generation and management. This provides very little control over how the keys are used, but has little admin overhead.
 
@@ -1300,14 +1286,11 @@ Three Problems with this method:
 - No way to control key material rotation.
 - No role separation. A full S3 admin can decrypt data and open objects.
 
-#### 1.4.8.3. SSE-KMS (Server-side encryption w/ customer master keys stored in AWS KMS)
+#### 1.4.8.5 SSE-KMS (Server-side encryption w/ customer master keys stored in AWS KMS)
 
-Much like SSE-S3, where AWS handles both the keys and encryption process.
-KMS handles the master key and not S3. The first time an object is uploaded,
-S3 works with KMS to create an AWS managed CMK. This is the default key which gets used in the future.
+Much like SSE-S3, where AWS handles both the keys and encryption process. KMS handles the master key and not S3. The first time an object is uploaded, S3 works with KMS to create an AWS managed CMK. This is the default key which gets used in the future.
 
-Every time an object is uploaded, S3 uses a dedicated key to encrypt that object and that key is a data encryption key which KMS generates using the CMK.
-The CMK does not need to be managed by AWS and can be a customer managed CMK.
+Every time an object is uploaded, S3 uses a dedicated key to encrypt that object and that key is a data encryption key which KMS generates using the CMK. The CMK does not need to be managed by AWS and can be a customer managed CMK.
 
 SSE-KMS Encryption Steps
 
@@ -1351,8 +1334,7 @@ All of the other storage classes trade some of these compromises for another.
 #### 1.4.9.2. S3 Standard-IA
 
 - Designed for less frequent rapid access when it is needed.
-- Cheaper rate to store data you will rarely need, but if you do need it, you
-need it quickly.
+- Cheaper rate to store data you will rarely need, but if you do need it, you need it quickly.
 - ~54% cheaper than S3 standard.
 - Minimum 128KB charge for each object.
   - Cost benefits might be negated for smaller objects.
@@ -1370,9 +1352,7 @@ Designed for data that isn't accessed often, long term storage, backups, disaste
 - Data is only stored in a single AZ, no 3+ AZ replication.
 - 99.5% availability, lower than Standard-IA
 
-Great choice for secondary copies of primary data or backup copies.
-
-If data is easily creatable from a primary data set, this would be a great place to store the output from another data set.
+Great choice for secondary copies of primary data or backup copies. If data is easily creatable from a primary data set, this would be a great place to store the output from another data set.
 
 #### 1.4.9.4. S3 Glacier
 
@@ -1518,14 +1498,34 @@ S3 will create a presigned URL and return it. This URL will have encoded inside 
 
 ### 1.4.13. S3 Select and Glacier Select
 
-This provides a ways to retrieve parts of objects and not the entire object.
+This provides a ways to retrieve parts of objects and not the entire object. If you retrieve a 5TB object, it takes time and consumes 5TB of data. Filtering at the client side doesn't reduce this cost because it already downloads it.
 
-If you retrieve a 5TB object, it takes time and consumes 5TB of data.
-Filtering at the client side doesn't reduce this cost.
-
-S3 and Glacier select lets you use SQL-like statements to select part of the
-object which is returned in a filtered way.
+S3 and Glacier select lets you use SQL-like statements to select part of the object which is returned in a filtered way.
 The filtering happens at the S3 service itself saving time and data.
+
+Works on file types:
+
+- CSV, JSON, Parquet, BZIP2.
+
+### 1.4.14 S3 Events notification
+
+- Notifications generated when events occur in a bucket like
+  - Object creation (Put, Post, Copy, CompleteMultiPartUpload)
+  - Object deletion
+  - Object restore (from Glacier or Deep Archive)
+  - S3 replication (missing 15min threshold, failed replication etc)
+- Delivered to SNS, SQS, Lambda
+
+### 1.4.15 S3 Access Logs
+
+Consists of source bucket (which is logged) and target bucket (where logs are stored). To enable need
+
+- Target bucket needs ACL to allow "S3 Log delivery group"
+- Best-effort log delivery
+- Logs delivered as log files
+  - Records newline-delimited
+  - Attributes space-delimited
+- Can use single target bucket for many source targets
 
 ---
 
@@ -1540,9 +1540,7 @@ Dotted decimal notation for human readability.
 - 4 numbers from 0 to 255 separated by a period.
 - Octet are the numbers between the period.
 
-There are just over 4 billion addresses.
-This was not very flexible because it was either too small or large for
-some corporations. Some IP addresses was always left unused.
+There are just over 4 billion addresses. This was not very flexible because it was either too small or large for some corporations. Some IP addresses was always left unused.
 
 #### 1.5.1.2. Classful Addressing
 
@@ -1588,8 +1586,7 @@ CIDR Example: `10.0.0.0/16`
 - `10.0.0.0/24` means 10.0.0.ANYTHING - Class C
 - `10.0.0.0/32` means only 1 IP address
 
-`10.0.0.0/16` is the equivalent of `1234` as a password. You should consider
-other ranges that people might use to ensure it does not overlap.
+`10.0.0.0/16` is the equivalent of `1234` as a password. You should consider other ranges that people might use to ensure it does not overlap.
 
 #### 1.5.1.6. Packets
 
@@ -1673,14 +1670,12 @@ Taking a /16 subnet and splitting it 16 ways will make each a /20.
   - Operates from all AZs in that region
 - Allows isolated networks inside AWS.
 - Nothing IN or OUT of a VPC without explicit configuration.
-  - Isolated blast radius. Any problems are limited to that VPC or anything
-  connected to it.
+  - Isolated blast radius. Any problems are limited to that VPC or anything connected to it.
 - Flexible configuration
 - Hybrid networking to allow connection to other cloud or on-prem networking.
 - Default or Dedicated Tenancy. This refers to how the hardware is configured.
   - Default allows on a per resource decision later on.
-  - Dedicated locks any resourced created in that VPC to be on dedicated
-  hardware which comes at a cost premium.
+  - Dedicated locks any resourced created in that VPC to be on dedicated shardware which comes at a cost premium.
 
 #### 1.5.3.1. Custom VPC Facts
 
