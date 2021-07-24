@@ -1686,17 +1686,14 @@ IPv4 private and public IPs
   - Max /16 prefix (65,536 IP)
 - Can add secondary IPv4 Blocks after creation.
   - Max of 5, can be increased with a support ticket
-  - When thinking of VPC, it has a pool of private IPv4 addresses and can
-  use public addresses when needed.
+  - When thinking of VPC, it has a pool of private IPv4 addresses and can use public addresses when needed.
 
 Single assigned IPv6 /56 CIDR block
 
 - Still being matured, not everything works the same as IPv4.
 - With increasing use of IPv6, this should be added as a default
-- Range is either allocated by AWS as in you have no choice on which range
-to use, or you can select to use your own IPv6 addresses which you own.
-- IPv6 does not have private addresses, they are all routed as public by
-default.
+- Range is either allocated by AWS as in you have no choice on which range to use, or you can select to use your own IPv6 addresses which you own.
+- IPv6 does not have private addresses, they are all routed as public by sdefault.
 
 #### 1.5.3.2. DNS provided by R53
 
@@ -1705,21 +1702,18 @@ If the VPC is `10.0.0.0` then the DNS IP will be `10.0.0.2`
 
 Two options that manage how DNS works in a VPC:
 
-- Edit DNS hostnames
-  - If true, instances with public IPs in a VPC are given public DNS hostnames.
-  - If false, this is not available.
-
-- Edit DNS resolution
-  - If true, instances in the VPC can use the DNS IP address.
-  - If false, this is not available.
+- enableDnsHostnames 
+  - If true (default disabled), instances with public IPs in a VPC are given public DNS hostnames.
+  
+- enableDnsSupport
+  - If true (default enabled), instances in the VPC can use the DNS IP address.
 
 ### 1.5.4. VPC Subnets
 
 - AZ Resilient subnetwork of a VPC.
   - If the AZ fails, the subnet and services also fail.
   - High availability needs multiple components into different AZs.
-- 1 subnet can only have 1 AZ.
-- 1 AZ can have zero or many subnets.
+- 1 subnet can only have 1 AZ, however 1 AZ can have zero or many subnets.
 - IPv4 CIDR is a subset of the VPC CIDR block.
   - Cannot overlap with any other subnets in that VPC
 - Subnet can optionally be allocated IPv6 CIDR block.
@@ -1728,8 +1722,7 @@ Two options that manage how DNS works in a VPC:
 
 #### 1.5.4.1. Reserved IP addresses
 
-There are five IP addresses within every VPC subnet that you cannot use.
-Whatever size of the subnet, the IP addresses are five less than you expect.
+There are five IP addresses within every VPC subnet that you cannot use. Whatever size of the subnet, the IP addresses are five less than you expect.
 
 If using `10.16.16.0/20` (`10.16.16.0` - `10.16.31.255`)
 
@@ -1761,42 +1754,29 @@ through to subnets.
 
 ### 1.5.5. VPC Routing and Internet Gateway
 
-VPC Router is a highly available device available in every VPC which moves
-traffic from somewhere to somewhere else.
-Router has a network interface in every subnet in the VPC.
-Routes traffic between subnets.
+VPC Router is a highly available device available in every VPC which moves traffic from somewhere to somewhere else.
+Router has a network interface in every subnet in the VPC. Routes traffic between subnets.
 
-Route tables defines what the VPC router will do with traffic
-when data leaves that subnet.
-A VPC is created with a main route table. If you don't associate a custom
-route table with a subnet, it uses the main route table of the VPC.
+Route tables defines what the VPC router will do with traffic when data leaves that subnet.
+A VPC is created with a main route table. If you don't associate a custom route table with a subnet, it uses the main route table of the VPC.
 
-If you do associate a custom route table you create with a subnet, then the
-main route table is disassociated. A subnet can only have one route table
-associated at a time, but a route table can be associated by many subnets.
+If you do associate a custom route table you create with a subnet, then the main route table is disassociated. A subnet can only have one route table associated at a time, but a route table can be associated by many subnets.
 
 #### 1.5.5.1. Route Tables
 
-When traffic leaves the subnet that this route table is associated with, the
-VPC router reviews the IP packets looking for the destination address.
-The traffic will try to match the route against the route table. If there
-are more than one routes found as a match, the prefix is used as a priority.
-The higher the prefix, the more specific the route, thus higher priority.
-If the target says local, that means the destination is in the VPC itself.
-Local route can never be updated, they're always present and the local route
-always takes priority. This is the exception to the prefix rule.
+When traffic leaves the subnet that this route table is associated with, the VPC router reviews the IP packets looking for the destination address. The traffic will try to match the route against the route table. If there are more than one routes found as a match, the prefix is used as a priority (longer prefix, more specific takes priority)
+
+The higher the prefix, the more specific the route, thus higher priority. If the target says local, that means the destination is in the VPC itself. Local route can never be updated, they're always present and the local route always takes priority. This is the exception to the prefix rule.
 
 #### 1.5.5.2. Internet Gateway
 
-A managed service that allows gateway traffic between the VPC and the internet
-or AWS Public Zones (S3, SQS, SNS, etc.)
+A managed service that allows gateway traffic between the VPC and the internet or AWS Public Zones (S3, SQS, SNS, etc.)
 
 - Regional resilient gateway attached to a VPC.
 - One IGW will cover all AZ's in a region the VPC is using.
 - A VPC can have either:
-  - No IGW and be entirely private.
-  - One IGW
-- IGW can be created and attached to no VPC.
+  - No IGW and be entirely private or 1 IGW
+  - Conversely an IGW can be created and attached to no VPC.
 - Runs from within the AWS public zone.
 
 #### 1.5.5.3. Using IGW
@@ -1806,61 +1786,31 @@ In this example, an EC2 instance has:
 - Private IP address of 10.16.16.20
 - Public address of 43.250.192.20
 
-The public address is not public and connected to the EC2 instance itself.
-Instead, the IGW creates a record that links the instance's private IP
-to the public IP. This is why when an EC2 instance is created it only
-sees the private IP address. This is IMPORTANT. For IPv4 it is not configured
-in the OS with the public address.
+![](./Pics/IGW_routing.png)
 
-When the linux instance wants to communicate with the linux update service,
-it makes a packet of data.
-The packet has a source address of the EC2 instance and a destination address
-of the linux update server. At this point the packet is not configured with
-any public addressing and could not reach the linux update server.
+##### The packet arrives at the internet gateway.
 
-The packet arrives at the internet gateway.
+![](./Pics/IGW_routing2.png)
 
-The IGW sees this is from the EC2 instance and analyzes the source IP address.
-It changes the packet source IP address from the linux EC2 server and puts
-on the public IP address that is routed from that instance. The IGW then
-pushes that packet on the public internet.
-
-On the return, the inverse happens. As far as it is concerned, it does not know
-about the private address and instead uses the instance's public IP address.
-
-If the instance uses an IPv6 address, that public address is good to go. The IGW
-does not translate the packet and only pushes it to a gateway.
+If the instance uses an IPv6 address, that public address is good to go. The IGW does not translate the packet and only pushes it to a gateway.
 
 #### 1.5.5.4. Bastion Host / Jumpbox
 
-It is an instance in a public subnet inside a VPC.
-These are used to allow incoming management connections.
-Once connected, you can then go on to access internal only VPC resources.
-Used as a management point or as an entry point for a private only VPC.
+It is an instance in a public subnet inside a VPC. These are used to allow incoming management connections. Once connected, you can then go on to access internal only VPC resources. Used as a management point or as an entry point for a private only VPC.
 
-This is an inbound management point. Can be configured to only allow
-specific IP addresses or to authenticate with SSH. It can also integrate
-with your on premise identification service.
+This is an inbound management point. Can be configured to only allow specific IP addresses or to authenticate with SSH. It can also integrate with your on premise identification service.
 
 ### 1.5.6. Network Access Control List (NACL)
 
-Network Access Control Lists (NACLs) are a type of security filter
-(like firewalls) which can filter traffic as it enters or leaves a subnet.
+Network Access Control Lists (NACLs) are a type of security filter (like firewalls) which can filter traffic as it enters or leaves a subnet.
 
-All VPCs have a default NACL, this is associated with all subnets of that VPC
-by default.
-NACLs are used when traffic enters or leaves a subnet.
-Since they are attached to a subnet and not a resource, they only filter
-data as it crosses in or out.
-If two EC2 instances in a VPC communicate, the NACL does nothing because
-it is not involved.
+All VPCs have a default NACL, this is associated with all subnets of that VPC by default.
+NACLs are used when traffic enters or leaves a subnet. Since they are attached to a subnet and not a resource, they only filter
+data as it crosses in or out. If two EC2 instances in a VPC communicate, the NACL does nothing because it is not involved.
 
 NACLs have an inbound and outbound sets of rules.
 
-When a specific rule set has been called, the one with the lowest
-rule number first.
-As soon as one rule is matched, the processing stops for
-that particular piece of traffic.
+When a specific rule set has been called, the one with the lowest rule number first. As soon as one rule is matched, the processing stops for that particular piece of traffic.
 
 The action can be for the traffic to **allow** or **deny** the traffic.
 
@@ -1881,9 +1831,7 @@ Examples:
 
 If all of those fields match, then the first rule will either allow or deny.
 
-The rule at the bottom with `*` is the **implicit deny**
-This cannot be edited and is defaulted on each rule list.
-If no other rules match the traffic being evaluated, it will be denied.
+The rule at the bottom with `*` is the **implicit deny** This cannot be edited and is defaulted on each rule list. If no other rules match the traffic being evaluated, it will be denied.
 
 #### 1.5.6.1. NACLs example below
 
@@ -1895,95 +1843,82 @@ If no other rules match the traffic being evaluated, it will be denied.
 - Bob is initiating a connection to the server to ask for a webpage
 - Server will respond with an **Ephemeral** port
 - Bob talks to the webserver connecting to a port on that server (tcp/443)
-  - This is a well known port number
-- Bob's PC tells the server it can talk to back to Bob on a specific port
-  - Wide range from port 1024, 65535
-  - That response is outbound traffic
-- When using NACLs, you must add an outbound port for the response traffic
-as well as the inbound port. This is the ephemeral port.
-- If the webserver is not managing the apps server, it may communicate
-back on a different port.
+- Bob's PC tells the server it can talk to back to Bob with a specific port ranging 1024-65535
+- When using NACLs, you must add an outbound port for the response traffic as well as the inbound port. This is the ephemeral port.
+- If the webserver is not managing the apps server, it may communicate back on a different port.
 - This back and forth communication can be hard to configure for.
 
 #### 1.5.6.2. NACL Exam PowerUp
 
-- NACLs are stateless
-  - Initiation and response traffic are separate streams requiring two rules.
-- NACLs are attached to subnets and only filter data as it crosses the
-subnet boundary. Two EC2 instances in the same subnet will not check against
-the NACLs when moving data.
-- Can explicitly allow and deny traffic. If you need to block one particular
-thing, you need to use NACLs.
-- They only see IPs, ports, protocols, and other network connections.
-No logical resources can be changed with them.
-- NACLs cannot be assigned to specific AWS resources.
+- NACLs are stateless (initiation/response are seen as different)
+- NACLs are attached to subnets and only filter data as it crosses the subnet boundary. Two EC2 instances in the same subnet will not check against the NACLs when moving data.
+- Can explicitly allow and deny traffic. If you need to block one particular thing, you need to use NACLs.
+- They only see IPs, ports, protocols, and other network connections. No logical resources can be used with them.
+- NACLs cannot be assigned to specific AWS resources, only subnets.
 - NACLs can be used with security groups to add explicit deny (Bad IPs/nets)
 - One subnet can only be assigned to one NACL at a time.
 
-NACLs are processed in order starting at the lowest rule number until
-it gets to the catch all. A rule with a lower rule number will be processed
-before another rule with a higher rule number.
+NACLs are processed in order starting at the lowest rule number until it gets to the catch all. A rule with a lower rule number will be processed before another rule with a higher rule number. If it is denied a rule, it stops processing there.
 
 ### 1.5.7. Security Groups
 
 - SGs are boundaries which can filter traffic.
-- Attached to a resource and not a subnet.
-- SGs have two sets of rules like NACLs.
-- SGs are stateful.
-  - Only one inbound rule is needed.
-  - They see traffic and response as the same thing.
+- Attached to a resource (eg. EC2 instance) and not a subnet.
+- SGs have two sets of rules like NACLs (inbound, outbound)
+- SGs are stateful, seeing response as part of the same stream as initiation so only 1 rule needed.
 - Understand AWS logical resources so they're not limit to IP traffic only.
   - Can have a source and destination referencing the instance and not the IP.
 - Default SG is created in a VPC to allow all traffic.
-  - Does so by referencing itself. Anything this SG is attached to is matched
-  by this rule.
-- SGs have a hidden implicit **Deny**.
-  - Anything that is not allowed in the rule set for the SG is implicitly denied.
-- SG cannot explicit deny anything.
-  - NACLs are used in conjunction with SGs to do explicit denys.
+  - Does so by referencing itself. Anything this SG is attached to is matched by this rule.
+- SGs have a hidden implicit **Deny**, and explicit Allow but no explicit Deny.
+- SG cannot explicit deny anything so NACLs are used in conjunction with SGs to do explicit denies.
 
 #### 1.5.7.1. SGs vs NACL
 
 - NACLs are used when products cannot use SGs, e.g. NAT Gateways.
 - NACLs are used when adding explicit deny, such as bad IPs or bad actors.
-- SGs is the default almost everywhere because they are stateful.
-- NACLs are associated with a subnet and only filter traffic that crosses
-that boundary. If the resource is in the same subnet, it will not do anything.
+- SGs is the default almost everywhere else because they are stateful.
+- NACLs are associated with a subnet and only filter traffic that crosses that boundary. If the resource is in the same subnet, it will not do anything, so use SG to filter traffic between two EC2 instances in the same subnet.
 
 ### 1.5.8. Network Address Translation (NAT) Gateway
 
-Set of different processes that can address IP packets by changing
-their source or destination addresses.
+Set of different processes that can address IP packets by changing their source or destination addresses.
 
-**IP masquerading**, hides CIDR block behind one IP. This allows many IPv4
-addresses to use one public IP for **outgoing** internet access.
-Incoming connections don't work. Outgoing connections can get a response
-returned.
+**IP masquerading**, hides CIDR block behind one IP. This allows many IPv4 addresses to use one public IP for **outgoing** internet access. Incoming connections don't work.
 
 - Must run from a public subnet to allow for public IP address.
-  - Internet Gateway subnets configure to allocate public IPv4 addresses
-  and default routes for those subnets pointing at the IGW.
+  - Internet Gateway subnets configure to allocate public IPv4 addresses and default routes for those subnets pointing at the IGW.
+  
 - Uses Elastic IPs (Static IPv4 Public)
   - Don't change
   - Allocated to your account
+  
 - AZ resilient service , but HA in that AZ.
+  
   - If that AZ fails, there is no recovery.
-- For a fully region resilient service, you must deploy one NATGW in each AZ
-with a Route Table in each AZ with NATGW as target.
-- NAT instance is limited by capabilities of the instance it is running on and that instance is also general purpose, so won't offer the same level of custom design performance as NAT Gateway.
-- NAT instance is single instance running in single AZ it'll fail if EC2 hardware fails, network fails, storage fails or AZ itself fails.
-- NAT Gateway has benefit over NAT instance, inside one AZ it is highly available.
-- You can connect to NAT instance just like any other instance, you can use them as Bastion host or can use them for port forwarding.
-- With NAT Gateway it is not possible, it is managed service. NAT Gateway cannot be used as Bastion host and it cannot do port forwarding.
-- You cannot use SG with NAT instance, you can only use NACLs.
-- NAT is not required for IPv6. Inside AWS all IPv6 addresses are publicly routable. IG works with all IPv6 addresses directly.
-- That means if you choose to make an instance in private subnet that have a default IPv6 route to IG, it'll become public instance.
-- Managed service, scales up to 45 Gbps. Can deploy multiple NATGW to increase
-bandwidth.
-- AWS charges on usage per hour and data volume processed.
+  
+- For a fully region resilient service, you must deploy one NATGW in each AZ with a Route Table in each AZ with NATGW as target.
 
-NATGW cannot do port forwarding or be a bastion server. In that case it might
-be necessary to run a NAT EC2 instance instead.
+  #### Alternative to NAT Gateway is NAT instance
+
+  |    Attribute    |                         NAT Gateway                          |                         NAT Instance                         |
+  | :-------------: | :----------------------------------------------------------: | :----------------------------------------------------------: |
+  |  Availability   | Highly available. NAT gateways in each AZ are implemented with redundancy. Create NATGW in each AZ to ensure zone-independent architecture. |       Use script to manage failover between instances.       |
+  |    Bandwidth    |                   Can scale up to 45 Gbps                    |            Depends on bandwidth of instance type.            |
+  |   Maintenance   |           Managed by AWS. No maintenance required.           |     Managed by you, like a VM for software, OS updates.      |
+  |   Performance   |         Software optimized for handling NAT traffic.         |          A generic Amazon Linux AMI to perform NAT.          |
+  |      Cost       | Charged on num of NATGWs, duration of usage and traffic through NATGWs. |           Charged as per EC2 instance attributes.            |
+  |  Type and size  | Uniform offering, you don't need to decide on type or size.  |            Choose suitable instance type and size            |
+  | Security groups | Can't be associated with NATGWs, associate SGs with resources behind NATGW to control inbound/outbound traffic. | Associate with your NAT instance and the resources behind NAT instance to control inbound/outbound traffic. |
+  |      NACLs      | Use network ACL to control the traffic to/from subnet your NATGW resides in. | Use network ACL to control the traffic to/from subnet your NATGW resides in. |
+  |    Flow logs    |               Use flow logs to capture traffic               |               Use flow logs to capture traffic               |
+  | Port forwarding |                        Not supported                         | Manually customise configuration to support port forwarding. |
+  | Bastion servers |                        Not supported.                        |                  Can use as bastion server                   |
+
+- NAT not required for IPv6, all IPv6 addresses are publicly routable.
+- NATGWs cannot work with IPv6. To make IPv6 publicly routable
+  - ::/0 route + IGW for bi-directional connectivity.
+  - ::/0 route + egress-only IGW - outbound only.
 
 ---
 
