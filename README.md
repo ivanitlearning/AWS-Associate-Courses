@@ -1887,6 +1887,7 @@ Set of different processes that can address IP packets by changing their source 
 **IP masquerading**, hides CIDR block behind one IP. This allows many IPv4 addresses to use one public IP for **outgoing** internet access. Incoming connections don't work.
 
 - Must run from a public subnet to allow for public IP address.
+  
   - Internet Gateway subnets configure to allocate public IPv4 addresses and default routes for those subnets pointing at the IGW.
   
 - Uses Elastic IPs (Static IPv4 Public)
@@ -1944,56 +1945,36 @@ Servers are configured in three sections without virtualization.
 
 Host OS operated on the HW and included a hypervisor (HV).
 SW ran in privileged mode and had full access to the HW.
-Guest OS wrapped in a VM and had devices mapped into their OS to emulate real
-HW. Drivers such as graphics cards were all SW emulated to allow the process
-to run properly.
+Guest OS wrapped in a VM and had devices mapped into their OS to emulate real HW. Drivers such as graphics cards were all SW emulated to allow the process to run properly.
 
-The guest OS still believed they were running on real HW and tried
-to take control of the HW. The areas were not real and only allocated
-space to them for the moment.
+The guest OS still believed they were running on real HW and tried to take control of the HW. The areas were not real and only allocated space to them for the moment.
 
-The HV performs **binary translation**.
-System calls are intercepted and translated in SW on the way. The guest OS needs
-no modification, but slows down a lot.
+The HV performs **binary translation**. System calls are intercepted and translated in SW on the way. The guest OS needs no modification, but slows down a lot.
 
 #### 1.6.1.2. Para-Virtualization
 
-Guest OS are modified and run in HV containers, except they do not use slow
-binary translation. The OS is modified to change the **system calls** to
-**user calls**. Instead of calling on the HW, they call on the HV using
-**hypercalls**. Areas of the OS call the HV instead of the HW.
+Guest OS are modified and run in HV containers, except they do not use slow binary translation. The OS is modified to change the **system calls** to **user calls**. Instead of calling on the HW, they call on the HV using **hypercalls**. Areas of the OS call the HV instead of the HW.
 
 #### 1.6.1.3. Hardware Assisted Virtualization
 
-The physical HW itself is virtualization aware. The CPU has specific
-functions so the HV can come in and support. When guest OS tries to run
-privileged instructions, they are trapped by the CPU and do not halt
-the process. They are redirected to the HV from the HW.
+The physical HW itself is virtualization aware. The CPU has specific functions so the HV can come in and support. When guest OS tries to run privileged instructions, they are trapped by the CPU and do not halt the process. They are redirected to the HV from the HW.
 
-What matters for a VM is the input and output operations such
-as network transfer and disk IO. The problem is multiple OS try to access
-the same piece of hardware but they get caught up on sharing.
+What matters for a VM is the input and output operations such as network transfer and disk IO. The problem is multiple OS try to access the same piece of hardware but they get caught up on sharing.
 
 #### 1.6.1.4. SR-IOV (Singe Route IO virtualization)
 
-Allows a network or any card to present itself as many mini cards.
-As far as the HV is concerned, they are real dedicated cards for their
-use. No translation needs to be done by the HV. The physical card
-handles it all. In EC2 this feature is called **enhanced networking**.
+Allows a network or any card to present itself as many mini cards. As far as the HV is concerned, they are real dedicated cards for their use. No translation needs to be done by the HV. The physical card handles it all. In EC2 this feature is called **enhanced networking**.
 
 ### 1.6.2. EC2 Architecture and Resilience
 
-EC2 instances are virtual machines run on EC2 hosts.
+EC2 instances are virtual machines run on EC2 hosts which are in single AZs.
 
 Tenancy:
 
 - **Shared** - Instances are run on shared hardware, but isolated from other customers.
-- **Dedicated** - Instances are run on hardware that's dedicates to a single customer.
-  Dedicated instances may share hardware with other instances from the same AWS account
-  that are not Dedicated instances.
-- **Dedicated host** - Instances are run on a physical server fully dedicated for your use.
-  Pay for entire host, don't pay for instances.
-
+- **Dedicated** - Instances are run on hardware that's dedicates to a single customer. Dedicated instances may share hardware with other instances from the same AWS account that are not Dedicated instances.
+- **Dedicated host** - Instances are run on a physical server fully dedicated for your use. Pay for entire host, don't pay for instances.
+  
 - AZ resilient service. They run within only one AZ system.
   - You can't access them cross zone.
 
@@ -2003,8 +1984,7 @@ EC2 host contains
 - Also have temporary instance store
   - If instance moves hosts, the storage is lost.
 - Can use remote storage, Elastic Block Store (EBS).
-  - EBS allows you to allocate volumes of persistent storage to instances
-  within the same AZ.
+  - EBS allows you to allocate volumes of persistent storage to instances within the same AZ.
 - 2 types of networking
   - Storage networking
   - Data networking
@@ -2012,24 +1992,16 @@ EC2 host contains
 EC2 Networking (ENI)
 
 When instances are provisioned within a specific subnet within a VPC
-A primary elastic network interface is provisioned in a subnet which
-maps to the physical hardware on the EC2 host. Subnets are also within
-one specific AZ. Instances can have multiple network interfaces, even within
-different subnets so long as they're within the same AZ.
+A primary elastic network interface is provisioned in a subnet which maps to the physical hardware on the EC2 host. Subnets are also within one specific AZ. Instances can have multiple network interfaces, even within different subnets so long as they're within the same AZ.
 
-An instance runs on a specific host. If you restart the instance
-it will stay on that host until either:
+An instance runs on a specific host. If you restart the instance it will stay on that host until either:
 
 - The host fails or is taken down by AWS
 - The instance is stopped and then started, different than restarted.
 
-The instance will be relocated to another host in the same AZ. Instances
-cannot move to different AZs. Everything about their hardware is locked within
-one specific AZ.
-A migration is taking a **copy** of an instance and moving it to a different AZ.
+The instance will be relocated to another host in the same AZ. Instances cannot move to different AZs. Everything about their hardware is locked within one specific AZ. A migration is taking a **copy** of an instance and moving it to a different AZ.
 
-In general instances of the same type and generation will occupy the same host.
-The only difference will generally be their size.
+In general instances of the same type and generation will occupy the same host. The only difference will generally be their size.
 
 #### 1.6.2.1. EC2 Strengths
 
@@ -2038,7 +2010,7 @@ Long running compute needs. Many other AWS services have run time limits.
 Server style applications
 
 - things waiting for network response
-- burst or stead-load
+- burst or steady-load
 - monolithic application stack
   - middle ware or specific run time components
 - migrating application workloads or disaster recovery
@@ -2058,9 +2030,9 @@ Server style applications
 R5dn.8xlarge - whole thing is the instance type. When in doubt give the
 full instance type
 
-- 1st char: Instance family.
-- 2nd char: Instance generation. Generally always select the newest generation.
-- char after period: Instance size. Memory and CPU considerations.
+- 1st char (R): Instance family.
+- 2nd char (5): Instance generation. Generally always select the newest generation.
+- char after period (8): Instance size. Memory and CPU considerations.
   - Often easier to scale system with a larger number of smaller instance sizes.
 - 3rd char - before period: additional capabilities
   - a: amd cpu
@@ -2081,21 +2053,11 @@ full instance type
 
 #### 1.6.4.1. Three types of storage
 
-- Block Storage: Volume presented to the OS as a collection of blocks. No
-structure beyond that. These are mountable and bootable. The OS will
-create a file system on top of this, NTFS or EXT3 and then it mounts
-it as a drive or a root volume on Linux. Spinning hard disks or SSD. This
-could also be delivered by a physical volume. Has no built in structure.
-You can mount an EBS volume or boot off an EBS volume.
+- Block Storage: Volume presented to the OS as a collection of blocks. No structure beyond that. These are mountable and bootable. The OS will create a file system on top of this, NTFS or EXT3 and then it mounts it as a drive or a root volume on Linux. Spinning hard disks or SSD. This could also be delivered by a physical volume. Has no built in structure. You can mount an EBS volume or boot off an EBS volume. Eg. EBS
 
-- File Storage: Presented as a file share with a structure. You access the
-files by traversing the storage. You cannot boot from storage, but you
-can mount it.
+- File Storage: Presented as a file share with a structure. You access the files by traversing the storage. You **cannot** boot from storage, but you can mount it.
 
-- Object Storage: It is a flat collection of objects. An object can be anything
-with or without attached metadata. To retrieve the object, you need to provide
-the key and then the value will be returned. This is not mountable or
-bootable. It scales very well and can have simultaneous access.
+- Object Storage: It is a flat collection of objects. An object can be anything with or without attached metadata. To retrieve the object, you need to provide the key and then the value will be returned. This is not mountable or bootable. It scales very well and can have simultaneous access. Eg. S3
 
 #### 1.6.4.2. Storage Performance
 
@@ -2114,8 +2076,9 @@ size increases.
 - Allocate block storage **volumes** to instances.
 - Volumes are isolated to one AZ.
   - The data is highly available and resilient for that AZ.
-  - All of the data is replicated within that AZ. The entire AZ must have
-  a major fault to go down.
+  - All of the data is replicated within that AZ. The entire AZ must have a major fault to go down.
+- Can snapshot backup to S3 which makes it region-resilient and allows data migration across AZs.
+- The snapshots can also be copied across regions for global resilience.
 - Two physical storage types available (SSD/HDD)
 - Varying level of performance (IOPS, T-put)
 - Billed as GB/month.
