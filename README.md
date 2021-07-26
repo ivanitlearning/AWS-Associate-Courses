@@ -2094,36 +2094,37 @@ size increases.
 
 #### 1.6.5.1. General Purpose SSD (gp2)
 
-Uses a performance bucket architecture based on the IOPS it can deliver.
-The GP2 starts with 5,400,000 IOPS allocated. It is all available instantly.
+Uses a performance bucket architecture based on the IOPS it can deliver. The GP2 starts with 5.4M IOPS allocated. It is all available instantly.
 
-You can consume the capacity quickly or slowly over the life of the volume.
-The capacity is filled back based upon the volume size.
-Min of 100 IOPS added back to the bucket per second.
+You can consume the capacity quickly or slowly over the life of the volume. The capacity is filled back based upon the volume size. Min of 100 IOPS added back to the bucket per second.
 
-Above that, there are 3 IOPS/GiB of volume size. The max is 16,000 IOPS.
-This is the **baseline performance**
+Above that, there are 3 IOPS/GiB of volume size. The max is 16,000 IOPS. This is the **baseline performance**
 
-Default for boot volumes and should be the default for data volumes.
-Can only be attached to one EC2 instance at a time.
+Default for boot volumes and should be the default for data volumes. Can only be attached to one EC2 instance at a time.
 
-#### 1.6.5.2. Provisioned IOPS SSD (io1)
+#### 1.6.5.2. General Purppose SSD (gp3)
 
-You pay for capacity and the IOPs set on the volume.
-This is good if your volume size is small but need a lot of IOPS.
+- Baseline 3,000 IOPS & 125 MB/s regardless of volume size
+- Also ranges from 1GB to 16 TB.
+- 20% cheaper than GP2
+- Can pay for better performance up to 16,000 IOPS or 1,000 MB/s.
+- Offers 1000 MB/s, 4x faster max throughput.
 
-50:1 IOPS to GiB Ratio
-64,000 is the max IOPS per volume assuming 16 KiB I/O.
+#### 1.6.5.3. Provisioned IOPS SSD (io1)
 
-Good for latency sensitive workloads such as mongoDB.
-Multi-attach allows them to attach to multiple EC2 instances at once.
+You pay for capacity and the IOPs set on the volume. This is good if your volume size is small but need a lot of IOPS.
 
-#### 1.6.5.3. HDD Volume Types
+50:1 IOPS to GiB Ratio  64,000 is the max IOPS per volume assuming 16 KiB I/O.
 
-- great value
-- great for high throughput vs IOPs
-- 500 GiB - 16 TiB
-- Neither can be used for EC2 boot volumes.
+Good for latency sensitive workloads such as mongoDB. Multi-attach allows them to attach to multiple EC2 instances at once.
+
+#### 1.6.5.4. HDD Volume Types
+
+- Mechanical storage type
+- Great value
+- Great for high throughput vs IOPs
+- 125 GB - 16 TiB
+- **Cannot** be used for EC2 boot volumes.
 - Good for streaming data on a hard disk.
   - Media conversion with large amounts of storage.
 - Frequently accessed high throughput intensive workload
@@ -2134,18 +2135,20 @@ Multi-attach allows them to attach to multiple EC2 instances at once.
 
 Two types
 
-- st1
+- **st1 - Throughput optimized**
+  - Designed for frequent access, throughput-access and sequential.
+  - Size: 125 GB - 16 TB
   - Starts at 1 TiB of credit per TiB of volume size.
   - 40 MB/s baseline per TiB
   - Burst of 250 MB/s per TiB
   - Max t-put of 500 MB/s
-- sc1
+- **sc1 - Cold HDD**
   - Designed for less frequently accessed data, it fills slower.
   - 12 MB/s baseline per TiB
   - Burst of 80 MB/s per TiB
   - Max t-put of 250 MB/s
 
-#### 1.6.5.4. EBS Exam Power Up
+#### 1.6.5.5. EBS Exam Power Up
 
 - Volumes are created in an AZ, isolated in that AZ.
 - If an AZ fails, the volume is impacted.
@@ -2163,11 +2166,10 @@ if the whole AZ fails.
   - They are isolated to that one specific host.
   - Instances on that host can access them.
 - Highest storage performance in AWS.
-- Included in instance price, use it or lose it.
+- Included in instance price, use it or lose it since you already paid for it.
 - Can be attached ONLY at launch. Cannot be attached later.
 
-Each instance has a collection of volumes that are
-locked to that specific host. If the instance moves, the data doesn't.
+Each instance has a collection of volumes that are locked to that specific host. If the instance moves, the data is lost.
 
 Instances can move between hosts for many reasons:
 
@@ -2176,9 +2178,7 @@ Instances can move between hosts for many reasons:
 - If you change the type of an instance, these will be lost.
 - If a physical hardware fails, then the data is gone.
 
-The number, size, and performance of instance store volumes vary based on the
-type of instance used. Some instances do not have any instance store volumes
-at all.
+The number, size, and performance of instance store volumes vary based on the type of instance used. Some instances do not have any instance store volumes at all.
 
 #### 1.6.6.1. Instance Store Exam PowerUp
 
@@ -2193,7 +2193,7 @@ at all.
 
 If the read/write can be handled by EBS, that should be default.
 
-When to use EBS
+**When to use EBS**
 
 - Highly available and reliable in an AZ. Can self correct against HW issues.
 - Persist independently from EC2 instances.
@@ -2202,13 +2202,14 @@ When to use EBS
 - Multi-attach feature of **io1**
   - Can create a multi shared volume.
 - Region resilient backups.
-- Require up to 64,000 IOPS and 1,000 MiB/s per volume
-- Require up to 80,000 IOPS and 2,375 MB/s per instance
+- GP2/3 - Up to 16,000 IOPS
+- IO1/2 - Up to 64,000 IOPS and 1,000 MiB/s per volume
+- RAID0 + EBS - Require up to 260,000 IOPS 
 
-When to use Instance Store
+**When to use Instance Store**
 
 - Great value, they're included in the cost of an instance.
-- More than 80,000 IOPS and 2,375 MB/s
+- More than 260,000 IOPS
 - If you need temporary storage, or can handle volatility.
 - Stateless services, where the server holds nothing of value.
 - Rigid lifecycle link between storage and the instance.
@@ -2216,51 +2217,32 @@ When to use Instance Store
 
 ### 1.6.8. EBS Snapshots, restore, and fast snapshot restore
 
-- Efficient way to backup EBS volumes to S3.
-  - The data becomes region resilient.
+- Efficient way to backup EBS volumes to S3. The data becomes region resilient.
 - Can be used to migrate data between hosts.
 
-Snapshots are incremental volume copies to S3.
-The first is a **full copy** of `data` on the volume. This can take some time.
-EBS won't be impacted, but will take time in the background.
-Future snaps are incremental, consume less space and are quicker to perform.
+Snapshots are incremental volume copies to S3. The first is a **full copy** of `data` on the volume. This can take some time. EBS won't be impacted, but will take time in the background. Future snaps are incremental, consume less space and are quicker to perform.
 
-If you delete an incremental snapshot, it moves data to ensure subsequent
-snapshots will work properly.
+If you delete an incremental snapshot, it moves data to ensure subsequent snapshots will work properly.
 
-Volumes can be created (restored) from snapshots.
-Snapshots can be used to move EBS volumes between AZs.
-Snapshots can be used to migrate data between volumes.
+Volumes can be created (restored) from snapshots. Snapshots can be used to move EBS volumes between AZs. Snapshots can be used to migrate data between volumes.
 
 #### 1.6.8.1. Snapshot and volume performance
 
-- When creating a new EBS volume without a snapshot, the performance is
-available immediately.
+- When creating a new EBS volume without a snapshot, the performance is available immediately.
 - When restoring from S3, performs **Lazy Restore**
   - If you restore a volume, it will transfer it slowly in the background.
-  - If you attempt to read data that hasn't been restored yet, it will
-  immediately pull it from S3, but this will achieve lower levels of performance
-  than reading from EBS directly.
-  - You can force a read of every block all data immediately using DD.
+  - If you attempt to read data that hasn't been restored yet, it will immediately pull it from S3, but this will achieve lower levels of performance than reading from EBS directly.
+  - You can force a read of every block all data immediately using `dd`
 
-Fast Snapshot Restore (FSR) allows for immediate restoration.
-You can create 50 of these FSRs per region. When you enable it on
-a snapshot, you pick the snapshot specifically and the AZ that you want to be
-able to do instant restores to. Each combination of Snapshot and AZ counts
-as one FSR set. You can have 50 FSR sets per region.
-FSR is not free and can get expensive with lost of different snapshots.
+Fast Snapshot Restore (FSR) allows for immediate restoration. You can create 50 of these FSRs per region (add up all the snapshots per AZs). When you enable it on a snapshot, you pick the snapshot specifically and the AZ that you want to be able to do instant restores to. Each combination of Snapshot and AZ counts as one FSR set. You can have 50 FSR sets per region. FSR is not free and can get expensive with lost of different snapshots.
 
 #### 1.6.8.2. Snapshot Consumption and Billing
 
-Billed using a GB/month metric.
-20 GB stored for half a month, represents 10 GB-month.
+Billed using a GB/month metric. Eg. 20 GB stored for half a month, represents 10 GB-month.
 
-This is used data, not allocated data. If you have a 40 GB volume but only
-use 10 GB, you will only be charged for the allocated data.
-This is not how EBS itself works.
+This is used data, not allocated data. If you have a 40 GB volume but only use 10 GB, you will only be charged for the allocated data. This is *not* how EBS itself works where you are charged for the entire volume instead of actual usage.
 
-The data is incrementally stored which means doing a snapshot every 5 minutes
-will not necessarily increase the charge as opposed to doing one every hour.
+The data is incrementally stored which means doing a snapshot every 5 minutes will not necessarily increase the charge as opposed to doing one every hour.
 
 #### 1.6.8.3. EBS Encryption
 
