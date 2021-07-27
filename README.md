@@ -2286,12 +2286,9 @@ Every time you create a new EBS volume from scratch, it creates a new data encry
 
 ### 1.6.9. EC2 Network Interfaces, Instance IPs and DNS
 
-An EC2 instance starts with at least one ENI - elastic network interface.
-An instance may have ENIs in separate subnets, but everything must be
-within one AZ.
+An EC2 instance starts with at least one ENI - elastic network interface. An instance may have ENIs in separate subnets, but everything must be within one AZ.
 
-When you launch an instance with Security Groups, they are on the
-network interface and not the instance.
+When you launch an instance with Security Groups, these are on the network interface and not the instance.
 
 #### 1.6.9.1. Elastic Network Interface (ENI)
 
@@ -2307,56 +2304,42 @@ Has these properties
     - Only resolvable inside the VPC and always points at private IP address
 - 0 or more secondary private IP addresses
 - 0 or 1 public IPv4 address
-  - The instance must manually be set to receive an IPv4 address or spun into a
-  subnet which automatically allocates an IPv4.
-  This is a dynamic IP that is not fixed.
-  If you stop an instance the address is removed.
-  When you start up again, it is given a brand new IPv4 address.
-  Restarting the instance will not change the IP address.
-  Changing between EC2 hosts will change the address.
-  This will be allocated a public DNS name. The Public DNS name will resolve to
-  the primary private IPv4 address of the instance.
-  Outside of the VPC, the DNS will resolve to the public IP address.
-  This allows one single DNS name for an instance, and allows traffic to resolve
-  to an internal address inside the VPC and the public will resolve to a public
-  IP address.
+  - The instance must manually be set to receive an IPv4 address or spun into a subnet which automatically allocates an IPv4.
+  - This is a dynamic IP that is not fixed.
+  - If you stop an instance the address is removed.
+  - When you start up again, it is given a brand new IPv4 address.
+  - Restarting the instance will not change the IP address.
+  - Changing between EC2 hosts will change the address.
+  - This will be allocated a public DNS name. 
+  - In the VPC, the Public DNS name will resolve to the primary private IPv4 address of the instance.
+  - Outside of the VPC, the DNS will resolve to the public IP address.
+  - This allows one single DNS name for an instance, and allows traffic to resolve to an internal address inside the VPC and the public will resolve to a public IP address.
 - 1 elastic IP per private IPv4 address
-  - Can have 1 public elastic interface per private IP address on this interface.
-  This is allocated to your AWS account.
-  Can associate with a private IP on the primary interface or secondary interface.
-  If you are using a public IPv4 and assign an elastic IP, the original IPv4
-  address will be lost. There is no way to recover the original address.
+  - Can have 1 public elastic interface per private IP address on this interface. This is allocated to your AWS account.
+  - Can associate with a private IP on the primary interface or secondary interface. If you are using a public IPv4 and assign an elastic IP, the original IPv4 address will be lost. There is no way to recover the original address.
+  - If you remove the elastic IP address it'll gain a completely new public IPv4 address.
 - 0 or more IPv6 address on the interface
   - These are by default public addresses.
 - Security groups
   - Applied to network interfaces.
   - Will impact all IP addresses on that interface.
-  - If you need different IP addresses impacted by different security
-  groups, then you need to make multiple interfaces and apply different
-  security groups to those interfaces.
+  - If you need different IP addresses impacted by different security groups, then you need to make multiple interfaces and apply different security groups to those interfaces.
 - Source / destination checks
-  - If traffic is on the interface, it will be discarded if it is not
-  from going to or coming from one of the IP addresses
+  - If traffic is on the interface, it will be discarded if it is not from going to or coming from one of the IP addresses
 
-Secondary interfaces function in all the same ways as primary interfaces except
-you can detach interfaces and move them to other EC2 instances.
+Secondary interfaces function in all the same ways as primary interfaces except you can detach interfaces and move them to other EC2 instances.
 
 #### 1.6.9.2. ENI Exam PowerUp
 
-- Legacy software is licensed using a mac address.
-  - If you provision a secondary ENI to a specific license, you can move
-  around the license to different EC2 instances.
+- Legacy software can be licensed using a MAC address.
+  - If you provision a secondary ENI to a specific license, you can move around the license to different EC2 instances.
 - Multi homed (subnets) management and data.
 - Different security groups are attached to different interfaces.
-- The OS doesn't see the IPv4 public address.
+- The OS never sees the IPv4 public address.
 - You always configure the private IPv4 private address on the interface.
 - Never configure an OS with a public IPv4 address.
-- IPv4 Public IPs are Dynamic, starting and stopping will kill it.
-
-Public DNS for a given instance will resolve to the primary private IP
-address in a VPC. If you have instance to instance communication within
-the VPC, it will never leave the VPC. It does not need to touch the internet
-gateway.
+- IPv4 Public IPs are Dynamic, stopping and starting will change it, while restarting won't.
+- Public DNS for a given instance will resolve to the primary private IP address in a VPC, outside the VPC it resolves to the public address. The former is done so the intra-VPC connection never leaves the VPC.
 
 ### 1.6.10. Amazon Machine Image (AMI)
 
@@ -2366,7 +2349,7 @@ Images of EC2 instances that can launch more EC2 instance.
 - Can be Amazon or community provided
 - Marketplace (can include commercial software)
   - Will charge you for the instance cost and an extra cost for the AMI
-- AMIs are regional with a unique ID.
+- AMIs are regional with a unique ID. Can only be used in the region its in.
 - Controls permissions
   - Default only your account can use it.
   - Can be set to be public.
@@ -2388,20 +2371,15 @@ Images of EC2 instances that can launch more EC2 instance.
       - Permissions: who can use it, is it public or private
       - EBS snapshots are created from attached EBS volumes
         - Snapshots are referenced inside the AMI using block device mapping.
-        - Table of data that links the snapshot IDs that you've just
-        created when making that AMI and it has for each one of those
-        snapshots, a device ID that the original volumes had on the EC2
-        instance.
-
-4. Launch: When launching an instance, the snapshots are used to create new EBS
-volumes in the AZ of the EC2 instance and contain the same block device mapping.
+        - Table of data that links the snapshot IDs that you've just created when making that AMI and it has for each one of those snapshots, a device ID that the original volumes had on the EC2 instance.
+    
+4. Launch: When launching an instance, the snapshots are used to create new EBS volumes in the AZ of the EC2 instance and contain the same block device mapping.
 
 #### 1.6.10.2. AMI Exam PowerUps
 
 - AMI can only be used in one region
-- AMI Baking: creating an AMI from a configuration instance.
-- An AMI cannot be edited. If you need to update an AMI, launch an instance,
-make changes, then make new AMI
+- AMI Baking: creating an AMI from a configured instance + installed application.
+- An AMI cannot be edited. If you need to update an AMI, launch an instance, make changes, then create new AMI.
 - Can be copied between regions
 - Remember permissions by default are your account only
 - Billing is for the storage capacity for the EBS snapshots the AMI references.
@@ -2420,51 +2398,53 @@ make changes, then make new AMI
 
 #### 1.6.11.2. Spot Instances
 
-Up to 90% off on-demand, but depends on the spare capacity.
-You can set a maximum hourly rate in a certain AZ in a certain region.
-If the max price you set is above the spot price, you pay only that spot
-price for the duration that you consume that instance.
-As the spot price increases, you pay more.
-Once this price increases past your maximum, it will terminate the instance.
-Great for data analytics when the process can occur later at a lower use time.
+- Up to 90% off on-demand, but depends on the spare capacity.
+- You can set a maximum hourly rate in a certain AZ in a certain region.
+- If the max price you set is above the spot price, you pay only that spot price for the duration that you consume that instance As the spot price increases, you pay more.
+- Once this price increases past your maximum, it will terminate the instance.
+- Great for data analytics when the process can occur later at a lower use time.
 
 #### 1.6.11.3. Reserved Instance
 
-Up to 75% off on-demand.
-The trade off is commitment.
-You're buying capacity in advance for 1 or 3 years.
-Flexibility on how to pay
+- Up to 75% off on-demand.
+- The trade off is commitment.
+- Buying capacity in advance for 1 or 3 years.
+- Flexibility on how to pay
+  - All up front
+  - Partial upfront 
+  - No upfront
 
-- All up front
-- Partial upfront
-- No upfront
-
-Best discounts are for 3 years all up front.
-Reserved in region, or AZ with capacity reservation.
-Reserved instances takes priority for AZ capacity.
-Can perform scheduled reservation when you can commit to specific time windows.
-
-Great if you have a known stead state usage, email usage, domain server.
-Cheapest option with no tolerance for disruption.
+- Best discounts are for 3 years all up front.
+- Reserved in region, or AZ with capacity reservation.
+- Reserved instances takes priority for AZ capacity.
+- Can perform scheduled reservation when you can commit to specific time windows.
+- Great if you have a known stead state usage, email usage, domain server or when you need to reserve capacity in a given region or AZ.
+- Cheapest option with no tolerance for disruption.
 
 ### 1.6.12. Instance Status Checks and Autorecovery
 
 Every instance has two high level status checks
 
 - System Status Checks
-  - Failure of this check could indicate SW or HW problems of the EC2
-  service or the host.
+  - System power
+  - Network connectivity
+  - Host SW/HW issues.
 - Instance Status Checks
-  - Specific to the file system or has a corrupted Kernel.
+  - File system
+  - Instance networking
+  - Kernel problems
 
 Autorecovery can kick in and help,
 
-- Recover this instance
-  - can be a number of steps depending on the failure
+- Recover this instance by 
+  - Rebooting
+  - Moving everything to new host in same AZ, keeping everything else the same.
 - Stop this instance
 - Terminate this instance
-  - useful in a cluster
+  - Useful in a cluster with HA configured.
 - Reboot this instance
+
+Instances can also have termination protection permissions (disableApiTermination) configured, preventing anyone without permissions from terminating it.
 
 ### 1.6.13. Horizontal and Vertical Scaling
 
