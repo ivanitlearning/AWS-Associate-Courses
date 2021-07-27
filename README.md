@@ -2067,9 +2067,7 @@ full instance type
 
 `Block Size * IOPS = Throughput`
 
-This isn't the only part of the chain, but it is a simplification.
-A system might have a throughput cap. The IOPS might decrease as the block
-size increases.
+This isn't the only part of the chain, but it is a simplification. A system might have a throughput cap. The IOPS might decrease as the block size increases.
 
 ### 1.6.5. Elastic Block Store (EBS)
 
@@ -2112,7 +2110,7 @@ Default for boot volumes and should be the default for data volumes. Can only be
 
 #### 1.6.5.3. Provisioned IOPS SSD (io1)
 
-You pay for capacity and the IOPs set on the volume. This is good if your volume size is small but need a lot of IOPS.
+Can configure IOPS separately from volume size. You pay for capacity and the IOPs set on the volume. This is good if your volume size is small but need a lot of IOPS.
 
 50:1 IOPS to GiB Ratio  64,000 is the max IOPS per volume assuming 16 KiB I/O.
 
@@ -2152,8 +2150,7 @@ Two types
 
 - Volumes are created in an AZ, isolated in that AZ.
 - If an AZ fails, the volume is impacted.
-- Highly available and resilient in that AZ. The only reason for failure is
-if the whole AZ fails.
+- Highly available and resilient in that AZ. The only reason for failure is if the whole AZ fails.
 - Generally one volume to one instance, except **io1** with multi-attach
 - Has a GB/m fee regardless of instance state.
 - EBS maxes at 80k IOPS per instance and 64k vol (io1)
@@ -2249,11 +2246,9 @@ The data is incrementally stored which means doing a snapshot every 5 minutes wi
 
 Provides at rest encryption for block volumes and snapshots.
 
-When you don't have EBS encryption, the volume is not encrypted.
-The physical hardware itself may be performing at rest encryption, but that is a separate thing.
+When you don't have EBS encryption, the volume is not encrypted. The physical hardware itself may be performing at rest encryption, but that is a separate thing.
 
-When you set up an EBS volume initially, EBS uses KMS and a customer master key.
-This can be the EBS default (CMK) which is referred to as `aws/ebs` or it could be a customer managed CMK which you manage yourself.
+When you set up an EBS volume initially, EBS uses KMS and a customer master key. This can be the EBS default (CMK) which is referred to as `aws/ebs` or it could be a customer managed CMK which you manage yourself.
 
 That key is used by EBS when an encrypted volume is created. The CMK generates an encrypted **data encryption key (DEK)** which is stored with the volume with on the physical disk. This key can only be decrypted using KMS when a role with the proper permissions to decrypt that DEK.
 
@@ -2298,9 +2293,9 @@ Has these properties
 - Primary IPv4 private address
   - From the range of the subnet the ENI is within.
   - Will be static and not change for the lifetime of the instance
-    - `10.16.0.10`
+    - Eg.`10.16.0.10`
   - Given a DNS name that is associated with the address.
-    - `ip-10-16-0-10.ec2.internal`
+    - Eg. `ip-10-16-0-10.ec2.internal`
     - Only resolvable inside the VPC and always points at private IP address
 - 0 or more secondary private IP addresses
 - 0 or 1 public IPv4 address
@@ -2450,8 +2445,7 @@ Instances can also have termination protection permissions (disableApiTerminatio
 
 #### 1.6.13.1. Vertical Scaling
 
-As customer load increases, the server may need to grow to handle more data.
-The server can increase in capacity, but this will require a reboot.
+As customer load increases, the server may need to grow to handle more data. The server can increase in capacity, but this will require a reboot.
 
 - Often times vertical scaling can only occur during planned outages.
 - Larger instances also carry a **$ premium** compared to smaller instances.
@@ -2461,15 +2455,11 @@ The server can increase in capacity, but this will require a reboot.
 
 #### 1.6.13.2. Horizontal Scaling
 
-As the customer load increases, this adds additional capacity.
-Instead of one running copy of an application, you can have multiple versions
-running on each server.
-This requires a load balancer.
+As the customer load increases, this adds additional capacity. Instead of one running copy of an application, you can have multiple versions running on each server. This requires a load balancer.
 
 > A load balancer is an _appliance_ that sits in between your servers -- in this case instances -- and your customers.
 
-When customers try to access an application, the load balancer ensures the
-servers get equal parts of the load.
+When customers try to access an application, the load balancer ensures the servers get equal parts of the load.
 
 - Sessions are everything.
   - When you log into youtube, netflix or your email, the state of your interaction with that application is called a *session*.
@@ -2498,8 +2488,9 @@ Meta-data contains information on the:
 
 - environment the instance is in.
 - You can find out about the networking or user-data among other things.
-- This is not authenticated or encrypted. Anyone who can gain access to the
-instance can see the meta-data. This can be restricted by local firewall
+- This is not authenticated or encrypted. Anyone who can gain access to the instance can see the meta-data. This can be restricted by local firewall
+
+Can use [this Bash script](http://s3.amazonaws.com/ec2metadata/ec2-metadata) to work with the metadata API
 
 ---
 
