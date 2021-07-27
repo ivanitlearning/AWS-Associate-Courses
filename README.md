@@ -2077,6 +2077,9 @@ This isn't the only part of the chain, but it is a simplification. A system migh
   - All of the data is replicated within that AZ. The entire AZ must have a major fault to go down.
 - Can snapshot backup to S3 which makes it region-resilient and allows data migration across AZs.
 - The snapshots can also be copied across regions for global resilience.
+
+![](Pics\EBS_Architecture.png)
+
 - Two physical storage types available (SSD/HDD)
 - Varying level of performance (IOPS, T-put)
 - Billed as GB/month.
@@ -2500,10 +2503,7 @@ Can use [this Bash script](http://s3.amazonaws.com/ec2metadata/ec2-metadata) to 
 
 Virtualization Problems
 
-Using an EC2 virtual machine with Nitro Hypervisor, 4 GB ram, and 40 GB disk,
-the OS can consume 60-70% of the disk and much of the available memory.
-Containers leverage the similarities of multiple guest OS by removing duplicate
-resources. This allows applications to run in their own isolated environments.
+Using an EC2 virtual machine with Nitro Hypervisor, 4 GB ram, and 40 GB disk, the OS can consume 60-70% of the disk and much of the available memory. Containers leverage the similarities of multiple guest OS by removing duplicate resources. This allows applications to run in their own isolated environments.
 
 #### 1.7.1.1. Image Anatomy
 
@@ -2524,9 +2524,7 @@ Images contain read only layers, images are layer onto images.
 
 A container registry or hub is a hub of container images. As a developer or solution architect, you use a dockerfile to create a container image. Then you upload that image to a private/public repository such as the docker hub. In the case of a public hub, other people will likely do the same including vendors of the base OS such as the CentOS example shown above. From there, these container images can then be deployed to docker hosts, which are just services running a container engine (e.g. docker).
 
-A docker host can run many containers based on or more images. A single image can be to generate containers on many docker hosts.
-Dockerfile can create a container image where it gets stored
-in the container registry.
+A docker host can run many containers based on or more images. A single image can be to generate containers on many docker hosts. Dockerfile can create a container image where it gets stored in the container registry.
 
 #### 1.7.1.3. Container Key Concepts
 
