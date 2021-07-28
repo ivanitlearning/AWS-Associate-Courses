@@ -2581,10 +2581,8 @@ Read [this](https://stackoverflow.com/questions/40575584/what-is-the-difference-
 
 #### 1.7.3.2. Fargate mode
 
-- Removes more of the management overhead from ECS, no need to manage EC2. **Fargate shared infrastructure** allows all customers
-  to access from the same pool of resources. Fargate deployment still uses a cluster with a VPC where AZs are specified.
-- For ECS tasks, they are injected into the VPC. Each task is given an elastic network interface_ which has an IP address within the VPC. They then
-  run like a VPC resource.
+- Removes more of the management overhead from ECS, no need to manage EC2. **Fargate shared infrastructure** allows all customers to access from the same pool of resources. Fargate deployment still uses a cluster with a VPC where AZs are specified.
+- For ECS tasks, they are injected into the VPC. Each task is given an elastic network interface_ which has an IP address within the VPC. They then run like a VPC resource.
 - You only pay for the container resources you use.
 
 ![](Pics/ECS-Fargate.png)
@@ -2607,24 +2605,19 @@ If you already are using containers, use **ECS**.
 
 ### 1.8.1. Bootstrapping EC2 using User Data
 
-Bootstrapping is a process where scripts or other config steps can be run when
-an instance is first launched. This allows an instance to be brought to service
-in a particular configured state.
+Bootstrapping is a process where scripts or other config steps can be run when an instance is first launched. This allows an instance to be brought to service in a particular configured state.
 
-In systems automation, bootstrapping allows the system to self configure.
-In AWS this is **EC2 Build Automation**.
+In systems automation, bootstrapping allows the system to self configure. In AWS this is **EC2 Build Automation**.
 
 This could perform some software installs and post install configs.
 
-Bootstrapping is done using **user data** and is injected into the instance
-in the same way that meta-data is. It is accessed using the meta-data IP.
+Bootstrapping is done using **user data** and is injected into the instance in the same way that meta-data is. It is accessed using the meta-data IP.
 
 <http://169.254.169.254/latest/user-data>
 
 Anything you pass in is executed by the instance OS **only once on launch!** It is for launch time configuration only.
 
-EC2 doesn't validate the user data. You can tell EC2 to pass in trash data
-and the data will be injected. The OS needs to understand the user data.
+EC2 doesn't validate the user data. You can tell EC2 to pass in trash data and the data will be injected. The OS needs to understand the user data.
 
 #### 1.8.1.1. Bootstrapping Architecture
 
