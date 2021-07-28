@@ -2559,8 +2559,7 @@ ECS runs into two modes: 1. Using EC2; 2. Using Fargate.
 
 See the [AWS documentation on container definition](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html) and [task definition](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskDefinition.html) for more information.
 
-ECS **Service** is configured via Service Definition and represents
-how many copies of a task you want to run for scaling and HA.
+ECS **Service** is configured via Service Definition and represents how many copies of a task you want to run for scaling and HA.
 
 ### 1.7.3. ECS Cluster Types
 
@@ -2572,38 +2571,29 @@ ECS Cluster manages:
 
 #### 1.7.3.1. EC2 mode
 
-ECS cluster is created within a VPC. It benefits from the multiple AZs that
-are within that VPC.
-You specify an initial size which will drive an **auto scaling group**.
+- ECS cluster is created within a VPC. It benefits from the multiple AZs that are within that VPC. You specify an initial size which will drive an **auto scaling group** (ASG).
+- ECS using EC2 mode is not a serverless solution, you need to worry about capacity and availability for your cluster.
+- The container instances are not delivered as a managed service, they are managed as normal EC2 instances. You can use spot pricing or prepaid EC2 servers.
 
-ECS using EC2 mode is not a serverless solution, you need to worry about
-capacity and availability for your cluster.
+Read [this](https://stackoverflow.com/questions/40575584/what-is-the-difference-between-amazon-ecs-and-amazon-ec2) to understand difference between EC2 and ECS.
 
-The container instances are not delivered as a managed service, they
-are managed as normal EC2 instances.
-You can use spot pricing or prepaid EC2 servers.
+![](Pics/ECS-EC2.png)
 
 #### 1.7.3.2. Fargate mode
 
-Removes more of the management overhead from ECS, no need to manage EC2.
+- Removes more of the management overhead from ECS, no need to manage EC2. **Fargate shared infrastructure** allows all customers
+  to access from the same pool of resources. Fargate deployment still uses a cluster with a VPC where AZs are specified.
+- For ECS tasks, they are injected into the VPC. Each task is given an elastic network interface_ which has an IP address within the VPC. They then
+  run like a VPC resource.
+- You only pay for the container resources you use.
 
-**Fargate shared infrastructure** allows all customers
-to access from the same pool of resources.
-
-Fargate deployment still uses a cluster with a VPC where AZs are specified.
-
-For ECS tasks, they are injected into the VPC. Each task is given an
-_elastic network interface_ which has an IP address within the VPC. They then
-run like a VPC resource.
-
-You only pay for the container resources you use.
+![](Pics/ECS-Fargate.png)
 
 #### 1.7.3.3. EC2 vs ECS(EC2) vs Fargate
 
 If you already are using containers, use **ECS**.
 
-**EC2 mode** is good for a large workload if you are price conscious.
-This allows for spot pricing and prepayment.
+**EC2 mode** is good for a large workload if you are price conscious. This allows for spot pricing and prepayment of managing EC2-based ECS hosts, provided you can minimise admin overhead of managing the hosts.
 
 **Fargate** is great if you:
 
