@@ -2605,32 +2605,26 @@ If you already are using containers, use **ECS**.
 
 ### 1.8.1. Bootstrapping EC2 using User Data
 
-Bootstrapping is a process where scripts or other config steps can be run when an instance is first launched. This allows an instance to be brought to service in a particular configured state.
+* Bootstrapping is a process where scripts or other config steps can be run when an instance is first launched. This allows an instance to be brought to service in a particular configured state.
 
-In systems automation, bootstrapping allows the system to self configure. In AWS this is **EC2 Build Automation**.
+* In systems automation, bootstrapping allows the system to self configure. In AWS this is **EC2 Build Automation**.
 
-This could perform some software installs and post install configs.
+* This could perform some software installs and post install configs.
 
-Bootstrapping is done using **user data** and is injected into the instance in the same way that meta-data is. It is accessed using the meta-data IP.
+* Bootstrapping is done using **user data** and is injected into the instance in the same way that meta-data is. It is accessed using the meta-data IP.
+  * <http://169.254.169.254/latest/user-data>
 
-<http://169.254.169.254/latest/user-data>
+* Anything you pass in is executed by the instance OS **only once on launch!** It is for launch time configuration only. Updating it and rebooting the instance doesn't execute it.
 
-Anything you pass in is executed by the instance OS **only once on launch!** It is for launch time configuration only.
-
-EC2 doesn't validate the user data. You can tell EC2 to pass in trash data and the data will be injected. The OS needs to understand the user data.
+* EC2 doesn't validate the user data. You can tell EC2 to pass in trash data/malicious commands and the data will be injected. The OS needs to understand the user data.
 
 #### 1.8.1.1. Bootstrapping Architecture
 
-An AMI is used to launch an EC2 instance in the usual way to create
-an EBS volume that is attached to the EC2 instance. This is based on the
-block mapping inside the AMI.
+An AMI is used to launch an EC2 instance in the usual way to create an EBS volume that is attached to the EC2 instance. This is based on the block mapping inside the AMI.
 
-Now the EC2 service provides some user data through to the EC2 instance.
-There is SW within the OS designed to look at the metadata IP for any user data.
-If it sees any user data, it executes this on launch of that instance.
+Now the EC2 service provides some user data through to the EC2 instance. There is SW within the OS designed to look at the metadata IP for any user data. If it sees any user data, it executes this on launch of that instance.
 
-This is treated like any other script the OS runs. At the end of running
-the script, the instance will be in:
+This is treated like any other script the OS runs. At the end of running the script, the instance will be in:
 
 - Running state and ready for service.
 - Bad config but still likely running.
@@ -2639,23 +2633,19 @@ the script, the instance will be in:
 
 #### 1.8.1.2. User Data Key Points
 
-EC2 doesn't know what the user data contains, it's just a block of data.
-The user data is not secure, anyone can see what gets passed in. For this
-reason it is important not to pass passwords or long term credentials.
+* EC2 doesn't know what the user data contains, it's just a block of data. The user data is not secure, anyone who logins can see what gets passed in. Don't put in passwords or long term credentials.
 
-**User data is limited to 16 KB in size**. Anything larger than this will
-need to pass a script to download the larger set of data.
+* **User data is limited to 16 KB in size**. Anything larger than this will need to pass a script to download the larger set of data.
 
-User data can be modified if you stop the instance, change the user
-data, then restart the instance. This won't be executed since the instance
-has already started.
+* User data can be modified if you stop the instance, change the user data, then restart the instance. This won't be executed since the instance has already started.
+* User data must be in base64. When you pass it through CloudFormation need to use the ` Fn::Base64: !Sub |` function to convert to base64 . If entered via EC2 console, option to convert to base64 is already there.
+* Logs on EC2 instance found in 
+  * /var/log/cloud-init.log
+  * /var/log/cloud-init-output.log (Commands run)
 
 #### 1.8.1.3. Boot-Time-To-Service-Time
 
-How quickly after you launch an instance is it ready for service?
-This includes the time for EC2 to configure the instance and any software
-downloads that are needed for the user.
-When looking at an AMI, this can be measured in minutes.
+How quickly after you launch an instance is it ready for service? This includes the time for EC2 to configure the instance and any software downloads that are needed for the user. When looking at an AMI, this can be measured in minutes.
 
 AMI baking will front load the time needed by configuring as much as possible.
 
@@ -2666,64 +2656,44 @@ This way you reduce the post-launch time and thus the boot-time-to-service.
 
 ### 1.8.2. AWS::CloudFormation::Init
 
-**cfn-init** is a helper script installed on EC2 OS.
-This is a simple configuration management system.
+**cfn-init** is a helper script installed on EC2 OS. This is a simple configuration management system.
 
 - User Data is procedural and run by the OS line by line.
 - cfn-init can be procedural, but can also be desired state.
-  - Can specify particular versions of packages. It will ensure things are
-  configured to that end state.
+  - Can specify particular versions of packages. It will ensure things are configured to that end state.
   - Can manipulate OS groups and users.
   - Can download sources and extract them using authentication.
 
-This is executed as any other command by being passed into the instance as part
-of the user data and retrieves its directives from the CloudFormation
-stack and you define this data in the CloudFormation template called
-`AWS::CloudFormation::Init`.
+This is executed as any other command by being passed into the instance as part of the user data and retrieves its directives from the CloudFormation stack and you define this data in the CloudFormation template called `AWS::CloudFormation::Init`.
 
 #### 1.8.2.1. cfn-init explained
 
-Starts off with a **CloudFormation template**.
-This has a logical resource within it which is to create an EC2 instance.
-This has a specific section called `Metadata`.
-This then passes in the information passed in as `UserData`.
-cfn-init gets variables passed into the user data by CloudFormation.
+* Starts off with a **CloudFormation template**. This has a logical resource within it which is to create an EC2 instance.
+  This has a specific section called `Metadata`. This then passes in the information passed in as `UserData`. cfn-init gets variables passed into the user data by CloudFormation template.
 
-It knows the desired state and can work towards a final configuration.
-This can monitor the user data and change things as the EC2 data changes.
+* It knows the desired state and can work towards a final configuration. This can monitor the user data and change things as the EC2 data changes.
+
+* Check **/var/log/cfn-init-cmd.log** for commands used.
 
 #### 1.8.2.2. CreationPolicy and Signals
 
-If you pass in user data, there is no way for CloudFormation to know
-if the EC2 instance was provisioned properly. It may be marked as complete,
-but the instance could be broken.
+If you pass in user data, there is no way for CloudFormation to know if the EC2 instance was provisioned properly. It may be marked as complete, but the instance could be broken.
 
-A **CreationPolicy** is something which is added to a logical resource
-inside a CloudFormation template. You create it and supply a timeout value.
-
-This waits for a signal from the resource itself before moving to a create
-complete state.
+A **CreationPolicy** is something which is added to a logical resource inside a CloudFormation template. You create it and supply a timeout value. This waits for a signal from the resource itself (cfn-signal) before moving to a create complete state.
 
 ### 1.8.3. EC2 Instance Roles
 
-IAM roles are the best practice ways for services to be granted permissions.
-EC2 instance roles are roles that an instance can assume and anything
-running in that instance has the permissions that role grants.
+IAM roles are the best practice ways for services to be granted permissions. EC2 instance roles are roles that an instance can assume and anything running in that instance has the permissions that role grants.
 
-Starts with an IAM role with a permissions policy.
-EC2 instance role allows the EC2 service to assume that role.
+Starts with an IAM role with a permissions policy. EC2 instance role allows the EC2 service to assume that role.
 
-The **instance profile** is the item that allows the permissions to get
-inside the instance. When you create an instance role in the console,
-an instance profile is created with the same name.
+The **instance profile** is the item that allows the permissions to get inside the instance. When you create an instance role in the console, an instance profile is created with the same name.
 
-When IAM roles are assumed, you are provided temporary roles based on the
-permission assigned to that role. These credentials are passed through
-instance **meta-data**.
+When IAM roles are assumed, you are provided temporary roles based on the permission assigned to that role. These credentials are passed through instance via **meta-data**.
 
 EC2 and the secure token service ensure the credentials never expire.
 
-Key facts
+##### Key facts
 
 - Credentials are inside meta-data
   - iam/security-credentials/role-name
@@ -2734,27 +2704,27 @@ Key facts
 
 ### 1.8.4. AWS System Manager Parameter Store
 
-Passing secrets into an EC2 instance is bad practice because anyone
-who has access to the meta-data has access to the secrets.
+Passing secrets into an EC2 instance is bad practice because anyone who has access to the meta-data has access to the secrets.
 
 Parameter store allows for storage of **configuration** and **secrets**
 
-- Strings
-- StringList
-- SecureString
+1. Strings
+2. StringList
+3. SecureString
 
 Parameter Store:
 
 - Can store license codes, database strings, and full configs and passwords.
 - Allows for hierarchies and versioning.
+  - /wordpress/
+    - DBuser
+    - DBpassword
 - Can store plaintext and ciphertext.
-  - This integrates with **kms** to encrypt passwords.
-- Allows for public parameters such as the latest AMI parameter to be stored
-and referenced during EC2 creation
-- Is a public service so any services needs access to the public sphere or
-to be an AWS public service.
-- Applications, EC2 instances, lambda functions can all request access to
-parameter store.
+  - This integrates with **KMS** to encrypt passwords.
+  - Note that permissions to interact with parameter store is *separate* from permissions to interact with KMS. You can retrieve data but it remains encrypted unless you specify decryption and you have perms.
+- Allows for public parameters such as the latest AMI parameter to be stored and referenced during EC2 creation
+- Is a public service so any services needs access to the public sphere or to be an AWS public service.
+- Applications, EC2 instances, lambda functions can all request access to parameter store.
 - Tied closely to IAM, can use
   - Long term credentials such as access keys.
   - Short term use of IAM roles.
