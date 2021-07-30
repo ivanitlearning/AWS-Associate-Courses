@@ -2507,16 +2507,11 @@ Using an EC2 virtual machine with Nitro Hypervisor, 4 GB ram, and 40 GB disk, th
 
 #### 1.7.1.1. Image Anatomy
 
-A Docker image is composed of multiple independent layers. Docker images are stacks of these layers and not a single, monolithic disk image. Docker images are created initially using a _docker file_.
-Each line in a docker file is processed one by one and each line creates a new filesystem layer inside the docker image it creates.
-Images are created from scratch or a base image.
-Images contain read only layers, images are layer onto images.
-
 ![Anatomy of a docker image](Learning-Aids/09-Containers-and-ECS/ImageAnatomy.png)
 
 ##### 1.7.1.1.1. What are images used for
 
-1. A docker image is actually how we create a docker container. In fact a ocker container is just a running copy of a docker image with one crucial difference: a docker container has an additional *read/write* file system layer. File system layers --  the layers that make up the docker image -- by default are _read_ only; they never change after they are created. And so, the special read/write layer is added which allows containers to run. If you have lots of containers with very similar base structures, they will share the parts that overlap. The other layers are reused between containers.
+1. A docker image is actually how we create a docker container. In fact a docker container is just a running copy of a docker image with one crucial difference: a docker container has an additional *read/write* file system layer. File system layers --  the layers that make up the docker image -- by default are _read_ only; they never change after they are created. And so, the special read/write layer is added which allows containers to run. If you have lots of containers with very similar base structures, they will share the parts that overlap. The other layers are reused between containers.
 
 2. The reuse architecture that is offered by the way containers do their disk images scales really well. Disk space when you have lots of containers is minimized because of this layered architecture. The base layer -- the OS -- they are generally made available by the OS vendors through something called a _container registry_ and a popular one is _docker hub_.
 
@@ -2733,46 +2728,36 @@ Parameter Store:
 
 CloudWatch and CloudWatch Logs cannot natively capture data inside an instance.
 
-CloudWatch Agent is required for OS visible data. It sends this data into CW
-For CW to function, it needs configuration and permissions in addition
-to having the CW agent installed.
-The CW agent needs to know what information to inject into CW and CW Logs.
+CloudWatch Agent (similar to Nagios agent) is required for OS visible data. It sends this data into CW For CW to function, it needs configuration and permissions in addition to having the CW agent installed. The CW agent needs to know what information to inject into CW and CW Logs. 
 
-The agent also needs some permissions to interact with AWS.
-This is done with an IAM role as best practice.
-The IAM role has permissions to interact with CW logs.
-The IAM role is attached to the instance which provides the instance and
+Log examples:
+
+- /var/log/secure
+- /var/log/httpd/access_log
+
+The agent also needs some permissions to interact with AWS. This is done with an IAM role as best practice. The IAM role has permissions to interact with CW logs. The IAM role is attached to the instance which provides the instance and
 anything running on the instance, permissions to manage CW logs.
 
-The data requested is then injected in CW logs.
-There is one log group for each individual log we want to capture.
-There is one log stream for each group for each instance that needs
-management.
-
-We can use parameter store to store the configuration for the CW agent.
+The data requested is then injected in CW logs. There is one log group for each individual log we want to capture. There is one log stream for each group for each instance that needs management.  We can use parameter store to store the configuration for the CW agent.
 
 ### 1.8.6. EC2 Placement Groups
 
+Three types:
+
 #### 1.8.6.1. Cluster Placement -> Pack Instances Close Together
 
-Designed so that instances within the same cluster are physically close together.
+* Designed so that instances within the same cluster are physically close together.
 
-Achieves the highest level of performance possible inside EC2.
+* Achieves the highest level of performance possible inside EC2.
 
-Best practice is to launch all of the instances within that group at the
-same time.
-If you launch with 9 instances and AWS places you in a place with capacity
-for 12, you are now limited in how many you can add.
+* Best practice is to launch all of the instances within that group at the same time.
+  If you launch with 9 instances and AWS places you in a place with capacity for 12, you are now limited in how many you can add eg. you can't double to 18.
 
-Cluster placements need to be part of the same AZ. Cluster
-placement groups are generally the same rack, but they can even be the same
-EC2 host.
+* **Cluster placements need to be part of the same AZ**. Cluster placement groups are generally the same rack, but they can even be the same EC2 host.
 
-All members have direct connections to each other. They can achieve
-**10 Gbps single stream** vs 5 Gbps normally. They also have the lowest
-latency and max packets-per-second (PPS) possible in AWS.
+* All members have direct connections to each other. They can achieve **10 Gbps single stream** vs 5 Gbps normally. They also have the lowest latency and max packets-per-second (PPS) possible in AWS.
 
-If the hardware fails, the entire cluster will fail.
+* No resilience. If the hardware fails, the entire cluster will fail.
 
 ##### 1.8.6.1.1. Cluster Placement Exam PowerUp
 
@@ -2780,46 +2765,43 @@ If the hardware fails, the entire cluster will fail.
 - They can span VPC peers.
 - Requires a supported instance type.
 - Best practice to use the same type of instance (not mandatory).
-- Best practice to launch all instances at once (not mandatory).
-- This is the only way to achieve **10Gbps SINGLE stream performance**, other data metrics assume multiple streams.
+- Best practice to launch all instances at once (not mandatory). You might get a capacity error if you try to launch additional instances.
+- This is the only way to achieve **10Gbps SINGLE stream performance**, other data metrics which can achieve 10Gbps assume multiple streams.
 - Use cases: Performance, fast transfer speeds, and low consistent latency.
 
 #### 1.8.6.2. Spread Placement -> Keep Instances Separated
 
-Keep instances separated
+* Keep instances separated. This provides the highest level of resilience and availability.
+* Spread groups can span multiple AZs. Information will be put on separate racks with their own network or power supply. There is a limit of 7 instances per AZ. The more AZs in a region, the more instances inside a spread placement group.
 
-This provides the best resilience and availability.
-Spread groups can span multiple AZs. Information will be put on distinct
-racks with their own network or power supply. There is a limit of 7 instances
-per AZ. The more AZs in a region, the more instances inside a spread placement
-group.
+![](Pics/SpreadPlacementGroup.png)
 
 ##### 1.8.6.2.1. Spread Placement Exam PowerUp
 
 - Provides the highest level of availability and resilience.
   - Each instance by default runs from a different rack.
-- **7 instances per AZ is a hard limit**.
+- **7 instances per AZ is a hard limit**. The eighth instance in the same AZ will not launch.
 - Not supported for dedicated instances or hosts.
 
-- Use case: small number of critical instances that need to be kept separated
-from each other. Several mirrors of an application; different nodes of an application; etc.
+- Use case: small number of critical instances that need to be kept separated from each other. Several mirrors of an application; different nodes of an application; etc.
 
 #### 1.8.6.3. Partition Placement -> Groups of Instances Spread Apart
 
-Groups of instances spread apart
+* Groups of instances spread apart.
 
-If a problem occurs with one rack's networking or power, it will
-at most take out one instance.
+* Each partition in an AZ has its own set of racks; power and networking. No sharing of infra between partitions.
 
-The main difference is you can launch as many instances in each partition
-as you desire.
+* If a problem occurs with one rack's networking or power, it will at most take out one partition of instances.
 
-When you launch a partition group, you can allow AWS decide or you can
-specifically decide.
+* The main difference is you can launch as many instances in each partition as you desire.
+
+* When you launch an instance you can allow AWS decide or you can specifically decide which partition it goes into.
+
+![](Pics/PartitionPlacementGroup.png)
 
 ##### 1.8.6.3.1. Partition Placement Exam PowerUp
 
-- 7 partitions maximum for each AZ
+- 7 *partitions* maximum for each AZ.
 - Instances can be placed into a specific partition, or AWS can pick.
 - This is not supported on dedicated hosts.
 - Great for HDFS, HBase, and Cassandra
