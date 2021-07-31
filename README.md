@@ -2601,17 +2601,12 @@ If you already are using containers, use **ECS**.
 ### 1.8.1. Bootstrapping EC2 using User Data
 
 * Bootstrapping is a process where scripts or other config steps can be run when an instance is first launched. This allows an instance to be brought to service in a particular configured state.
-
 * In systems automation, bootstrapping allows the system to self configure. In AWS this is **EC2 Build Automation**.
-
 * This could perform some software installs and post install configs.
-
 * Bootstrapping is done using **user data** and is injected into the instance in the same way that meta-data is. It is accessed using the meta-data IP.
   * <http://169.254.169.254/latest/user-data>
-
 * Anything you pass in is executed by the instance OS **only once on launch!** It is for launch time configuration only. Updating it and rebooting the instance doesn't execute it.
-
-* EC2 doesn't validate the user data. You can tell EC2 to pass in trash data/malicious commands and the data will be injected. The OS needs to understand the user data.
+* EC2 doesn't validate the user data. You can tell EC2 to pass in trash data/malicious commands and the data will be injected.
 
 #### 1.8.1.1. Bootstrapping Architecture
 
@@ -2636,7 +2631,7 @@ This is treated like any other script the OS runs. At the end of running the scr
 * User data must be in base64. When you pass it through CloudFormation need to use the ` Fn::Base64: !Sub |` function to convert to base64 . If entered via EC2 console, option to convert to base64 is already there.
 * Logs on EC2 instance found in 
   * /var/log/cloud-init.log
-  * /var/log/cloud-init-output.log (Commands run)
+  * /var/log/cloud-init-output.log (Commands history)
 
 #### 1.8.1.3. Boot-Time-To-Service-Time
 
@@ -2674,7 +2669,7 @@ This is executed as any other command by being passed into the instance as part 
 
 If you pass in user data, there is no way for CloudFormation to know if the EC2 instance was provisioned properly. It may be marked as complete, but the instance could be broken.
 
-A **CreationPolicy** is something which is added to a logical resource inside a CloudFormation template. You create it and supply a timeout value. This waits for a signal from the resource itself (cfn-signal) before moving to a create complete state.
+A **CreationPolicy** is something which is added to a logical resource inside a CloudFormation template. You create it and supply a timeout value. This waits for a signal from the resource itself (`cfn-signal`) before moving to a create complete state.
 
 ### 1.8.3. EC2 Instance Roles
 
@@ -2726,19 +2721,19 @@ Parameter Store:
 
 ### 1.8.5. System and Application Logging on EC2
 
-CloudWatch and CloudWatch Logs cannot natively capture data inside an instance.
+* CloudWatch and CloudWatch Logs cannot natively capture data inside an instance.
 
-CloudWatch Agent (similar to Nagios agent) is required for OS visible data. It sends this data into CW For CW to function, it needs configuration and permissions in addition to having the CW agent installed. The CW agent needs to know what information to inject into CW and CW Logs. 
+* CloudWatch Agent (similar to Nagios agent) is required for OS visible data. It sends this data into CW For CW to function, it needs configuration and permissions in addition to having the CW agent installed. The CW agent needs to know what information to inject into CW and CW Logs. 
 
 Log examples:
 
 - /var/log/secure
 - /var/log/httpd/access_log
 
-The agent also needs some permissions to interact with AWS. This is done with an IAM role as best practice. The IAM role has permissions to interact with CW logs. The IAM role is attached to the instance which provides the instance and
-anything running on the instance, permissions to manage CW logs.
+* The agent also needs some permissions to interact with AWS. This is done with an IAM role as best practice. The IAM role has permissions to interact with CW logs. The IAM role is attached to the instance which provides the instance and
+  anything running on the instance, permissions to manage CW logs.
 
-The data requested is then injected in CW logs. There is one log group for each individual log we want to capture. There is one log stream for each group for each instance that needs management.  We can use parameter store to store the configuration for the CW agent.
+* The data requested is then injected in CW logs. There is one log group for each individual log we want to capture. There is one log stream for each group for each instance that needs management.  We can use parameter store to store the configuration for the CW agent.
 
 ### 1.8.6. EC2 Placement Groups
 
@@ -2808,47 +2803,43 @@ Three types:
 
 ### 1.8.7. EC2 Dedicated Hosts
 
-EC2 host allocated to you in its entirety.
-Pay for the host itself which is designed for a family of instances.
-There are no instance charges.
-You can pay for a host on-demand or reservation with 1 or 3 year terms.
+* EC2 host allocated to you in its entirety.
+* You pay for the host itself which is designed for a family of instances, instead of the instance ie no instance charges.
+* You can pay for a host on-demand, reservation with 1 or 3 year terms (upfront, partial or no upfront)
+* The host hardware has physical sockets and cores. 
+  * This allows some software licenses to charge based on certain hardware specs even if you don't use them directly.
+* The host hardware specs dictate the number and types of instances that can run on it.
 
-The host hardware has physical sockets and cores. This dictates how
-many instances can be run on the HW.
-
-Hosts are designed for a specific size and family. If you purchase one host, you configure what type of instances you want to run on it. With the older VM
-system you cannot mix and match. The new Nitro system allows for mixing and
-matching host size.
+* Hosts are designed for a specific size and family. If you purchase one host, you configure what type of instances you want to run on it. With the older VM system you cannot mix and match. New Nitro hypervisor allows for mixing and matching host size.
 
 #### 1.8.7.1. Dedicated Hosts Limitations
 
-- AMI Limits, some versions can't be used
+- AMI Limits, some versions can't be used eg. RHEL, SUSE Linux, Windows not supported.
 - Amazon RDS instances are not supported
 - Placement groups are not supported for dedicated hosts.
 - Hosts can be shared with other organization accounts using **Resource Access Manager (RAM)**
+  - **Role separation:**
+  - Accounts able to access shared dedicated hosts can only see and create their own instances, and can't see others. 
+  - Host owner can see all instances running on them but can control only those they created.
 - This is mostly used for licensing problems related to ports.
 
 ### 1.8.8. Enhanced Networking
 
-Enhanced networking uses SR-IOV.
-The physical network interface is aware of the virtualization.
-Each instance is given exclusive access to one part of a physical network
-interface card.
+* Enhanced networking uses SR-IOV.
+  * The physical network interface is aware of the virtualization.
+  * Each instance is given exclusive access to one part of a physical networkinterface card.
 
-There is no charge for this and is available on most EC2 types.
-It allows for higher IO and lower host CPU usage
-This provides more bandwidth and higher packet per seconds.
-In general this provides lower latency.
+* There is no charge for this and is available on most EC2 types.
+* It allows for higher IO and lower host CPU usage
+* This provides more bandwidth and higher packet per seconds, consistent lower latency.
 
-#### 1.8.8.1. EBS Optimized
+### 1.8.9. EBS Optimized
 
-Historically network on EC2 was shared with the same network stack used
-for both data networking and EBS storage networking.
+* Historically network on EC2 was shared with the same network stack used for both data networking and EBS storage networking.
 
-EBS optimized instance means that some stack optimizations have taken place
-and dedicated capacity has been provided for that instance for EBS usage.
+* EBS optimized instance means that some stack optimizations have taken place and dedicated capacity has been provided for that instance for EBS usage.
 
-Most new instances support this and have this enabled by default for no charge.
+* Most new instances support this and have this enabled by default for no charge.
 
 ---
 
@@ -2857,66 +2848,53 @@ Most new instances support this and have this enabled by default for no charge.
 ### 1.9.1. Public Hosted Zones
 
 A hosted zone is a DNS database for a given section of global DNS data.
-A public hosted zone is a type of R53 hosted zone which is hosted on
-R53 provided public DNS name servers. When creating a hosted zone, AWS provides
-at least 4 DNS name servers which host the zone.
+A public hosted zone is a type of R53 hosted zone which is hosted on R53 provided public DNS name servers. When creating a hosted zone, AWS provides at least 4 DNS name servers which host the zone.
 
 This is globally resilient service due to multiple DNS servers.
 
 Hosted zones are created automatically when you register a domain using R53.
 
-Hosted zones can be created separately. If you want to register a domain
-elsewhere and use R53 to host the zone file and records for that domain, then
-you can specifically create a hosted zone and point at an externally
-registered domain at that zone.
-There is a monthly fee to host each hosted zone within R53 and a fee for
-any queries made to that service.
+Hosted zones can be created separately. If you want to register a domain elsewhere and use R53 to host the zone file and records for that domain, then you can specifically create a hosted zone and point at an externally registered domain at that zone.
+There is a monthly fee to host each hosted zone within R53 and a fee for any queries made to that service.
 
-Hosted Zones are what the DNS system references via delegation and name server
-records. A hosted zone, when referenced in this way by the DNS system, is known
-as being authoritative for a domain.
-It becomes the single source of truth for a domain.
+Hosted Zones are what the DNS system references via delegation and name server records. A hosted zone, when referenced in this way by the DNS system, is known as being authoritative for a domain. It becomes the single source of truth for a domain.
 
-VPC instances are already configured (if enabled) with the VPC +2 address as their
-DNS resolver - this allows querying of R53 public and internet hosted DNS zones from
-instances within that VPC.
+VPC instances are already configured (if enabled) with the VPC +2 address as their DNS resolver - this allows querying of R53 public and internet hosted DNS zones from instances within that VPC.
 
 ### 1.9.2. Private Hosted Zones
 
-Same as public hosted zones except these are not public.
-They are associated with VPCs and are only accesible within those VPCs via the R53 resolver.
+Same as public hosted zones except these are not public. They are associated with VPCs and are only accessible within those VPCs via the R53 resolver.
 
-It's possible to use a technique called Split-view for public and internal use with the same
-zone name. A common architecure is to make the public hosted zone a subset of the private hosted zone
-containing only those records that are meant to be accessed from the Internet, while inside VPCs
-associated with the private hosted zone all resource records can be accessed.
+It's possible to use a technique called **Split-view** for public and internal use with the same zone name. A common architecture is to make the public hosted zone a subset of the private hosted zone containing only those records that are meant to be accessed from the Internet, while inside VPCs associated with the private hosted zone all resource records can be accessed.
 
-### 1.9.2. Route 53 Health Checks
+![](Pics/SplitView.png)
 
-Route checks will allow for periodic health checks on the servers.
-If one of the servers has a bug, this will be removed from the list.
+### 1.9.2. CNAME vs R53 Alias
 
-If the bug gets fixed, the health check will pass and the server will be
-added back into a healthy state.
+* CNAME maps a name to another.
+* However, you can't use CNAME to map a [naked domain](https://www.pcmag.com/encyclopedia/term/naked-domain) eg. computerlanguages.com
+* AWS services such as ELBs use only a DNS name, and can't use CNAME to point to these resources.
+* ALIAS maps names to AWS resources, and can be used for both naked or normal records, with no charges. Pick as default since no costs.
+* ALIAS are a DNS resource subtype ie. A ALIAS, CNAME ALIAS. If the resource which is pointed to has a record of that type, use the same subtype eg. ELB has A record so choose A record ALIAS.
+* Note: ALIAS is unique to AWS Route 53, not necessarily available outside AWS.
 
-Health checks are separate from, but are used by records inside R53.
-You don't create health checks inside records themselves.
+### 1.9.3. Route 53 Health Checks
 
-These are performed by a fleet of global health checkers. If you think
-they are bots and block them, this could cause alarms.
+Simple routing doesn't support health checks for DNS results returned.
 
-Checks occur every 30 seconds by default. This can be increased to 10 seconds
-for additional costs. These checks are per health checker. Since there are many
-you will automatically get one every few seconds. The 10 second option will
-complete multiple checks per second.
+Route checks will allow for periodic health checks on specified (Web) servers. If one of the servers has a bug, this will be removed from the list. If the bug gets fixed, the health check will pass and the server will be added back into a healthy state.
+
+Health checks are separate from, but are used by records inside R53. You don't create health checks inside records themselves.
+
+These are performed by a fleet of global health checkers. If you think they are bots and block them, this could cause alarms.
+
+Checks occur every 30 seconds by default. This can be increased to 10 seconds for additional costs. These checks are per health checker. Since there are many you will automatically get one every few seconds. The 10 second option will complete multiple checks per second.
 
 There could be one of three checks
 
 - TCP checks: R53 tries to establish TCP with end point within 10 (fast) or 30 seconds (standard).
-- HTTP/HTTPS: Same as TCP but within 4 seconds. The end point must respond
-with a 200 or 300 status code within 3 seconds of checking.
-- HTTP/HTTPS String matching: Same as above, the body must have a string within the first
-5120 bytes. This is chosen by the user.
+- HTTP/HTTPS: Same as TCP but within 4 seconds. The end point must respond with a 200 or 300 status code within 3 seconds of checking.
+- HTTP/HTTPS String matching: Same as above, the HTTP body must have a specified string within the first 5120 bytes. This is chosen by the user.
 
 It will be deemed healthy or unhealthy.
 
@@ -2926,7 +2904,7 @@ There are three types of checks.
 - CloudWatch alarms
 - Checks of checks (calculated)
 
-### 1.9.3. Route 53 Routing Policies Examples
+### 1.9.4. Route 53 Routing Policies Examples
 
 - **Simple**: Route traffic to a single resource. Client queries the resolver
 which has one record. It will respond with 3 values and these get forwarded
@@ -5227,4 +5205,4 @@ This can be saved in the console or fed to other visualization tools.
 You can optimize the original data set to reduce the amount of space uses
 for the data and reduce the costs for querying that data. For more information see the AWS [documentation.](https://aws.amazon.com/cloudtrail/pricing/)
 
-[^1]: For more information on Server Name Indication see the Cloudfare SNI [documentation.](https://www.cloudflare.com/learning/ssl/what-is-sni/)
+[^1]: For more information on Server Name Indication see the Cloudfare SNI learn[documentation.](https://www.cloudflare.com/learning/ssl/what-is-sni/)
