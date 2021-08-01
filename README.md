@@ -2906,50 +2906,59 @@ There are three types of checks.
 
 ### 1.9.4. Route 53 Routing Policies Examples
 
-- **Simple**: Route traffic to a single resource. Client queries the resolver
-which has one record. It will respond with 3 values and these get forwarded
-back to the client. The client then picks one of the three at random.
-This is a single record only. No health checks.
+- **Simple**: Route traffic to a single resource. Client queries the resolver which has one record. It will respond with 3 values and these get forwarded back to the client. The client then picks one of the three at random. This is a single record only. No health checks.
 
-- **Failover**: Create two records of the same name and the same type. One
-is set to be the primary and the other is the secondary. This is the same
-as the simple policy except for the response. Route 53 knows the health of
-both instances. As long as the primary is healthy, it will respond with
-this one. If the health check with the primary fails, the backup will be
-returned instead. This is set to implement active - passive failover.
+- **Failover**: 
 
-- **Weighted**: Create multiple records of the same name within the hosted zone.
-For each of those records, you provide a weighted value. The total weight
-is the same as the weight of all the records of the same name. If all of the
-parts of the same name are healthy, it will distribute the load based
-on the weight. If one of them fails its health check, it will be skipped over
-and over again until a good one gets hit. This can be used for migration
-to separate servers.
+  * Two records of the same name and the same type. One is set to be the primary and the other is the secondary. 
+  * Route 53 knows the health of both instances. 
+  * As long as the primary is healthy, it will respond with this one. If the health check with the primary fails, the backup will be
+    returned instead. This is set to implement active - passive failover.
 
-- **Latency-based**: Multiple records in a hosted zone can be created with
-the same name and same type. When a client request arrives, it knows which
-region the request comes from. It knows the lowest latency and will respond
-with the lowest latency.
+- **Weighted**:
 
-- **Geolocation**: Focused to delivering results matching the query of your
-customers. The record will first be matched based on the country if possible.
-If this does not happen, the record will be checked based on the continent.
-Finally, if nothing matches again it will respond with the default response.
-This can be used for licensing rights. If overlapping regions occur,
-the priority will always go to the most specific or smallest region. The US
-will be chosen over the North America record.
+  - Multiple records for same name.
+  - Each assigned a weight.
+  - Probability of returned record = record wt / total wt
+  - If unhealthy record selected, process repeated until healthy selected.
 
-- **Multi-value**: Simple records use one name and multiple values in this record.
-These will be health checked and the unhealthy responses will automatically
-be removed. With multi-value, you can have multiple records with the same
-name and each of these records can have a health check. R53 using this method
-will respond to queries with any and all healthy records, but it removes
-any records that are marked as unhealthy from those responses. This removes
-the problem with simple routing where a single unhealthy record can make it
-through to your customers. Great alternative to simple routing when
-you need to improve the reliability, and it's an alternative to failover
-when you have more than two records to respond with, but don't want
-the complexity or the overhead of weighted routing.
+  ![](Pics/Weighted_routing.png)
+
+- **Latency-based**
+
+  - One record for the same name in each region
+  - Responses to client request will depends on where the client is from; will record from region with lowest latency.
+
+- **Geolocation**: 
+
+  - Returns records based on geographical location of client, not proximity.
+  - Returns records based on this order 1) state , 2) country , 3) continent , 4) default (if no matches)
+  - Used for regional restrictions or to serve language specific content
+
+- **Multi-value**: Up to 8 healthy records returned to client, if >8, just 8 are randomly selected. Client chooses  one to connect to resource. Health checks are done to mark out those which are not responsive.
+
+- **Geoproximity**
+
+  - Geographical bias can be applied to countries
+  - Eg. Saudi user can be directed to Australian rather than UK resource if Australian bias is large enough.
+
+  ![](Pics/Geoproximity_routing.png)
+
+### 1.9.5. Route 53 Interoperability
+
+* Can be used to do both domain hosting, domain registrar (registering records with TLD registry) or either one.
+
+#### Domain registrar only
+
+* Rare usage, because R53's main value is in hosting domains rather than just registering them.
+
+![](Pics/R53_domain_registrar_only.png)
+
+#### Domain hosting only
+
+* Used more often, mostly when there is legacy arrangement with 3rd party registrar to register domains or when you already registered legacy ones.
+
+![](Pics/R53_domain_hosting_only.png)
 
 ---
 
@@ -2970,24 +2979,18 @@ Systems to store and manage data.
 - Fixed relationship between tables.
   - This is defined before data is entered into the database.
 
-Every row in a table must have a value for the **primary key**.
-There must be a value stored for every attribute in the table.
+Every row in a table must have a value for the **primary key**. There must be a value stored for every attribute in the table.
 
-SQL systems are relational so we generally define relationships between
-tables as well. This is defined with a **join table**.
-A join table has a **composite key** which is a key formed of two parts.
-Composite keys together must be unique.
+SQL systems are relational so we generally define relationships between tables as well. This is defined with a **join table**.
+A join table has a **composite key** which is a key formed of two parts. Composite keys together must be unique.
 
-Keys in different tables are how the relationships between the tables
-are defined.
+Keys in different tables are how the relationships between the tables are defined.
 
-The Table schema and relationships must be defined in advance which can be
-hard to do.
+The Table schema and relationships must be defined in advance which can be hard to do.
 
 #### 1.10.1.2. Non-Relational (NoSQL)
 
-Not a single thing, and is a catch all for everything else.
-There is generally no schema or a weak one.
+Not a single thing, and is a catch all for everything else. There is generally no schema or a weak one.
 
 ##### 1.10.1.2.1. Key-Value databases
 
@@ -3002,24 +3005,17 @@ DynamoDB is an example of wide column store database.
 
 Each row or item has one or more keys.
 One key is called the partition key.
-You can have additional keys other than the partition key called the
-sort or range key.
+You can have additional keys other than the partition key called the sort or range key.
 
-It can be **single key** (only partition key) or **composite key**
-(partition key and sort key).
+It can be **single key** (only partition key) or **composite key** (partition key and sort key).
 
-Every item in a table can also have attributes, but they don't have to be
-the same between values.
-The only requirements is that every item inside the table has to use the same
-key structure and it has to have a unique key.
+Every item in a table can also have attributes, but they don't have to be the same between values. The only requirements is that every item inside the table has to use the same key structure and it has to have a unique key.
 
 ##### 1.10.1.2.3. Document
 
 Documents are generally formatted using JSON or XML.
 
-This is an extension of a key-value store where each document is interacted
-with via an ID that's unique to that document, but the value of the document
-contents are exposed to the database allowing you to interact with it.
+This is an extension of a key-value store where each document is interacted with via an ID that's unique to that document, but the value of the document contents are exposed to the database allowing you to interact with it.
 
 Good for order databases, or collections, or contact stale databases.
 
@@ -3029,39 +3025,33 @@ Great for nested data items within a document structure such as user profiles.
 
 Often called OLTP (Online Transactional Processing Databases).
 
-If you needed to read the price of one item you need that
-row first. If you wanted to query all of the sizes of every order, you will
+If you needed to read the price of one item you need that row first. If you wanted to query all of the sizes of every order, you will
 need to check for each row.
 
-Great for things which deal in rows and items where they are constantly
-accessed, modified, and removed.
+Great for things which deal in rows and items where they are constantly accessed, modified, and removed.
 
 ##### 1.10.1.2.5. Column Database (Redshift)
 
-Instead of storing data in rows on disk, they store it based on columns.
-The data is the same, but it's grouped together on disk, based on
-column so every order value is stored together, every product item, color,
-size, and price are all grouped together.
+Instead of storing data in rows on disk, they store it based on columns. The data is the same, but it's grouped together on disk, based on column so every order value is stored together, every product item, color, size, and price are all grouped together.
 
-This is bad for transactional style processing, but great for reporting or when
-all values for a specific size are required.
+This is bad for transactional style processing, but great for reporting or when all values for a specific size are required.
 
 ##### 1.10.1.2.6. Graph
 
-Relationships between things are formally defined and stored along in the
-database itself with the data.
-They are not calculated each and every time you run a query.
-These are great for relationship driven data.
+Relationships between things are formally defined and stored along in the database itself with the data.
+They are not calculated each and every time you run a query. These are great for relationship driven data.
 
-Nodes are objects inside a graph database. They can have properties.
+Nodes are objects inside a graph database. They can have properties. Edges are relationships between the nodes. They have a direction.
 
-Edges are relationships between the nodes. They have a direction.
+Relationships themselves can also have attached data, so name value pairs. We might want to store the start date of any employment relationship.
 
-Relationships themselves can also have attached data, so name value pairs.
-We might want to store the start date of any employment relationship.
+Can store massive amounts of complex relationships between data or between nodes in a database.
 
-Can store massive amounts of complex relationships between data or between
-nodes in a database.
+### Acid vs Base
+
+
+
+
 
 ### 1.10.2. Databases on EC2
 
