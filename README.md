@@ -3083,15 +3083,15 @@ It is always a bad idea to do this.
 
 - Splitting an instance over different AZs
   - Adds reliability consideration between the AZs
-  - Adds a cost to move the data between AZs
+  - Adds a cost to transfer data between AZs
 
-#### 1.10.3.1. Reasons EC2 Database might make sense
+#### 1.10.3.1. Reasons running DB on EC2 might make sense
 
 - Need access to the OS of the Database.
   - You should question if a client requests this, it rarely is needed.
 - Advanced DB Option tuning (DBROOT)
   - AWS provides options to tune many of these parameters anyways.
-  - Can be a vendor that is asking for this.
+  - Could be the DBMS vendor asking for this.
 - DB or DB version that AWS doesn't provide.
 - You might need a specific version of an OS and DB that AWS doesn't provide.
 
@@ -3108,45 +3108,43 @@ It is always a bad idea to do this.
 ### 1.10.4. Relational Database Service (RDS)
 
 - Database-as-a-service (DBaaS)
-  - Not entirely true more of DatabaseServer-as-a-service.
+  - More like DatabaseServer-as-a-service.
   - Managed Database Instance for one or more databases.
 - No need to manage the HW or server itself.
 - Handles engines such as MySQL, MariaDB, PostgreSQL, Oracle, Microsoft SQL.
 
-Amazon Aurora. This is so different from normal RDS, it is a separate product.
+Also Amazon Aurora. This is so different from normal RDS, it is a separate product.
 
 #### 1.10.4.1. RDS Database Instance
 
-Runs one of a few types of database engines and can contain multiple
-user created databases. Create one when you provision the instance, but
-multiple ones can be created after.
+* Runs one of a few types of database engines and can contain multiple user created databases. Create one when you provision the instance, but multiple ones can be created after.
 
-When you create a database instance, the way you access it is using a database
-host-name, a CNAME, and this resolves to the database instance itself.
+* When you create a database instance, the way you access it is using a database host-name, a CNAME, and this resolves to the database instance itself.
 
-RDS uses standard database engines so you can access an RDS instance using the
-same tooling as if you were accessing a self-managed database.
+* RDS uses standard database engines so you can access an RDS instance using the same tooling as if you were accessing a self-managed database.
 
 The database can be optimized for:
 
-db.m5 general
-db.r5 memory
-db.t3 burst
+1. db.m5 general
+2. db.r5 memory
+3. db.t3 burst
 
 There is an associated size and AZ selected.
 
-When you provision an instance, you provision dedicated storage to that instance.
-This is EBS storage located in the same AZ.
+When you provision an instance, you provision dedicated storage to that instance. This is EBS storage located in the same AZ.
 RDS is vulnerable to failures in that AZ.
 
 The storage can be allocated with SSD or magnetic.
 
-io1 - lots of IOPS and consistent low latency
-gp2 - same burst pool architecture as it does on EC2, used by default
-magnetic - compatibility mostly for long term historic uses
+* io1 - lots of IOPS and consistent low latency
+* gp2 - same burst pool architecture as it does on EC2, used by default
+* magnetic - compatibility mostly for long term historic uses
 
-Billing is per instance and hourly rate for that compute. You are billed
-for storage allocated.
+Billing is per instance and hourly rate for that compute. You are billed for storage allocated (GB/mth, including IOPS if you use io1)
+
+#### Demo
+
+* To use RDS need to first create a subnet group, associate it with AZs and select the subnets of the VPC. This tells RDS which subnets to place things into.
 
 ### 1.10.5. RDS Multi AZ (High-Availability)
 
