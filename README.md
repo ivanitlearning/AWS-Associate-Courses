@@ -3149,17 +3149,11 @@ Billing is per instance and hourly rate for that compute. You are billed for sto
 ### 1.10.5. RDS Multi AZ (High-Availability)
 
 This is an option that you can enable on RDS instances.
-Secondary hardware is allocated inside another AZ. This is referred to as
-the standby replica or standby replica instance. The standby replica has
-its own storage in the same AZ as it's located.
+Secondary hardware is allocated inside another AZ. This is referred to as the standby replica or standby replica instance. The standby replica has its own storage in the same AZ as it's located.
 
-RDS enables synchronous replication from the primary instance to the
-standby replica.
+RDS enables synchronous replication from the primary instance to the standby replica.
 
-RDS Access ONLY via database CNAME. The CNAME will point at the primary
-instance. You cannot access the standby replica for any reason via RDS.
-
-The standby replica cannot be used for extra capacity.
+RDS Access ONLY via database CNAME. The CNAME will point at the primary instance. You cannot access the standby replica for any reason via RDS. The standby replica cannot be used for extra capacity.
 
 **Synchronous Replication** means:
 
@@ -3168,27 +3162,27 @@ The standby replica cannot be used for extra capacity.
 3. Same time as the write is happening, standby replication is happening.
 4. Standby replica commits writes.
 
-If any error occurs with the primary database, AWS detects this and will
-failover within 60 to 120 seconds to change to the new database.
+![](Pics/SynchronousReplication.png)
 
-This does not provide fault tolerance as there will be some impact during change.
+If any error occurs with the primary database, AWS detects this and will failover within 60 to 120 seconds to change to the new database. This provides HA but not fault tolerance as there will be some impact during change.
+
+Exam note: Synchronous replication mean multi-AZ.
 
 #### 1.10.5.1. RDS Exam PowerUp
 
 - Multi-AZ feature is not free tier, extra infrastructure for standby.
-  - Generally two times the price.
-- The standby replica cannot be accessed directly unless a fail occurs.
+  - Generally 2x price.
+- Standby replica cannot be accessed directly unless a fail occurs.
    - Can't be used for scaling. It's an availability improvement not performance one.
-- Failover is highly available, not fault tolerant.
+- Failover is highly available (60-120s), not fault tolerant.
 - Offers only high availability and minimizes disruptions associated with software updates, backups, and instance type changes not performance improvement or scalability. (Don't for exam questions that try to trick you into choosing options that say Multi-AZ can improve performance.)
-- Same region only (others AZ in the VPC).
-- Backups are taken from standby which removes performance impacts.
+- Same region only (other AZs in the same VPC).
+- Backups are taken from standby instance removes performance impacts.
 - Failover can happen for a number of reasons.
   - Full AZ outage
   - Primary RDS failure
   - Manual failover for testing
-  - If you change the type of a RDS instance, it will failover as part of
-  changing that type.
+  - If you change the type of a RDS instance, it will failover as part of changing that type.
 
 ### 1.10.6. RDS Backup and Restores
 
@@ -3204,78 +3198,77 @@ RTO - Recovery Time Objective
 - Time between the disaster recovery event and full recovery.
 - Influenced by process, staff, tech and documentation.
 
-RDS Backups
+![](Pics/RPOvsRTO.png)
 
-First snap is full copy of the data used on the RDS volume. From then on,
-the snapshots are incremental and only store the change in data.
+#### 1.10.6.1. RDS Backups
 
-When any snapshot occurs, there's a brief interruption to the flow of data
-between the compute resource and the storage. If you are using single AZ, this
-can impact your application. If you are using Multi-AZ, the snapshot occurs
-on the standby replica.
+* Automatic backups and manual snapshots
+* Backs up to AWS-managed S3 bucket (not visible to user)
+* Backups only from single AZ instance or standby instance ie. primary instance never used.
 
-**Manual snapshots don't expire**, you have to clean them yourself.
-Automatic Snapshots can be configured to make things easier.
+##### Manual snapshots
 
-In addition to automated backup, every 5 minutes database transaction logs are
-saved to S3. Transaction logs store the actual data which changes inside a
-database so the actual operations that are executed. This allows a database
-to be restored to a point in time often with 5 minute granularity.
+* First snap is full copy of the data used on the RDS volume (very slow). From then on, the snapshots are incremental and only store the change in data.
 
-Automatic cleanups can be anywhere from *0 to 35* days.
-This means you can restore to any point in that time frame.
-This will use both the snapshots and the translation logs.
+* During snapshot, brief interruption to the flow of data between the DB instance and the storage. Impacts performance on single AZ. If on Multi-AZ, the snapshot occurs on the standby replica.
 
-When you delete the database, they can be retained but they will expire
-based on their retention period.
+##### Automatic snapshots
 
-The only way to maintain backups is to create a final snapshot which will not
-expire automatically.
+* **Manual snapshots don't expire**, you have to clean them yourself, even after the RDS instance is deleted.
+* Automatic Snapshots can be configured to make things easier.
+  * Configure backup interval (and hence RPO)
 
-#### 1.10.6.1. RDS Backup Exam PowerUp
+* In addition to automated backup, every 5 minutes database transaction logs are saved to S3. Transaction logs store the actual data which changes inside a database. RPO is hence 5 min.
+  * After restore, 5 min interval transactions are replayed over the snapshot to bring it up to 5 min.
+* Automatic cleanups can be anywhere from *0 to 35* days. This means you can restore to any point in that time frame.
+  This will use both the snapshots and the translation logs.
 
-- When performing a restore, RDS creates a new RDS with a new endpoint address.
-- When restoring a manual snapshot, you are setting it to a single point
-in time. This influences the RPO value.
+* After RDS deleted, they can be retained but they will expire based on their retention period.
+
+* The only way to maintain backups is to create a final snapshot which will not expire automatically.
+
+#### 1.10.6.2. RDS Backup Exam PowerUp
+
+- When performing a restore, RDS creates a new RDS with a new endpoint address (need to repoint app to new RDS instance)
+- When restoring a manual snapshot, you are setting it to a single point in time. This influences the RPO value.
 - Automated backups are different, they allow any 5 minute point in time.
-- Backups are restored and transaction logs are replayed to bring DB to
-desired point in time.
+- Backups are restored and transaction logs are replayed to bring DB to desired point in time.
 - Restores aren't fast, think about RTO.
 
 ### 1.10.7. RDS Read-Replicas
 
 Kept in sync using **asynchronous replication**
 
-It is written fully to the primary and standby instance first.
-Once its stored on disk, it is then pushed to the replica.
-This means there could be a small lag.
-These can be created in the same region or a different region.
-This is known as **cross region replication**. AWS handles all of the
-encryption, configuration, and networking without intervention.
+* Written fully to the primary and standby instance first.
+* Once its stored on disk, it is then pushed to the replica.
+* This means there could be a small lag
+* These can be created in the same region or a different region.
+* This is known as **cross region replication**. AWS handles all of the encryption, configuration, and networking without intervention.
+* Exam note: Asynchronous RDS usually implies RR.
 
 #### 1.10.7.1. Why do these matter
 
-(READ Replicas) Performance Improvements
+**(READ Replicas) Performance Improvements**
 
-- 5 direct read-replicas per DB instance.
-- Each of these provides an additional instance of read performance.
-- This allows you to scale out read operations for an instance.
-- Read-replicas can chain, but lag will become a problem.
+- Up to 5 direct read-replicas per DB instance.
+- Each provides an additional instance of read performance.
+  - This allows you to scale out read operations for an instance.
+- Read-replicas can chain (RR of RR), but will lag.
 - Can provide global performance improvements.
 - Provides global resilience by using cross region replication.
-- They don't improve RTO
+- They don't improve RTO (until promoted)
 
-(Read Replicas) Availability Improvements
+**(Read Replicas) Availability Improvements**
 
 - Snapshots & backups improve recovery-point-objective (time difference between the last backup and the occurrence of a failure).
 - Provide near 0 RPO; RTOs still remain a problem.
-- If the primary instance fails, you can promote a read-replica (RR) quickly to take over thus resulting in a low RTO (the time between a failure and full recovery).
+- If the primary instance fails, can promote a read-replica (RR) quickly to take over thus resulting in a low RTO (the time between a failure and full recovery).
 - Once it is promoted, it allows for read and write.
-- Only works for failures.
+- Only works for failures, not data corruption.
   - Read-replicas will replicate data corruption.
   - In this case you must default back to snapshots and backups.
 - Promotion cannot be reversed.
-- RRs are for reads only until promoted.
+- RRs are read only until promoted.
 - Offers global availability improvements and global resilience.
 
 ### 1.10.8. Enhanced Monitoring
