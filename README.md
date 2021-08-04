@@ -3164,7 +3164,7 @@ RDS Access ONLY via database CNAME. The CNAME will point at the primary instance
 
 ![](Pics/SynchronousReplication.png)
 
-If any error occurs with the primary database, AWS detects this and will failover within 60 to 120 seconds to change to the new database. This provides HA but not fault tolerance as there will be some impact during change.
+If any error occurs with the primary database, AWS detects this and will failover within 60 to 120 seconds to change to the new database. This provides HA but not fault tolerance as there will be some impact during change. Note that the DB instance doesn't switch back to AZ-A afterwards.
 
 Exam note: Synchronous replication mean multi-AZ.
 
@@ -3229,7 +3229,7 @@ RTO - Recovery Time Objective
 
 #### 1.10.6.2. RDS Backup Exam PowerUp
 
-- When performing a restore, RDS creates a new RDS with a new endpoint address (need to repoint app to new RDS instance)
+- When performing a restore, RDS creates a new RDS with a new endpoint address (need to repoint app to new RDS instance). It doesn't replace the old DB instance.
 - When restoring a manual snapshot, you are setting it to a single point in time. This influences the RPO value.
 - Automated backups are different, they allow any 5 minute point in time.
 - Backups are restored and transaction logs are replayed to bring DB to desired point in time.
@@ -3271,79 +3271,91 @@ Kept in sync using **asynchronous replication**
 - RRs are read only until promoted.
 - Offers global availability improvements and global resilience.
 
-### 1.10.8. Enhanced Monitoring
+### 1.10.8. RDS Data Security
+
+#### 1.10.8.1. RDS Encryption
+
+* SSL/TLS in transit can be made mandatory between client and RDS instance.
+* Supports EBS volume encryption with KMS, handled by EBS host.
+  * Encryption transparent to RDS, it just writes in plain text.
+* Use either your own CMK or AWS CMK to generate DEKs (data encryption keys).
+* Storage, Logs, Snapshots, Replicas are encrypted
+* Encryption **can't** be removed once added.
+* RDS MS-SQL and Oracle supports TDE (transparent data encryption) which occurs within the DB engine itself (not by host like EBS encryption)
+  * RDS Oracle supports integration with CloudHSM (managed by user, completely without AWS involved).
+
+![](Pics/RDS-Encryption.png)
+
+#### 1.10.8.2. RDS IAM Authentication
+
+* Can configure RDS for IAM user authentication
+* Attach policy to Users or Roles that IAM identity can be mapped to local RDS user.
+* Generates a 15 min token that can be used to authenticate to DBMS.
+* For authentication only, not authorisation.
+
+![](Pics/IAM-Authentication.png)
+
+### 1.10.9. Enhanced Monitoring
 
 CloudWatch gathers metrics about CPU utilization from the hypervisor for a DB instance, and Enhanced Monitoring gathers its metrics from an agent on the instance. As a result, you might find differences between the measurements, because the hypervisor layer performs a small amount of work. The differences can be greater if your DB instances use smaller instance classes, because then there are likely more virtual machines (VMs) that are managed by the hypervisor layer on a single physical instance. 
 
 > Enhanced Monitoring metrics are useful when you want to see how different processes or threads on a DB instance use the CPU.
 
-### 1.10.9. Amazon Aurora
+### 1.10.10. Amazon Aurora
 
 Aurora architecture is VERY different from RDS.
 
 It uses a **cluster** which is:
 
 - A single primary instance and 0 or more replicas.
+- Spread across a few AZs.
 - The replicas within Aurora can be used for reads during normal operation.
   - Provides benefits of RDS multi-AZ and read-replicas.
 - Aurora doesn't use local storage for the compute instances.
-  - An Aurora cluster has a shared cluster volume.
+  - An Aurora cluster has a shared cluster volume, available to all instances in cluster.
   - Provides faster provisioning.
   - Improved availability.
   - Better performance.
 
 Aurora cluster functions across a number of availability zones.
 
-There is a primary instance and a number of replicas.
-The read applications from applications can use the replicas.
+There is a primary instance and a number of replicas. The read applications from applications can use the replicas.
 
-There is a shared storage of **max 64 TiB** across all replicas.
-This uses 6 copies across AZs.
+There is a shared storage of **max 64 TiB** across all replicas. This uses 6 copies across AZs.
 
-All instances have access to these storage nodes. This replication
-happens at the storage level. No extra resources are consumed during
-replication.
+![](Pics/Aurora-1.png)
 
-By default the primary instance is the only one who can write. The replicas
-will have read access.
+All instances have access to these storage nodes. This replication happens at the storage level. No extra resources are consumed during replication.
 
-Aurora automatically detect hardware failures on the shared storage. If there
-is a failure, it immediately repairs that area of disk and
-recreates that data with no corruption.
+By default the primary instance is the only one who can write. The replicas will have read access.
 
-With Aurora you can have up to 15 replicas and any of them
-can be a failover target. The failover operation will be quicker because
-it doesn't have to make any storage modifications.
+Automatically detect hardware failures and repairs that area of disk with replicas and recreates that data with no corruption.
+
+With Aurora you can have **up to 15 replicas** and any of them can be a failover target. The failover operation will be quicker because it doesn't have to make any storage modifications.
 
 - Cluster shared volume is based on SSD storage by default.
-  - Provides so high IOPS and low latency.
-  - No way to select magnetic storage.
-- Aurora cluster does not specify the amount of storage needed.
-  - This is based on what is consumed.
-- High water mark billing or billed for the most used.
+  - Provides high IOPS and low latency.
+  - Can't select magnetic storage.
+- Aurora cluster does not specify the amount of storage needed, billing based on high water mark.
+- High water mark billing (highest storage ever used in a cluster)
   - Storage which is freed up can be re-used.
-  - If you reduce a lot of storage, you will need to create a brand new
-  cluster and migrate data from the old cluster to the new cluster.
-- Storage is for the cluster and not the instances which means Replicas can be
-added and removed without requiring storage, provisioning, or removal.
+  - If you reduce a lot of storage, you will need to create a brand new cluster and migrate data from the old cluster to the new cluster to lower costs.
+- Storage is for the cluster and not the instances which means Replicas can be added and removed without requiring storage, provisioning, or removal.
 
-#### 1.10.9.1. Aurora Endpoints
+#### 1.10.10.1. Aurora Endpoints
 
-Aurora clusters like RDS use endpoints, so these are DNS addresses which
-are used to connect to the cluster. Unlike RDS, Aurora clusters have
-multiple endpoints that are available for an application.
+Aurora clusters like RDS use endpoints, so these are DNS addresses which are used to connect to the cluster. Unlike RDS, Aurora clusters have multiple endpoints that are available for an application.
 
-Minimum endpoints
+Two endpoints at a minimum
 
 - **Cluster endpoint** always points at the primary instance.
   - This is used for read and write applications.
 - **Reader endpoint**
-  - Will point at primary instance if that is all there is.
+  - Will point at primary instance if no replicas.
   - Will load balance across all available replicas for read operations.
-  - Additional replicas which are used for reads will be load balanced
-  automatically.
+  - Automatically updates to load balance for read after every replica added.
 
-#### 1.10.9.2. Costs
+#### 1.10.10.2. Costs
 
 - No free-tier option
 - Aurora doesn't support micro instances
@@ -3354,75 +3366,61 @@ Minimum endpoints
 - 100% DB size in backups are included for free.
   - 100 GB cluster will have 100 GB of storage for backups.
 
-#### 1.10.9.3. Aurora Restore, Clone and Backtrack
+#### 1.10.10.3. Aurora Restore, Clone and Backtrack
 
-Backups in Aurora work in the same way as RDS.
-Restores create a brand new cluster.
+* Backups in Aurora work in the same way as RDS.
+* Restores create a brand new cluster.
+* **Backtrack** must be enabled on a per cluster basis. This allows you to roll back your data base to a previous point in time. This helps for data corruption.
+* You can adjust the window backtrack will work for. New feature.
 
-Backtrack must be enabled on a per cluster basis. This allows you to roll back
-your data base to a previous point in time. This helps for data corruption.
+* Fast clones make a new database much faster than copying all the data. It references the original storage and only stores the differences between the two. It uses a tiny amount of storage and only stores data that's changed in the clone or changed in the original after you make the clone.
 
-You can adjust the window backtrack will work for.
+### 1.10.11. Aurora Serverless
 
-Fast clones make a new database much faster than copying all the data.
-It references the original storage and only stores the differences between
-the two. It uses a tiny amount of storage and only stores data that's changed
-in the clone or changed in the original after you make the clone.
+* Provides a version of Aurora database product without managing the resources. You still create a cluster, but it uses ACUs or Aurora Capacity Units. Similar to Fargate for ECS.
 
-### 1.10.10. Aurora Serverless
+* For a cluster, you can set a min and max ACU based on the load and can even go down to 0 and paused. In this case you would only be billed for storage consumed.
+  * In demo you can see the capacity drop to 0 after the Wordpress instance is not visited.
 
-Provides a version of Aurora database product without managing the resources.
-You still create a cluster, but it uses ACUs or Aurora Capacity Units.
+* Billing is based on resources used on a per-second basis.
 
-For a cluster, you can set a min and max ACU based on the load and can even
-go down to 0 to be paused. In this case you would only be billed for storage
-consumed.
+* Same resilience as Aurora (6 copies across AZs).
 
-Billing is based on resources used on a per-second basis.
+* ACUs are stateless and shared across many AWS customers without local storage. They can be allocated to your Aurora Serverless cluster rapidly when required. Once ACUs are allocated to a cluster, they have access to cluster storage in the same way as an Aurora Provisioned cluster.
 
-Same resilience as Aurora (6 copies across AZs).
+* When an application interacts with the DB they are actually communicating with the proxy fleet. The proxy fleet brokers an application with the ACU and ensures you can scale in and out without worrying about usage. This is managed by AWS on your behalf.
+* Only need to pick min and max values for ACUs.
 
-ACUs are stateless and shared across many AWS customers and have no local
-storage. They can be allocated to your Aurora Serverless cluster rapidly
-when required. Once ACUs are allocated to a cluster, they have access to cluster
-storage in the same way as an Aurora Provisioned cluster.
-
-There is a shared proxy fleet. When a customer interacts with the data
-they are actually communicating with the proxy fleet. The proxy fleet
-brokers an application with the ACU and ensures you can scale in and out
-without worrying about usage. This is managed by AWS on your behalf.
-
-#### 1.10.10.1. Aurora Serverless - Use Cases
+#### 1.10.11.1. Aurora Serverless - Use Cases
 
 - Infrequently used applications.
-  - Low volume blog site.
+  - Eg. low volume blog site.
   - You only pay for resources as you consume them on a per second basis.
 - New applications with unpredictable workloads.
-- Great for variable workloads such as sales cycles.
-It can scale in and out based on demand
+- Great for variable workloads such as sales cycles. It can scale in and out based on demand
 - Good for development and test databases, can scale back when not needed.
 - Great for multi-tenant applications.
   - Billing a user a set dollar amount per month per license.
   - If your incoming load is directly tied to more revenue this makes sense.
 
-### 1.10.11. Aurora Global Database
+### 1.10.12. Aurora Global Database
 
-Introduces the idea of secondary regions with up to 16 read only replicas.
-Replication from primary region to secondary regions happens at the storage
-layer and typically occurs within one second.
+Introduces the idea of secondary regions with up to 16 read only replicas. Replication from primary region to secondary regions happens at the storage layer and typically occurs within one second.
 
 - Great for *cross region disaster recovery and business continuity*.
 - Global read scaling
   - Low latency performance improvements for international customers.
 - The application can perform read operations against the read replicas.
-- There is ~1s or less replication between regions.
-- It is one way replication.
+- Replication takes ~1s to happen between regions.
+- It is one way replication; primary to secondary only.
 - No additional CPU usage is needed, it happens on the storage layer.
 - Secondary regions can have 16 replicas.
   - All can be promoted to Read or Write in a DR situation.
 - Maximum of 5 secondary regions.
 
-### 1.10.12. Aurora Multi-Master Writes
+![](Pics/AuroraGlobalDB.png)
+
+### 1.10.13. Aurora Multi-Master Writes
 
 Allows an aurora cluster to have multiple instances capable of reads and writes.
 
