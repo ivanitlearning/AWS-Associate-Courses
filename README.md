@@ -3491,30 +3491,32 @@ EFS moves the instances closer to being stateless.
 
 #### 1.11.1.1. Elastic File System Explained
 
-EFS runs inside a VPC. Inside EFS you create file systems and these use POSIX
-permissions. EFS is made available inside a VPC via mount targets.
-Mount targets have IP addresses taken from the IP address range of the
-subnet they're inside. For HA, you need to make sure that you put mount
-targets in each AZ the system runs in.
+* EFS runs inside a VPC. Inside EFS you create file systems and these use POSIX permissions. EFS is made available inside a VPC via mount targets.
+* Mount targets have IP addresses taken from the IP address range of the subnet they're inside. For HA, you need to make sure that you put mount targets in each AZ the system runs in.
 
-You can use hybrid networking to connect to the same mount targets.
+* You can use hybrid networking to connect to the same mount targets.
+
+![](Pics/EFS.png)
 
 #### 1.11.1.2. EFS Exam PowerUp
 
-- EFS is Linux Only
+- EFS Linux Only (as NFS)
 - Two performance modes:
   - **General purpose** is good for _latency sensitive_ use cases.
     - General purpose should be default for 99.9% of uses.
-  - **Max I/O performance** mode can scale to higher levels of aggregate t-put
-  and IOPS but it does have increased latencies.
+  - **Max I/O performance** mode can scale to higher levels of aggregate throughput and IOPS but it does have increased latencies.
 - Two throughput modes:
-  - Bursting works like GP2 volumes inside EBS with a burst pool.
-  The more data you store in the FS, the better performance you get.
+  - Bursting works like GP2 volumes inside EBS with a burst pool. The more data you store in the FS, the better performance you get.
   - Provisioned t-put modes can specify t-put requirements separately from size.
 - Two storage classes available:
   - Standard
   - Infrequent access
   - Can use lifecycle policies to move data between classes.
+
+#### 1.11.1.3 Notes from Demo
+
+* Best practice: Create mount target in every AZ 
+* Mount EFS in /etc/fstab by going to EFS console and copying the ID there.
 
 ---
 
