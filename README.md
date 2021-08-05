@@ -3089,7 +3089,7 @@ It is always a bad idea to do this.
 
 - Need access to the OS of the Database.
   - You should question if a client requests this, it rarely is needed.
-- Advanced DB Option tuning (DBROOT)
+- Advanced DB Option tuning (DBROOT) via OS shell.
   - AWS provides options to tune many of these parameters anyways.
   - Could be the DBMS vendor asking for this.
 - DB or DB version that AWS doesn't provide.
@@ -3186,14 +3186,14 @@ Exam note: Synchronous replication mean multi-AZ.
 
 ### 1.10.6. RDS Backup and Restores
 
-RPO - Recovery Point Objective
+**RPO - Recovery Point Objective**
 
 - Time between the last backup and when the failure occurred.
 - Amount of maximum data loss.
 - Influences technical solution and cost.
 - Business usually provides an RPO value.
 
-RTO - Recovery Time Objective
+**RTO - Recovery Time Objective**
 
 - Time between the disaster recovery event and full recovery.
 - Influenced by process, staff, tech and documentation.
@@ -3231,7 +3231,7 @@ RTO - Recovery Time Objective
 
 - When performing a restore, RDS creates a new RDS with a new endpoint address (need to repoint app to new RDS instance). It doesn't replace the old DB instance.
 - When restoring a manual snapshot, you are setting it to a single point in time. This influences the RPO value.
-- Automated backups are different, they allow any 5 minute point in time.
+- Automated backups are different, they allow restoration to any 5 min period ago.
 - Backups are restored and transaction logs are replayed to bring DB to desired point in time.
 - Restores aren't fast, think about RTO.
 
@@ -3244,7 +3244,7 @@ Kept in sync using **asynchronous replication**
 * This means there could be a small lag
 * These can be created in the same region or a different region.
 * This is known as **cross region replication**. AWS handles all of the encryption, configuration, and networking without intervention.
-* Exam note: Asynchronous RDS usually implies RR.
+* **Exam note:** Asynchronous RDS usually implies RR.
 
 #### 1.10.7.1. Why do these matter
 
@@ -3426,53 +3426,46 @@ Allows an aurora cluster to have multiple instances capable of reads and writes.
 
 Single-master Mode
 
-- one R/W and zero or more read only replicas
+- 1 R/W and 0 or more read only replicas
 - Cluster endpoint is normally used to write
 - Read endpoint is used for load balancing
 
-Aurora Multi-master has no endpoint or load balancing. An application
-can connect with one or both of the instances inside a multi-master
-cluster.
+Aurora Multi-master has no endpoint or load balancing. An application can connect with one or all of the instances inside a multi-master cluster.
 
-When one of the R/W nodes receives a write request from the application, it
-immediately proposes that data be committed to all of the storage notes in that
-cluster. At this point, each node that makes up a cluster either confirms
-or rejects the proposed change. It will reject if this conflicts with something
-already in flight.
+#### Write operation
 
-The writing instance is looking for a bunch of nodes to agree. If the group
-rejects it, it cancels the write in error. If it commits, it will replicate
-on all storage nodes in the cluster.
+1. R/W node receives write request from app.
+2. Node proposes data be committed to all storage nodes in cluster
+3. Quorum of nodes to agree, based on no-conflict principle with other nodes also possibly writing.
+   1. If it rejects write request, it returns error to application.
+4. If succeeds, the write is replicated to every storage node in cluster.
+5. It is then replicated to all the instance nodes in the cluster to update their in-memory cache.
 
-This also ensures storage is updated on in-memory cache's of other nodes.
+If a writer goes down in a multi-master cluster, the application will shift all future load over to a new writer with little if any disruption. App also needs to load-balance across all write instances.
 
-If a writer goes down in a multi-master cluster, the application will shift
-all future load over to a new writer with little if any disruption.
+### 1.10.14. Database Migration Service (DMS)
 
-### 1.10.13. Database Migration Service (DMS)
+* Starts with a replication instance which runs on top of an EC2 instance.
+* This replication instance runs one or more replication tasks.
+* This is where the configuration is defined for the migration of databases.
+* Need to define the source and destination endpoints (source and destination DBs)
+* One of these end points **must** be on AWS.
 
-A managed database migration service.
-Starts with a replication instance which runs on top of an EC2 instance.
-This replication instance runs one or more replication tasks.
-This is where the configuration is defined for the migration of databases.
-This runs using a replication instance.
+#### 1.10.14.1 DMS types
 
-Need to define the source and destination endpoints.
-These point at the physical source and target databases.
-One of these end points must be on AWS.
+* **Full load migration** is a one off process which transfers everything at once. This requires the database to be down during this process. This might
+  take several days.
 
-Full load migration is a one off process which transfers everything at once.
-This requires the database to be down during this process. This might
-take several days.
+* **Full Load + change data capture (CDC)** allows for a full load transfer to occur and it monitors any changes that happens during this time. Any of the captured changes can be applied to the target.
 
-Instead Full Load + CDC allows for a full load transfer to occur and it
-monitors any changes that happens during this time. Any of the captured
-changes can be applied to the target.
-
-CDC only migration is good if you have a vendor solution that works quickly
-and only changes need to be captured.
+* **CDC only** migration is good if you have a vendor solution that migrates initial full data migration while DMS handles subsequent changes.
 
 Schema Conversion Tool or SCT can perform conversions between database types.
+
+#### 1.10.14.2 Exam notes
+
+* If SCT is mentioned, then it likely involves DMS.
+* If one endpoint is inside AWS, default to DMS especially if little or no downtime is required.
 
 ---
 
