@@ -3524,11 +3524,9 @@ EFS moves the instances closer to being stateless.
 
 ### 1.12.1. Load Balancing Fundamentals
 
-Using one server is risky because that server can have performance issues
-or be completely unavailable, thus bringing down an application.
+Using one server is risky because that server can have performance issues or be completely unavailable, thus bringing down an application.
 
-A better solution is to use multiple servers.
-Without load balancing, this could bring additional problems.
+A better solution is to use multiple servers. Without load balancing, this could bring additional problems.
 
 - The servers can end up with uneven load.
   - Some requests take more CPU than others.
@@ -3539,47 +3537,40 @@ Without load balancing, this could bring additional problems.
 
 The user connects to a load balancer that is set to listens on port 80 and 443.
 
-Within AWS, the configuration for which ports the load balancer listens on is
-called a **listener**.
+Within AWS, the configuration for which ports the load balancer listens on is called a **listener**.
 
 The user is connected to the load balancer and not the actual server.
 
-Behind the load balancer, there is an application server.
-At a high level when the user connects to the load balancer, it distributes
-that load to servers on the application server. The users client thinks it is
-talking directly to the application server.
+Behind the load balancer, there is an application server. At a high level when the user connects to the load balancer, it distributes
+that load to servers on the application server. The users client thinks it is talking directly to the application server.
 
-LB will run health checks against all of the servers. If one of the servers
-does fail, the load balancer will realize this and stop sending connections
-to that server. From the users client, the application always works.
+LB will run health checks against all of the servers. If one of the servers does fail, the load balancer will realize this and stop sending connections to that server. From the users client, the application always works.
 
-As long as 1+ servers are operational, the LB is operational.
-Clients shouldn't see errors that occur with one server.
+As long as 1+ servers are operational, the LB is operational. Clients shouldn't see errors that occur with one server.
 
 #### 1.12.1.2. LB Exam PowerUp
 
-- Clients connect to the **listener** of the load balancer.
-- The load balancer connects to one or more **targets** or servers.
+- Clients connect to the load balancer.
+- The load balancer connects to one or more targets or servers.
 - Two connections in play.
   - Listener connection: one connection between the client and listener.
   - Backend connection: one connection between load balancer and target.
-- The LB abstracts the client away from individual servers.
+- LB abstracts the client away from individual servers.
 - Used for high availability, fault tolerance, and scaling
 
 ### 1.12.2. Application Load Balancer (ALB)
 
-ALB is a layer 7 or Application Layer Load Balancer. It is capable of inspecting data that passes through it. It can understand the application layer `http` and `https` and
-take actions based on things in those protocols like paths, headers, and hosts.
+ALB is a layer 7 or Application Layer Load Balancer. It is capable of inspecting data that passes through it. It can understand the application layer `http` and `https` and take actions based on things in those protocols like paths, headers, and hosts.
 
-![OSI Model](/Learning-Aids/14-HA-and-Scaling/OSINetworkModel.png)
+![OSI Model](Learning-Aids/14-HA-and-Scaling/OSINetworkModel.png)
 
-All AWS load balancers are scalable and highly available. Capacity that you have as part of an ALB increases automatically based on the load which passes through that ALB. This is made of multiple ALB nodes each running in different AZs. This makes them scalable and highly available.
+* All AWS load balancers are scalable and highly available. Capacity that you have as part of an ALB increases automatically based on the load which passes through that ALB. 
 
-Load balancing can be internet facing or internal. The difference is whether the nodes of the LB, the things which run in the AZs have public IP addresses or not.
+* Its made up of multiple ALB nodes each running in different AZs.
 
-Internet facing LB is designed to be connected to, from public internet based clients, and load balance them across targets.
-
-Internal load balancer is not accessible from the internet and is used to load balance inside a VPC only.
+* Load balancing can be internet facing or internal. Nodes of the LB, the things which run in the AZs may have public or private IP addresses.
+  * **Internet facing LB** is designed to be connected to, from public internet based clients, and load balance them across targets.
+  * **Internal load balancer** is not accessible from the internet and is used to load balance inside a VPC only.
 
 Load balancer sits between a client and one or more servers. Front end or listening side, accepts connections from a client. Back end is used for distribution to the targets.
 
@@ -3590,51 +3581,41 @@ LB billed based on two things:
 
 #### 1.12.2.1. Cross zone load balancing
 
-Each node that is part of the load balancer is able to distribute load
-across all instances across all AZ that are registered with that LB,
-even if its not in the same AZ. It is the reason we can achieve a balanced
-distribution of connections behind a load balancer.
+* Each node that is part of the load balancer is able to distribute load across all instances across all AZ that are registered with that LB, even if its not in the same AZ. It is the reason we can achieve a balanced distribution of connections behind a load balancer.
 
-It can also provide health checks on the target servers.
-If all instances are shown as healthy, it can distribute evenly.
+* Can also provide health checks on the target servers. If all instances are shown as healthy, it can distribute evenly.
 
-ALB can support a wide array of targets. Targets are grouped within target
-groups and an individual target can be a member of multiple groups. It's the
-groups which ALBs distribute connections to. You could create rules
-to direct traffic to different Target Groups based on their DNS.
+* ALB can support a wide array of targets. Targets are grouped within target groups and an individual target can be a member of multiple groups. It's the groups which ALBs distribute connections to. You could create rules to direct traffic to different Target Groups based on their DNS.
+
+![](Pics/CrossZoneLoadBalancing.png)
 
 #### 1.12.2.2. ALB Exam PowerUp
 
-- Targets are one single compute resource that connections are directed
-towards. Targets represents Lambda functions, EC2 instances, ECS containers.
+- Targets are one single compute resource that connections are directed towards. Targets represents Lambda functions, EC2 instances, ECS containers.
 - Target groups are groups of targets which are addressed using rules.
 - Rules are:
   - path-based `/cat` or `/dog`
   - host-based if you want to use different DNS names.
-- Support EC2, EKS, Lambda, HTTPS, HTTP/2 and websockets.
+- Support EC2, ECS, EKS (k8s), Lambda, HTTPS, HTTP/2 and websockets.
 - ALB can use Server Name Indication (SNI)[^1] for multiple SSL certs attached to that LB.
-  - LB can direct individual domain names using SSL certs at different target
-  groups.
-- AWS does not suggest using Classic Load Balancer (CLB), these are legacy.
+  - LB can direct individual domain names using SSL certs at different target groups.
+- AWS does not suggest using Classic Load Balancer (CLB), these are legacy. All achievable with ALB.
   - This can only use one SSL certificate.
 
 ### 1.12.3. Launch Configuration and Templates
 
-They are documents which allow you to define the configuration of an EC2 instance in advance.
+* These allow you to define the configuration of an EC2 instance in advance.
+  * AMIs to use; Instance Type; Storate and Key Pairs.
+  * Networking and Security Groups
+  * Userdata & IAM Role
 
-They allow you to configure:
+* Anything you usually define at the point of launching an instance can be selected with a Launch Configuration (LC) or Launch Template (LT).
 
-- AMIs to use; Instance Type; Storate and Key Pairs.
-- Networking and Security Groups
-- Userdata & IAM Role
+* LTs are newer and provide more features than LCs such as T2/T3 unlimited, placement groups, capacity reservations, elastic graphics, and versioning.
 
-Anything you usually define at the point of launching an instance can be selected with a Launch Configuration (LC) or Launch Template (LT).
+* Both of these are not editable. You define them once and that configuration is locked. If you need to adjust a configuration, you must make a new one and launch it.
 
-LTs are newer and provide more features than LCs such as T2/T3 unlimited, placement groups, capacity reservations, elastic graphics, and versioning.
-
-Both of these are not editable. You define them once and that configuration is locked. If you need to adjust a configuration, you must make a new one and launch it.
-
-LTs can be used to save time when provisioning EC2 instances from the console UI / CLI.
+* LTs can be used to save time when provisioning EC2 instances from the console UI / CLI.
 
 ### 1.12.4. Autoscaling Groups
 
@@ -3646,10 +3627,9 @@ LTs can be used to save time when provisioning EC2 instances from the console UI
   - desired capacity
   - maximum size
 
-Provision or terminate instances to keep at the desired level
-Scaling Policies can trigger this based on metrics.
+Provision or terminate instances to keep at the desired level. Scaling Policies can trigger this based on metrics.
 
-Autoscaling Groups will distribute EC2 instances to try and keep the AZs equal.
+Autoscaling Groups will distribute EC2 instances to try and keep the number of instances in each AZ equal.
 
 #### 1.12.4.1. Scaling Policies
 
@@ -3659,28 +3639,22 @@ There are three types of scaling policies:
 1. Manual Scaling - manually adjust the desired capacity
 2. Scheduled Scaling - useful for known periods of high or low usage. They are time based adjustments e.g. Sales Periods.
 3. Dynamic Scaling:
+	- Simple: If CPU is above 50%, add one to capacity
+	- Stepped: If CPU usage is above 50%, add one, if above 80% add three
+	- Target: Desired aggregate CPU = 40%, ASG will achieve this
 
-- Simple: If CPU is above 50%, add one to capacity
-- Stepped: If CPU usage is above 50%, add one, if above 80% add three
-- Target: Desired aggregate CPU = 40%, ASG will achieve this
+**Cooldown Period** controls how long to wait at the end of a scaling action before scaling again. This handles the minimum billable duration for an EC2 instance. Default 300 seconds.
 
-**Cooldown Period** is how long to wait at the end of a scaling action before
-scaling again. There is a minimum billable duration for an EC2 instance.
-Currently this is 300 seconds.
-
-Self healing occurs when an instance has failed and AWS provisions a new
-instance in its place. This will fix most problems that are isolated to one
-instance.
+Self healing occurs when an instance has failed and AWS provisions a new instance in its place. This will fix most problems that are isolated to one instance.
 
 AGS can use the load balancer health checks rather than EC2.
-ALB status checks can be much richer than EC2 checks because they can monitor
-the status of HTTP and HTTPS requests. This makes them more application aware.
+ALB status checks can be much richer than EC2 checks because they can monitor the status of HTTP and HTTPS requests. This makes them more application aware.
 
 - Autoscaling Groups are free, only billed for the resources deployed.
-- Always use cool downs to avoid rapid scaling.
+- Always use cool downs to avoid rapid scaling (min EC2 instance billable period)
 - Think about implementing more and smaller instances to allow granularity.
 - Generally, for anything client-facing you should always use Auto Scaling Groups (ASG) with Application Load Balancers (ALB) with autoscaling because they allow you to provide elasticity by abstracting the user away from individual servers. Since, the customers will be connecting through an ALB, they don't have any visibility of individual servers.
-- ASG defines WHEN and WHERE; Launch Templates defines WHAT.
+- ASG defines WHEN (under what circumstances) and WHERE (VPCs, SG); Launch Templates defines WHAT.
 
 ### 1.12.5. Network Load Balancer (NLB)
 
