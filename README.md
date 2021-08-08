@@ -3611,7 +3611,7 @@ LB billed based on two things:
 
 * Anything you usually define at the point of launching an instance can be selected with a Launch Configuration (LC) or Launch Template (LT).
 
-* LTs are newer and provide more features than LCs such as T2/T3 unlimited, placement groups, capacity reservations, elastic graphics, and versioning.
+* LTs are newer and provide more features than LCs such as T2/T3 unlimited, placement groups, capacity reservations, elastic graphics, and *versioning*.
 
 * Both of these are not editable. You define them once and that configuration is locked. If you need to adjust a configuration, you must make a new one and launch it.
 
@@ -3661,99 +3661,61 @@ ALB status checks can be much richer than EC2 checks because they can monitor th
 Part of AWS Version 2 series of load balancers.
 
 1. NLBs are Layer 4, only understand TCP and UDP.
-
 2. Can't interpret HTTP or HTTPs, but this makes it much faster in latency.
 [**EXAM HINT]** => If you see anything about latency and HTTP and HTTPS are not involved, this should default to a NLB.
-
-3. Rapid Scaling: There is nothing stopping NLB from load balancing on HTTP just by routing data. They would do this really fast and can deliver millions of requests per second.
-
-4. Only member of the load balancing family that can be provided a static IP.
-There is 1 interface per AZ. Can also use Elastic IPs (whitelisting on firewalls) and should be used for this purpose.
-
+3. Rapid Scaling: There is nothing stopping NLB from load balancing on HTTP just by routing data. They would do this really fast and can deliver millions of requests per second. Latency: 100ms vs 400ms ALB
+4. Only member of the load balancing family on AWS that can be provided a static IP. There is 1 interface per AZ. 
+**Exam hint:** Can also use Elastic IPs (**whitelisting** on firewalls) and should be used for this purpose.
 5. Can perform SSL pass through.
-
-6. NLB can load balance non-HTTP/S applications, doesn't care about anything
-above TCP/UDP. This means it can handle load balancing for FTP or things
-that aren't HTTP or HTTPS.
+6. NLB can load balance non-HTTP/S applications, doesn't care about anything above TCP/UDP. This means it can handle load balancing for FTP or things that aren't HTTP or HTTPS.
 
 ### 1.12.6. SSL Offload and Session Stickiness
 
+![](Pics/SSLOffload.png)
+
 #### 1.12.6.1. Bridging - Default mode
 
-One or more clients makes one or more connections to a load balancer.
-The load balancer is configured so its **listener** uses HTTPS, SSL connections
-occur between the client and the load balancer.
+* One or more clients makes one or more connections to a load balancer.
+  The load balancer is configured so its **listener** uses HTTPS, SSL connections occur between the client and the load balancer.
 
-The load balancer then needs an SSL certificate that matches the domain name
-that the application uses. AWS has access to this certificate.
-If you need to be careful of where your certificates are stored, you may
-have a problem with this system.
+* LB needs an SSL certificate that matches the domain name that the application uses. AWS has access to this certificate. If you need to be careful of where your certificates are stored, you may have a problem with this system.
 
-ELB initiates a new SSL connection to backend instances with a removed
-HTTPS certificate. This can take actions based on the content of the HTTP.
+* ELB initiates a new SSL connection to backend instances with a removed HTTPS certificate. This can take actions based on the content of the HTTP.
 
-The application local balancer requires a SSL certificate because it needs
-to decrypt any data that's being encrypted by the client. Once decrypted, it
-will interpret it then create new encrypted sessions between it and the back
-end EC2 instances. The EC2 instance will need matching SSL certificates.
+* The application local balancer requires a SSL certificate because it needs to decrypt any data that's being encrypted by the client. Once decrypted, it will interpret it then create new encrypted sessions between it and the back end EC2 instances. The EC2 instance will need matching SSL certificates.
 
-Needs the compute for the cryptographic operations. Every EC2 instance must
-perform these cryptographic operations. This overhead can be significant.
+* Every EC2 instance must perform these cryptographic operations. This overhead can be significant on EC2.
 
-The main benefit is the elastic load balancer gets to see the unencrypted
-HTTP and can take actions based on what's contained in this plain text
-protocol.
-
-![SSL Offload](Learning-Aids/14-HA-and-Scaling/SSLOffload.png)
+* The main benefit is the elastic load balancer gets to see the unencrypted HTTP and can take actions based on what's contained in this plain text protocol.
 
 #### 1.12.6.2. Pass-through - Network Load Balancer
 
-The client connects, but the load balancer passes the connection along without
-decrypting the data at all. The instances still need the SSL certificates,
-but the load balancer does not. Specifically it's a network load balancer
-which is able to perform this style of connection.
+* The client connects, but the load balancer passes the connection along without decrypting the data at all. The instances still need the SSL certificates, but the load balancer does not. Specifically it's a network load balancer which is able to perform this style of connection.
 
-The load balancer is configured for TCP, it can see the source or destinations,
-but it never touches the encrypted connection. The certificate never
-needs to be seen by AWS.
+* The load balancer is configured for TCP, it can see the source or destinations, but it never touches the encrypted connection. The certificate never needs to be seen by AWS.
 
-Negative is you don't get any load balancing based on the HTTP part
-because that is never exposed to the load balancer. The EC2 instances
-still need the compute cryptographic overhead.
+* Negative is you don't get any load balancing based on the HTTP part because that is never exposed to the load balancer. The EC2 instances still need the compute cryptographic overhead.
 
 #### 1.12.6.3. Offload
 
-Clients connect to the load balancer using HTTPS and are terminated on the
-load balancer. The LB needs an SSL certificate to decrypt the data, but
-on the backend the data is sent via HTTP. While there is a certificate
-required on the load balancer, this is not needed on the LB.
+* Clients connect to the load balancer using HTTPS and are terminated on the load balancer. The LB needs an SSL certificate to decrypt the data, but on the backend the data is sent via HTTP. While there is a certificate required on the load balancer, this is not needed on the LB.
 
-Data is in plaintext form across AWS's network. Not a problem for most.
+* Data is in plaintext form across AWS's network.
 
 #### 1.12.6.4. Connection Stickiness
 
-If there is no stickiness, each time the customer logs on they will have
-a stateless experience. If the state is stored on a particular server,
-sessions can't be load balanced across multiple servers.
+If there is no stickiness, each time the customer logs on they will have a stateless experience. If the state is stored on a particular server, sessions can't be load balanced across multiple servers.
 
-There is an option available within elastic load balancers called Session
-Stickiness.
+There is an option available within elastic load balancers called Session Stickiness.
 
 ![Session Stickiness](Learning-Aids/14-HA-and-Scaling/SessionStickiness.png)
 
-And within an application load balancer this is enabled on a
-target group. If enabled, the first time a user makes a request, the load
-balancer generates a cookie called AWSALB with a duration. A valid duration
-is between one second and seven days. For this time, sessions will be sent to
-the same backend instance. This will happen until:
+And within an application load balancer this is enabled on a target group. If enabled, the first time a user makes a request, the load balancer generates a cookie called AWSALB with a duration. A valid duration is between one second and seven days. For this time, sessions will be sent to the same backend instance. This will happen until:
 
 - A server failure, then the user will be moved to a different server.
-- The cookie expires, the whole process will repeat and will receive a
-new cookie
+- The cookie expires, the whole process will repeat and will receive a new cookie
 
-This could cause backend unevenness because one user will always be forced
-to the same server no matter what the distributed load is. Applications
-should be designed to hold session stickiness somewhere other than EC2. You can hold session state in, for instance, DynamoDB. If store session state data externally, this means EC2 instances will be completely stateless.
+This could cause backend unevenness because one user will always be forced to the same server no matter what the distributed  load is. Applications should be designed to hold session stickiness somewhere other than EC2. You can hold session state in, for instance, DynamoDB. If store session state data externally, this means EC2 instances will be completely stateless.
 
 ---
 
@@ -3781,11 +3743,9 @@ This is the least cost effective way to architect systems.
 - Can adjust the size of the server that is running each application tier.
 - Utilizes load balancers in between tiers to add capacity.
 - Tiers are still tightly coupled.
-  - Tiers expect a response from each other. If one tier fails, subsequent
-  tiers will also fail because they will not receive the proper response.
+  - Tiers expect a response from each other. If one tier fails, subsequent tiers will also fail because they will not receive the proper response.
   - Back loads in one tier will impact the other tiers and customer experience.
-- Tiers must be operational and send responses even if they are not processing
-anything of value otherwise the system fails.
+- Tiers must be operational and send responses even if they are not processing anything of value otherwise the system fails.
 
 #### 1.13.1.3. Evolving with Queues
 
@@ -3833,8 +3793,7 @@ A mature event-driven architecuture only consumes resources while handling event
   - Actions are taken and the system returns to waiting
 - Services can be producers and consumers at once.
 - Resources are not waiting around to be used.
-- Event router is needed for event driven architecture that also manages
-an event bus.
+- Event router is needed for event driven architecture that also manages an event bus.
 - Only consumes resources while handling events.
 
 ### 1.13.2. AWS Lambda
@@ -3851,51 +3810,35 @@ an event bus.
 
 #### 1.13.2.1. Lambda Architecture
 
-Best practice is to make it very small and very specialized.
-Lambda function code, when executed is known as being **invoked**.
-When invoked, it runs inside a runtime environment that matches the language the
-script is written in.
-The runtime environment is allocated a certain amount of memory and an
-appropriate amount of CPU. The more memory you allocate, the more CPU it gets,
-and the more the function costs to invoke per second.
+Best practice is to make it very small and very specialized. Lambda function code, when executed is known as being **invoked**.
 
-Lambda functions can be given an IAM role or **execution role**.
-The execution role is passed into the runtime environment.
-Whenever that function executes, the code inside has access to whatever
-permissions the role's permission policy provides.
+* When invoked, it runs inside a runtime environment that matches the language the script is written in.
+  The runtime environment is allocated a certain amount of memory and an appropriate amount of CPU. The more memory you allocate, the more CPU it gets, and the more the function costs to invoke per second.
 
-Lambda can be invoked in an **event-driven** or **manual** way.
-Each time you invoke a lambda function, the environment provided is new.
-Never store anything inside the runtime environment, it is ephemeral.
+* Lambda functions can be given an IAM role or **execution role**. The execution role is passed into the runtime environment.
+  Whenever that function executes, the code inside has access to whatever permissions the role's permission policy provides.
 
-Lambda functions by default are public services and can access any websites.
-By default they cannot access private VPC resources, but can be configured
-to do so if needed. Once configured, they can only access resources within a VPC.
-Unless you have configured your VPC to have all of the configuration needed
-to have public internet access or access to the AWS public space endpoints, then
-the Lambda will not have access.
+* Lambda can be invoked in an **event-driven** or **manual** way. Each time you invoke a lambda function, the environment provided is new and ephemeral.
 
-The Lambda runtime is stateless, so you should always use AWS services for input
-and output. Something like DynamoDB or S3. If a Lambda is invoked by an event,
-it gets details of the event given to it at startup.
+* Lambda functions by default are public services and can access any websites. By default they cannot access private VPC resources, but can be configured to do so if needed. Once configured, they can only access resources within a VPC.
+  Unless you have configured your VPC to have all of the configuration needed to have public internet access or access to the AWS public space endpoints, then the Lambda will not have access.
 
-Lambda functions can run up to 15 minutes. That is the max limit.
+* The Lambda runtime is stateless, so you should always use AWS services for input and output. Something like DynamoDB or S3. If a Lambda is invoked by an event, it gets details of the event given to it at startup.
+
+**Exam note:** Lambda functions can run up to 15 minutes. That is the max limit.
 
 #### 1.13.2.2. Key Considerations
 
-- Currently 15 min execution limit.
+- Currently 15 min execution limit. - Anything > 15 min can't use Lambda.
 - Assume each execution gets a new runtime environment.
 - Use the execution role which is assumed when needed.
 - Always load data from other services from public APIs or S3.
-- Store data to other services (e.g. S3).
+- Store data to other services (e.g. S3) because Lambda is non-persistent.
 - 1M free requests and 400,000 GB-seconds of compute per month.
 
 ### 1.13.3. CloudWatch Events and EventBridge
 
-Delivers near real time stream of system events that describe changes in AWS
-products and services. EventBridge will replace CW Events.
-EventBridge can also handle events from third parties. Both share the same
-underlying architecture. AWS is now encouraging a migration to EB.
+Delivers near real time stream of system events that describe changes in AWS products and services. EventBridge will replace CW Events. EventBridge can also handle events from third parties. Both share the same underlying architecture. AWS is now encouraging a migration to EB.
 
 #### 1.13.3.1. CloudWatch Events Key Concepts
 
@@ -3905,33 +3848,17 @@ They can observe if X happens at Y time(s), do Z.
 - Y can be a certain time or time period.
 - Z is a supported target service to deliver the event to.
 
-EventBridge is basically CloudWatch Events V2 that uses the same underlying
-APIs and has the same architecture, but with additional features.
-Things created in one can be visible in the other for now.
+* EventBridge is basically CloudWatch Events V2 that uses the same underlying APIs and has the same architecture, but with additional features. Things created in one can be visible in the other for now.
 
-Both systems have a default Event bus for a single AWS account.
-A bus is a stream of events which occur for any supported service inside an
-AWS account.
-In CW Events, there is only one bus (implicit), this is not exposed.
-EventBridge can have additional event buses for your applications or third party
-applications and services.
-These can be interacted with in the same way as the default bus.
+* Both systems have a default Event bus for a single AWS account. A bus is a stream of events which occur for any supported service inside an AWS account. In CW Events, there is only one bus (implicit), this is not exposed. EventBridge can have additional event buses for your applications or third party applications and services. These can be interacted with in the same way as the default bus.
 
-In both services, you create rules and these rules pattern match events which
-occur on the buses and when they see an event which matches, they deliver
-that event to a target. Alternatively you can have schedule based rules
-which match a certain date and time or ranges of dates and times.
+* In both services, create rules and these rules pattern match events which occur on the buses and when they see an event which matches, they deliver that event to a target. 
+  * Alternatively you can have schedule based rules which match a certain date and time or ranges of dates and times.
 
-Rules match incoming events or schedules. The rule matches an event and routes
-that event to one or more targets as you define on that rule.
+* Rules match incoming events or schedules. The rule matches an event and routes that event to one or more targets as you define on that rule.
 
-Architecturally at the heart of event bridge is the default account event bus.
-This is a stream of events generated by supported services within the AWS
-account. Rules are created and these are linked to a specific event bus
-or the default event bus. Once the rule completes pattern matching, the rule
-is executed and moves that event that it matched through to one or more targets.
-The events themselves are JSON structures and the data can be used by the
-targets.
+* Architecturally at the heart of event bridge is the default account event bus. This is a stream of events generated by supported services within the AWS account. Rules are created and these are linked to a specific event bus or the default event bus. Once the rule completes pattern matching, the rule is executed and moves that event that it matched through to one or more targets.  In the demo, the EventBridge rule is then mapped to a Lambda function to do something
+* The events themselves are JSON structures and the data can be used by the targets.
 
 ### 1.13.4. Application Programming Interface (API) Gateway
 
@@ -3972,20 +3899,15 @@ Your aim should be to use as-a-Service offerings as much as you can; code as lit
 
 A user wants to upload videos to a website for transcoding.
 
-1. User browses to a static website that is running the uploader. The JS runs
-directly from the web browser.
+1. User browses to a static website that is running the uploader. The JS runs directly from the web browser.
 2. Third party auth provider, google in this case, authenticates via **token**.
-3. AWS cannot use tokens provided by third parties. **Cognito** is called to
-swap the third party token for AWS credentials.
+3. AWS cannot use tokens provided by third parties. **Cognito** is called to swap the third party token for AWS credentials.
 4. Service uses these temporary credentials to upload a video to S3 bucket.
 5. Bucket will generate an event once it has completed the upload.
-6. A lambda triggers to transcode the video as needed. The
-transcoder will get the original S3 bucket video location and will use
+6. A lambda triggers to transcode the video as needed. The transcoder will get the original S3 bucket video location and will use
 this for its workload.
-7. Output will be added to a new transcode bucket and will put an entry into
-DynamoDB.
-8. User can interact with another Lambda to pull the media from the
-transcode bucket using the DynamoDB entry.
+7. Output will be added to a new transcode bucket and will put an entry into DynamoDB.
+8. User can interact with another Lambda to pull the media from the transcode bucket using the DynamoDB entry.
 
 ### 1.13.6. Simple Notification Service (SNS)
 
