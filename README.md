@@ -3924,14 +3924,16 @@ this for its workload.
 - Subscribers receive all of the messages sent to the Topic.
   - Subscribers can be HTTP and HTTPS endpoints, emails, or SQS queues, Mobile Push Notifications, SMS Messages and Lambda.
 - SNS is used across AWS products and services for notifications. For instance, CloudWatch uses it when alarms change state; CloudFormation uses it when stacks change state; Auto Scaling Groups can even be configured to send notifications to a topic when a scaling event occurs.
-  - Filters can be applied to limit messages sent to subscribers.
+  - Filters can be applied to limit messages to relevant ones sent to subscribers.
 - Fanout allows for a single SNS topic with multiple SQS queues as subscribers.
   - Can create multiple related workflows.
   - Allows multiple SQS queues to process the workload in slightly different ways.
 
-Offers:
+![](Pics/sns.png)
 
-- Delivery Status including HTTP/s, Lambda, SQS
+SNS offers:
+
+- Delivery Status including HTTP/s, Lambda, SQS - notifies you if subscribers get msgs		
 - Delivery retries which ensure reliable delivery
 - HA and Scalable (Regional)
 - SSE (server side encryption)
