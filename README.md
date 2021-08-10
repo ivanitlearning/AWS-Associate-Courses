@@ -3909,11 +3909,12 @@ this for its workload.
 7. Output will be added to a new transcode bucket and will put an entry into DynamoDB.
 8. User can interact with another Lambda to pull the media from the transcode bucket using the DynamoDB entry.
 
+![](Pics/Serverless_example.png)
+
 ### 1.13.6. Simple Notification Service (SNS)
 
 - HA, Durable, PUB/SUB messaging service.
-- Public AWS service meaning to access it, you need network connectivity
-with the Public AWS endpoints. The benefit of this is that it becomes accessible from anywhere that has that network connectivity.
+- Public AWS service meaning to access it, you need network connectivity with the Public AWS endpoints. The benefit of this is that it becomes accessible from anywhere that has that network connectivity.
 - Coordinates sending and delivering of messages: payloads that are up to 256KB in size.
   - Messages are not designed for large binary files.
 - SNS topics are the base entity of SNS.
@@ -3926,8 +3927,7 @@ with the Public AWS endpoints. The benefit of this is that it becomes accessible
   - Filters can be applied to limit messages sent to subscribers.
 - Fanout allows for a single SNS topic with multiple SQS queues as subscribers.
   - Can create multiple related workflows.
-  - Allows multiple SQS queues to process the workload in slightly different
-  ways.
+  - Allows multiple SQS queues to process the workload in slightly different ways.
 
 Offers:
 
