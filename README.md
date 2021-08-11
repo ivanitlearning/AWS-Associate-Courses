@@ -3993,6 +3993,10 @@ are available.
   - it allows the state machine to actually do things.
   - can be integrated with many different services such as Lambda, AWS batch, dynamoDB, ECS, SNS, SQS, Glue, SageMaker, EMR, and lots of others.
 
+#### Demo architecture
+
+![](Pics/stepfunctions.png)
+
 ### 1.13.8. Simple Queue Service (SQS)
 
 Public service that provides fully managed highly available message queues.
@@ -4005,24 +4009,31 @@ Public service that provides fully managed highly available message queues.
   - Should link to larger sets of data if needed.
 - Polling is checking for any messages on the queue.
 - **Visibility timeout**
-  - The amount of time a client has to process a message in some way
-  - When a client polls and receives messages, they aren't deleted from the
-  queue and are hidden for the length of this timeout.
+  - The amount of time a client has to process a message in some way (similar to RMQ consumer when it picks a msg from the queue)
+  - When a client polls and receives messages, they aren't deleted from the queue and are hidden for the length of this timeout.
   - This is the amount of time that a client can wait to work on the messages.
-  - If the client does not delete the message by the end, it will reappear in
-  the queue.
+  - If the client does not delete the message by the end, it will reappear in the queue (similar to msg not acked in RMQ because job not completed)
 - **Dead-letter queue**
-  - if a message is received multiple times but is unable to be finished, this
-  puts it into a different workload to try and fix the corruption.
+  - if a message is received 5 or move times but is unable to be finished, this puts it into a different workload to try and fix the corruption.
 - ASG can scale and lambdas can be invoked based on queue length.
-- Standard queue
+
+**Exam powerup**
+
+Remember this fanout arch, it will come in handy during exam
+
+![](Pics/sns_and_sqs_fanout.png)
+
+- **Standard queue**
+  
   - multi-lane highway. 
   - guarantee the order and at least once delivery.
-- FIFO queue
+  
+- **FIFO queue**
+  
   - single lane road with no way to overtake
   - guarantee the order and at exactly once delivery
-  - 3,000 messages p/s with batching or up to 300 messages p/s without
-
+- 3,000 messages p/s with batching or up to 300 messages p/s without
+  
     Standard Queue| FIFO Queue |
     ---------|----------|---------
     Multi lane highway | Single lane road with no way to overtake | 
@@ -4031,24 +4042,20 @@ Public service that provides fully managed highly available message queues.
 
 Billed on **requests** not messages. A request is a single request to SQS.
 One request can return 0 - 10 messages up to 64KB data in total.
-Since requests can return 0 messages, frequently polling a SQS Queue, makes it
-less effective.
+Since requests can return 0 messages, frequently polling a SQS Queue, makes it less effective.
 
 Two ways to poll
 
-- short (immediate) : uses 1 request and can return 0 or more messages. If the
-queue is empty, it will return 0 and try again. This hurts queues that stay
-short
+- short (immediate) : uses 1 request and can return 0 or more messages. If the queue is empty, it will return 0 and try again. This hurts queues that stay short
 
-- long (waitTimeSeconds) : it will wait for up to 20 seconds for messages
-to arrive on the queue. It will sit and wait if none currently exist.
+- long (waitTimeSeconds) : it will wait for up to 20 seconds for messages to arrive on the queue. It will sit and wait if none currently exist.
 
-Messages can live on SQS Queue for up to 15 days. They offer KMS encryption
-at rest. Server side encryption. Data is encrypted in transit with SQS and any
-clients.
+Messages can live on SQS Queue for up to 14 days. Offers 
 
-Access to a queue is based on identity policies or a queue policy. Queue
-policies only can allow access from an outside account. This is a resource policy.
+* Encryption at rest (ie. on disk and transparent to SQS) Server side encryption via KMS.
+* Encrypted in transit with SQS and any clients.
+
+Access to a queue is based on identity policies or a queue policy. Queue policies only can allow access from an outside account. This is a resource policy.
 
 ### 1.13.9. Kinesis
 
