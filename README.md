@@ -3758,8 +3758,7 @@ This is the least cost effective way to architect systems.
   - The upload tier can add more messages to the queue.
 - The queue will have an autoscaling group to increase processing capacity.
 - The autoscaling group will only bring up servers as they are needed.
-- The queue has the location of the S3 bucket and passes this onto the
-processing tier.
+- The queue has the location of the S3 bucket and passes this onto the processing tier.
 
 #### 1.13.1.4. Microservices Architecture
 
@@ -3825,8 +3824,6 @@ Best practice is to make it very small and very specialized. Lambda function cod
 
 * The Lambda runtime is stateless, so you should always use AWS services for input and output. Something like DynamoDB or S3. If a Lambda is invoked by an event, it gets details of the event given to it at startup.
 
-**Exam note:** Lambda functions can run up to 15 minutes. That is the max limit.
-
 #### 1.13.2.2. Key Considerations
 
 - Currently 15 min execution limit. - Anything > 15 min can't use Lambda.
@@ -3848,7 +3845,7 @@ They can observe if X happens at Y time(s), do Z.
 - Y can be a certain time or time period.
 - Z is a supported target service to deliver the event to.
 
-* EventBridge is basically CloudWatch Events V2 that uses the same underlying APIs and has the same architecture, but with additional features. Things created in one can be visible in the other for now.
+* EventBridge is basically CloudWatch Events V2 that uses the same underlying APIs and has the same architecture, but with additional features. Things created in one are visible in the other for now.
 
 * Both systems have a default Event bus for a single AWS account. A bus is a stream of events which occur for any supported service inside an AWS account. In CW Events, there is only one bus (implicit), this is not exposed. EventBridge can have additional event buses for your applications or third party applications and services. These can be interacted with in the same way as the default bus.
 
@@ -3879,8 +3876,7 @@ API stands for Application Programming Interface. It's a way that you can take a
 Great during an architecture evolution because the endpoints don't change.
 
 1. Create a managed API and point at the existing monolithic application.
-2. Using API gateway allows the business to evolve along the way slowly.
-This might move some of the data to fargate and aurora architecture.
+2. Using API gateway allows the business to evolve along the way slowly. This might move some of the data to fargate and aurora architecture.
 3. Move to a full serverless architecture with DynamoDB.
 
 ### 1.13.5. Serverless
@@ -4059,50 +4055,85 @@ Access to a queue is based on identity policies or a queue policy. Queue policie
 
 ### 1.13.9. Kinesis
 
-- Scalable streaming service. It is designed to inject data from
-lots of devices or lots of applications.
-- Many producers send data into a Kinesis Stream. Streams are the basic unit of Kinesis. 
+- Scalable streaming service designed to inject data from lots of devices or lots of applications.
+- Multiple producers send data into a Kinesis Stream. Streams are the basic unit of Kinesis. 
 - The stream can scale from low to near infinite data rates.
 - Highly available public service by design.
 - Streams store a 24-hour moving window of data.
   - Can be increased to 7 days.
   - Data 24 hours + 1s is replaced by new data entering the stream.
-- Kinesis includes the storage costs within it for the amount of data
-that can be ingested during a 24 hour period. However much you ingest during
-24 hours, that's included.
+- Kinesis includes the storage costs within it for the amount of data that can be ingested during a 24 hour period. However much you ingest during 24 hours, that's included.
 - Multiple consumers can access data from that moving window.
   - One might look at data points once per hour
   - Another looks at data 1 per minute.
 - Kinesis stream starts with 1 shard and expands as needed.
-  - Each shard can have 1MB/s for ingestion and 2MB/s consumption.
+  - Each shard can have capacity of 1MB/s for ingestion and 2MB/s consumption.
 
-**Kinesis data records (1MB)** are stored across shards and are the blocks
-of data for a stream.
+**Kinesis data records (1MB)** are stored across shards and are the blocks of data for a stream.
 
 **Kinesis Data Firehose** connects to a Kinesis stream. It can move the data from a stream onto S3 or another service. Kinesis Firehose allows for the long term persistence of storage of kinesis data into services like S3. 
 
-### 1.13.10. SQS vs Kinesis
+### 1.13.10. Differences between SQS queues and Kinesis streams
 
-Kinesis
+#### Kinesis
 
 - Large throughput or large numbers of devices
 - Huge scale ingestion with multiple consumers
 - Rolling window for multiple consumers
 - Designed for data ingestion, analytics, monitoring, app clicks
 
-SQS
+#### SQS
 
 - 1 thing sending messages to the queue
+
 - One consumption group from that tier
+
 - Allow for async communications
+
 - Once the message is processed, it is deleted
 
-  Kinesis | SQS |
-  ---------|----------|
+**Exam note:**
+
+  Kinesis | SQS 
+  ---------|----------
   Large throughout or large numbers of devices| One thing or one group of things sending messages to the queue
-  Huge scale ingestion with multiple consumers| One consumption group from that tier| C2
-  Rolling window for multiple consumers | Allow for async communications | C3
-  Designed for data ingestion, analytics, monitoring, and app clicks | Once the message is processed, it is deleted | C3
+  Huge scale ingestion with multiple consumers| One consumption group from that tier
+ Rolling window for multiple consumers, consumer can backwards or forwards within window | Allow for async communications, sender and receiver unaware of each other. 
+ Designed for data ingestion, streaming data, analytics, monitoring, and app clicks | Once the message is processed, it is deleted, no message persistence, no window 
+  | Used to split workloads, have web tier and worker pool. 
+
+### 1.13.11 Amazon Cognito
+
+* Provides
+
+  * Authentication
+  * Authorization
+  * User management 
+
+  for web/mobile apps
+
+#### 1.13.11.1 User Pools
+
+* After signing in, users get a JSON Web token (JWT)
+  * Works with MFA, directory management, profiles, social sign-ins with FB, Google etc. and other security providers (eg. SAMLs).
+* Note most AWS services don't accept JWTs, some like API Gateways accept them.
+* User pool token = JWT
+
+![](Pics/UserPools.png)
+
+#### 1.13.11.2 Identity Pools
+
+* Offers temporary AWS credentials
+* Swaps federated identities (eg. FB, Google, Apple, SAML logins) or User Pool logins for temp AWS creds. Process known as Federation.
+* Works by assuming IAM roles on behalf of the identity
+
+![](Pics/IdentityPools.png)
+
+Both can be combined 
+
+* Benefit is that the identity pool need only be configured to accept a single external identity provider, User Pool, instead of the numerous external ID providers.
+
+![](Pics/UserAndIdentityPools.png)
 
 ---
 
@@ -4113,36 +4144,35 @@ SQS
 - CloudFront is a global object cache (CDN)
 - Download caching only
 - Content is cached in locations close to customers.
-- If the content is not available on the local cache when requested, CloudFront
-will fetch the item and cache it and deliver it locally.
+- If the content is not available on the local cache when requested, CloudFront will fetch the item and cache it and deliver it locally.
 - This provides lower latency (more responsiveness) and higher throughput (faster page loads) for customers.
-- Can handle static and dynamic content.
+- Can handle both static and dynamic content.
+
+#### CloudFront Terms
+
 - **Origin** the original location of your content, can be an S3 bucket or ALB. In theory it can be anywhere on the internet accessible by CloudFront.
 - **Distribution** the configuration unit of CloudFront.
 - **Edge locations** global infrastructure which hosts a cache of your data.
   - There are over 200 edge locations.
   - They are generally one or more racks in a 3rd party data center.
-  - Normally 90% storage with some small compute.
+  - Normally 90% storage with some small compute services.
 - **Regional Edge Cache**
   - Larger version of an edge location.
   - Support a number of local edge locations.
   - Designed to hold more data to cache things which are accessed less often.
   - Provides another layer of caching.
 
+* Integrates with ACM for HTTPS for downloads only.
+
 #### 1.14.1.1. Caching Optimization
 
-Parameters can be passed on the url such as query string parameter.
-An example is `?language=en` and `?language=es`
+Parameters can be passed on the URL such as query string parameter. An example is `?language=en` and `?language=es`
 
-Caching will cache each string parameter storing two different objects.
-You must use the same string parameters again to retrieve them. If you remove
-them and the object is not caching it will need to be fetched first.
+Caching will cache each string parameter storing two different objects. You must use the same string parameters again to retrieve them. If you remove them and the object is not caching it will need to be fetched first.
 
-If string parameters aren't involved in the caching, you can select no
-to forward them to the origin.
+If string parameters aren't involved in the caching, you can select no to forward them to the origin.
 
-If the application does use **query string parameters**, you can use all of them for
-caching or just selected ones.
+If the application does use **query string parameters**, you can use all of them for caching or just selected ones.
 
 ### 1.14.2. AWS Certificate Manager (ACM)
 
@@ -4151,8 +4181,7 @@ caching or just selected ones.
 - Data is encrypted in-transit from the perspective of an outside observer.
 - HTTPS Certificates also allows for servers to prove their identity
 - Signed by a trusted authority (a Certificate Authority [CAs]), which are trusted by your browser.
-- To be secure, a website generates a certificate, and has a CA sign it. The
-website then uses that certificate to prove its authenticity.
+- To be secure, a website generates a certificate, and has a CA sign it. The website then uses that certificate to prove its authenticity.
 - ACM allows you to create, renew, and deploy certificates.
 - Supported AWS services ONLY (CloudFront, ALB and API Gateway, Elastic Beanstalk, CloudFormation, **NOT EC2**)
 - If it's not a managed service, ACM doesn't support it.
