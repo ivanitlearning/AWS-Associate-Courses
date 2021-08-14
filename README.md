@@ -4164,15 +4164,24 @@ Both can be combined
 
 * Integrates with ACM for HTTPS for downloads only.
 
+#### Exam notes:
+
+* If you come across trusted key groups or trusted signers it implies a private distribution for CloudFront access.
+* TTL for CloudFront specifies how often the cache copies in edge locations are refreshed from S3 or source.
+* To force it to refresh the cached copies, specify the invalidate option. This sends directive to every edge location to invalidate their cache and refresh from origin.
+  * Invalidations are billable and more cost effective to do larger invalidations less frequently than small frequent ones.
+  * Otherwise upload a different object with a different name instead and point all references to it.
+* You can add a certificate with ACM to direct it to a CF distribution you own
+
 #### 1.14.1.1. Caching Optimization
 
-Parameters can be passed on the URL such as query string parameter. An example is `?language=en` and `?language=es`
+* Parameters can be passed on the URL such as query string parameter. An example is `?language=en` and `?language=es`
 
-Caching will cache each string parameter storing two different objects. You must use the same string parameters again to retrieve them. If you remove them and the object is not caching it will need to be fetched first.
+* Caching will cache each string parameter storing two different objects. You must use the same string parameters again to retrieve them. If you remove them and the object is not caching it will need to be fetched first.
 
-If string parameters aren't involved in the caching, you can select no to forward them to the origin.
+* If string parameters aren't involved in the caching, you can select no to forward them to the origin.
 
-If the application does use **query string parameters**, you can use all of them for caching or just selected ones.
+* If the application does use **query string parameters**, you can use all of them for caching or just selected ones.
 
 ### 1.14.2. AWS Certificate Manager (ACM)
 
@@ -4183,40 +4192,41 @@ If the application does use **query string parameters**, you can use all of them
 - Signed by a trusted authority (a Certificate Authority [CAs]), which are trusted by your browser.
 - To be secure, a website generates a certificate, and has a CA sign it. The website then uses that certificate to prove its authenticity.
 - ACM allows you to create, renew, and deploy certificates.
-- Supported AWS services ONLY (CloudFront, ALB and API Gateway, Elastic Beanstalk, CloudFormation, **NOT EC2**)
+- Supported AWS services ONLY (CloudFront, ALB and API Gateway, Elastic Beanstalk, CloudFormation, not self-managed service like EC2)
 - If it's not a managed service, ACM doesn't support it.
 - CloudFront must have a trusted and signed certificate. Can't be self signed.
 
 ### 1.14.3. Origin Access Identity (OAI)
 
-1. Identity can be associated with a CloudFront distribution.
-2. The edge locations gain this identity.
-3. Create or adjust the bucket policy on the S3 origin. Add an explicit allow
-for the OAI. Can remove any other explicit allows on the OAI. This leaves
-the implicit deny.
+* This prevents clients from accessing the CF origin directly by bypassing the edge locations
 
-As long as accesses are coming from the edge locations, it will know they
-are from the OAI and allow them. Any direct attempts will not use the OAI and
-will only get the implicit deny.
+	1. Identity can be associated with a CloudFront distribution.
+	2. The edge locations gain this identity.
+	3. Create or adjust the bucket policy on the S3 origin. Add an explicit allow for the OAI. Can remove any other explicit allows on the OAI. This leaves the implicit deny.
 
-Best practice is to create one OAI per CloudFront distribution to manage
-permissions.
+As long as accesses are coming from the edge locations, it will know they are from the OAI and allow them. Any direct attempts will not use the OAI and will only get the implicit deny.
+
+Best practice is to create one OAI per CloudFront distribution to manage permissions.
+
+**Notes from demo:** Allowing the OAI to edit the bucket policy doesn't invalidate the Allow All policy on the bucket. This needs to be removed if origin access is to be restricted.
 
 ### 1.14.3.(1/2) Lambda@Edge
 
 - Permits to run lightweight Labda functions at Edge Locations
  - Adjust data between Viewer & Origin
  - Only Node.JS and Python are supported
- - Only AWS Public Space is supported ( NO VPC )
+ - Only AWS Public Space is supported (NO VPC resources accessible)
  - No layers supported
  - Different Limits vs Normal Lambda
 
  **Lambda@Edge Use Cases**
 
  - A/B Testing - Viewer Request
- - Migration Between S3 Origins - Origin Request
+ - Migration Between S3 Origins - Origin Request, transfer traffic between existing S3 origin to a new one.
  - Different objects based on Device - Origin Request
  - Content By Country - Origin Request
+
+![](Pics/Lambda@Edge.png)
 
 
 ### 1.14.4. AWS Global Accelerator
@@ -4224,17 +4234,17 @@ permissions.
 - Move the AWS network closer to customers.
 - Designed to optimize the flow of data from users to your AWS infrastructure.
 - While CloudFront caches your application at Edge Locations, Global Accelerator moves the AWS infrastructure closer to your customers. 
-- Generally customers who are further away from your infrastructure go through
-more internet based hops and this means a lower quality connection.
+- Generally customers who are further away from your infrastructure go through more internet based hops and this means a lower quality connection.
 - Normal IP addresses are unicast IP addresses. These refer to one thing.
 - Global Accelerator starts with 2 **anycast** IP address
   - Special IP address
   - Anycast IPs allow a single IP to be in multiple locations.
-  - Traffic initially uses public internet and enters Global Accelerator at
-  the closest edge location.
-  - Traffic then flows globally across the AWS global backbone network.
-- Global accelerator is a network product, and it uses non HTTP/S (TCP/UDP) protocols.
-- If you see questions that mention _caching_ that will most likely be CloudFront but, if you see questions that mention TCP or UDP and the requirement for _global performance optimization_ then possibly it's going to be global accelerator which is the right answer.
+  - Traffic from user clients initially uses public internet to get to nearest Global Accelerator edge locations.
+  - Traffic then flows globally across the AWS dedicated global network to the target.
+- Global accelerator is a network product (doesn't cache anything), and can be used for non HTTP/S (TCP/UDP) protocols while CloudFront caches HTTP/HTTPS content only.
+- 
+
+**Exam note:** If you see questions that mention _caching_ that will most likely be CloudFront but, if you see questions that mention TCP or UDP and the requirement for _global performance optimization_ then possibly it's going to be global accelerator which is the right answer.
 
 ---
 
