@@ -4273,7 +4273,7 @@ Best practice is to create one OAI per CloudFront distribution to manage permiss
   - Amazon DNS Server
   - Amazon Windows Licensing Server
 
-Example of Flow Logs
+Format for Flow Logs
 
 ```html
 <version>
@@ -4300,77 +4300,66 @@ Example of Flow Logs
 - NAT process exists because of the limitation of IPv4; it does not work with IPv6.
 - Using IPv6, all IPs are publicly routable.
   - Internet Gateway (IPv6) allows all IPs **in** and **out**
-- Egress-only is **outbound only** for IPv6. It is exactly the same as
-NAT, only outbound only.
-- To configure the Egress-only gateway, you must add default IPv6 route `::/0`
-added to RT with `eigw-id` as target.
+- Egress-only is **outbound only** for IPv6. It is exactly the same as NAT, only outbound only.
+- To configure the Egress-only gateway, you must add default IPv6 route `::/0` added to routing table with `eigw-id` as target.
 
 ### 1.15.3. VPC Gateway Endpoints
 
 - Provide _private_ access to S3 and DynamoDB
   - Allow a private only resource inside a VPC or any resource inside a private-only VPC access to S3 and DynamoDB. (Remember that both S3 and DynamoDB are public services)
 
-Normally when you want to access a public service through a VPC, you
-need infrastructure. You would create an IGW and attach it to the VPC.
-Resources inside need to be granted IP address or implement one or more
-NAT gateways which allow instances with private IP addresses to access
-these public services.
+* Normally when you want to access a public service through a VPC, you need infrastructure. 
+  1. You would create an IGW and attach it to the VPC. 
+  2. Resources inside need to be granted public IP address or implement one or more NAT gateways which allow instances with private IP addresses to access these public services.
 
-- When you allocate a gateway endpoint to a subnet, a ***prefix list*** is added
-to the route table. The target is the gateway endpoint. Any traffic destined for S3, goes via the gateway endpoint. The gateway endpoint is highly available for all AZs in a region by default.
-
-- With a gateway endpoint you set which subnet will be used with it and
-it will configure automatically. A gateway endpoint is a VPC gateway object.
-  - Endpoint policy controls what things can be connected to by that endpoint.
-
-- Gateway endpoints can only be used to access services in the same region.
-Can't access cross-region services. You cannot, for instance, access an S3 bucket located in the `ap-southeast-2` region from a gateway endpoint in the `us-east-1` region.
-
+- When you allocate a gateway endpoint to a subnet, a ***prefix list*** is added to the route table. The target is the gateway endpoint. Any traffic destined for S3, goes via the gateway endpoint. The gateway endpoint is highly available for all AZs in a region by default.
+- With a gateway endpoint you set which subnet will be used with it and it will configure automatically. A gateway endpoint is a VPC gateway object.
+- Endpoint policy controls what things can be connected to by that endpoint.
+- Gateway endpoints can only be used to access services in the same region. Can't access cross-region services. You cannot, for instance, access an S3 bucket located in the `ap-southeast-2` region from a gateway endpoint in the `us-east-1` region.
 - Prevent Leaky Buckets: S3 buckets can be set to private only by allowing access ONLY from a gateway endpoint. For anything else, the _implicit deny_ will apply.
+- Configure endpoint policy to control what the Gateway Endpoint can be used for.
 
-A limitation is that they are only accessible from inside that specific VPC.
+**Exam note:** Gateway endpoints only accessible from inside that specific VPC.
+
+![](Pics/GatewayEndpoints.png)
+
+**Demo notes:**
+
+1. When creating GW endpoints, you specify the VPC for which you want and the routing table.
 
 ### 1.15.4. VPC Interface Endpoints
 
-- Provide private access to AWS Public Services.
-  - Anything EXCEPT S3 and DynamoDB
+- Provide private access to any AWS Public Services **except** S3 and DynamoDB
 - These are not HA by default and are added to specific subnets.
   - For HA, add one endpoint, to one subnet, per AZ used in the VPC
   - Must add one endpoint for one subnet per AZ
 - Network access controlled via security groups.
-- You can use Endpoint policies to restrict what can be accessed with
-the endpoint.
+- You can use Endpoint policies to restrict what can be accessed with the endpoint.
 - ONLY TCP and IPv4 at the moment.
 - Behind the scenes, it uses ***PrivateLink***.
-  - PrivateLink allows external services to be injected into your VPC either from AWS or $3^{rd}$ parties.
-- Endpoint provides a **NEW** service endpoint DNS
-  - e.g. `vpce-123-xyz.sns.us-east-1.vpce.amazonaws.com`
-- **Regional DNS** is one single DNS name that works whatever AZ you're using to
-access the interface endpoint. Good for simplicity and HA.
-- **Zonal DNS** resolved to that one specific interface in that one specific AZ.
-- Either of those two points of endpoints can be used by applications to
-directly and immediately utilize interface endpoints.
-- PrivateDNS associates R53 private hosted zone with your VPC. This private
-hosted zone carries a replacement DNS record for the default service
-endpoint DNS name. It overrides the default service DNS with a new version
-that points at your interface endpoint. Enabled by default.
+  - PrivateLink allows external services to be injected into your VPC either from AWS or 3<sup>rd</sup> parties.
+- The endpoint is accessed via a service endpoint DNS e.g. `vpce-123-xyz.sns.us-east-1.vpce.amazonaws.com`
+  - **Regional DNS** is one single DNS name that works from all AZs you're accessing from.
+  - **Zonal DNS** resolves to that one specific interface in that one specific AZ.
+- Either of those two points of endpoints can be used by applications to directly and immediately utilize interface endpoints.
+- PrivateDNS associates R53 private hosted zone with your VPC. 
+  * This private hosted zone carries a replacement DNS record for the default service endpoint DNS name. 
+  * Apps can use interface endpoints without modification. Overrides the default service DNS with a new version that points at your interface endpoint. 
+  * Enabled by default.
 
 #### 1.15.4.1. Gateway Endpoints vs Interface Endpoints
 
-**Gateway endpoints** work using prefix lists and route tables so they do not
-need changes to the applications. The application thinks it's communicating
-directly with S3 or DynamoDB and all we're doing by using a gateway endpoint
-is influencing the route that the traffic flow uses. Instead of using IGW,
-it goes via gateway endpoint and can use private IP addressing.
-Gateway endpoints because they are VPC gateway logical object; they are **highly available by design**
+**Gateway endpoints** work using prefix lists and route tables so they do not need changes to the applications. 
 
-**Interface Endpoints** uses DNS and a private IP address for the interface
-endpoint. You can either use the endpoint specific DNS names or you can
-enable PrivateDNS which overrides the default and allows unmodified
-applications to access the services using the interface endpoint. This doesn't
-use routing and only DNS.
-Interface endpoints because they use normal VPC network interfaces are **not highly available**. 
-> Make sure as a Solutions Architect when you are designing an architecture if you are utilizing multiple AZs then you need to put interface endpoints in every AZ that you use inside that VPC.
+* The application thinks it's communicating directly with S3 or DynamoDB and all we're doing by using a gateway endpoint is influencing the route that the traffic flow uses. 
+* Instead of using IGW, it goes via gateway endpoint and can use private IP addressing. Gateway endpoints because they are VPC gateway logical object; they are **highly available by design**
+
+**Interface Endpoints** uses DNS and a private IP address for the interface endpoint. 
+
+* You can either use the endpoint specific DNS names or you can enable PrivateDNS which overrides the default and allows unmodified applications to access the services using the interface endpoint. 
+* This doesn't use routing and only DNS. Interface endpoints because they use normal VPC network interfaces are **not highly available**. 
+
+> Make sure as a Solutions Architect when you are designing san architecture if you are utilizing multiple AZs then you need to put interface endpoints in every AZ that you use inside that VPC.
 
 ### 1.15.5. VPC Peering
 
@@ -4378,28 +4367,26 @@ VPC Peering is a service that lets you create a private and encrypted network li
 
 - Peering connection can be in the same or cross region and in the same or across accounts.
 
-- When you create a VPC peer, you can enable an option so that public hostnames
-of services in the peered VPC resolve to the private internal IPs. You
-can use the same DNS names if its in peered VPCs or not. If you attempt
-to resolve the public DNS hostname of an EC2 instance, it will resolve
-to the private IP address of the EC2 instance.
+- When you create a VPC peer, you can enable an option so that public hostnames of services in the peered VPC resolve to the private internal IPs. You can use the same DNS names if its in peered VPCs or not. If you attempt to resolve the public DNS hostname of an EC2 instance, it will resolve to the private IP address of the EC2 instance.
 
-- VPCs in the same region can reference each other by using security group id.
-You can do the same efficient referencing and nesting of security groups that
-you can do if you're inside the same VPC. This is a feature that only works
-with VPC peers inside the same region.
+- VPCs in the same region can reference each other by using security group id. You can do the same efficient referencing and nesting of security groups that you can do if you're inside the same VPC. This is a feature that only works with VPC peers inside the same region.
 
-In different regions, you can utilize security groups, but you'll need to
-reference IP addresses or IP ranges. If VPC peers are in the same region,
-then you can do the logical referencing of an entire security group.
+* In different regions, you can utilize security groups, but you'll need to reference IP addresses or IP ranges. If VPC peers are in the same region, then you can do the logical referencing of an entire security group.
 
-VPC peering connects **ONLY TWO**
+* VPC peering connects **ONLY TWO** VPCs.
 
-VPC Peering does not support **transitive peering**.
-If you want to connect 3 VPCs, you need 3 connections. You can't route
-through interconnected VPCs.
+* VPC Peering does not support **transitive peering**. 
+  * If you want to connect 3 VPCs, you need 3 connections eg. VPC A peered with VPC B, while VPC B peered with C doesn't mean A is peered with C. Need to peer A with C explicitly.
 
-VPC Peering Connections CANNOT be created with overlapping VPC CIDRs.
+* VPC Peering Connections CANNOT be created with overlapping VPC CIDRs.
+* Data transferred between VPC Peers are encrypted; between regions goes thru AWS global secure network.
+
+**Demo notes:**
+
+1. First send VPC peering request, then accept it
+2. Add to/fro route to routing tables for both VPCs.
+3. Edit SG rules to allow in-bound traffic from VPC.
+   * For SG you can specify SG ID of the VPC instead of the CIDR range if the VPC peering is enabled.
 
 ---
 
