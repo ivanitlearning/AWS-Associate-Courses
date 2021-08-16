@@ -4242,7 +4242,6 @@ Best practice is to create one OAI per CloudFront distribution to manage permiss
   - Traffic from user clients initially uses public internet to get to nearest Global Accelerator edge locations.
   - Traffic then flows globally across the AWS dedicated global network to the target.
 - Global accelerator is a network product (doesn't cache anything), and can be used for non HTTP/S (TCP/UDP) protocols while CloudFront caches HTTP/HTTPS content only.
-- 
 
 **Exam note:** If you see questions that mention _caching_ that will most likely be CloudFront but, if you see questions that mention TCP or UDP and the requirement for _global performance optimization_ then possibly it's going to be global accelerator which is the right answer.
 
@@ -4394,8 +4393,7 @@ VPC Peering is a service that lets you create a private and encrypted network li
 
 ### 1.16.1. AWS Site-to-Site VPN
 
-- A logical connection between a VPC and on-premise network encrypted in transit
-using IPSec, running over the public internet (in most cases).
+- A logical connection between a VPC and on-premise network encrypted in transit using IPSec, running over the public internet (in most cases).
 - This can be fully Highly Available if you design it correctly
 - Quick to provision, less than an hour.
 - VPNs connect VPCs and private on-prem networks.
@@ -4413,16 +4411,15 @@ Static| Dynamic |
  Routes for remote side added to route tables as static routes | Routes can be added statically or configured dynamically by using a feature called ***route propagation*** on the route tables in the VPC| C3
 
 - VPN connection itself stores the config and links to one VGW and one CGW
-- Speed cap on VPN with two tunnels of 1.25 Gbps (gigabits per second).
+- Speed cap on VPN with two tunnels of **1.25 Gbps** (gigabits per second). Can't use VPN if requirement exceeds this.
   - AWS limit, will need to check speed supported by customer router.
-  - Will be processing overhead on encrypting and decrypting data.
-  At high speeds, this overhead can be significant.
+  - Will be processing overhead on encrypting and decrypting data. At high speeds, this overhead can be significant.
 - Latency is inconsistent because it uses the public internet.
 - Cost
   - AWS charges hourly
   - GB transfer out cost
-  - on-premises internet connection costs
-- VPN setup of hours or less
+  - On-premises internet connection costs
+- VPN setup in a few hours or less
 - Great as a backup especially for Direct Connect (DX)
 - Can be used with Direct Connect (DX)
 
@@ -4435,8 +4432,7 @@ Static| Dynamic |
   - 10 Gbps: 10GBASE-LR
 - This is a **cross connect** to your customer router (requires VLANs/BGP)
 - You can connect to a partner router if extending to your location.
-  - The port needs to be arranged to connect somewhere else and connect to
-  your hardware.
+  - Essentially you get a DX port on a DX router that you either need to connect to directly or via an AWS partner.
 - This is a single fiber optic cable from the AWS Managed DX port to your network.
 - You can run Virtual Interfaces (VIFs) over a single DX connect fiber optic line.
 - There is a one-to-many relationship between a DX line and VIFs. Therefore, you can multiple VIFs running on a single DX line. 
@@ -4445,31 +4441,27 @@ Static| Dynamic |
     - Connects to one AWS VPC
     - Can have as many Private VIFs as you want.
   - **Public VIF** (Public Zone Services)
-    - Only public services, not public internet
+    - Allows connection to AWS public services, but **not** public internet
     - Can be used with a site-to-site VPN to enable a private encryption using IPSec.
 
-Has one physical cable with **no high availability and no encryption**.
-DX Port Provisioning is quick, the cross-connect takes longer.
-Physical installation of cross-connect network can take weeks or months
-Generally use a VPN first then bring a DX in and leave VPN as backup.
+* Has one physical cable with **no high availability and no encryption**.
+* DX Port Provisioning is quick, the cross-connect takes longer.
+* Physical installation of cross-connect network can take weeks or months
+* Generally use a VPN first then bring a DX in and leave VPN as backup.
 
 - Up to 40 Gbps with aggregation, 4 x 10 Gbps ports.
-- It does not use public internet and provides consistently low latency.
+- Dedicated leased line, doesn't use public internet and provides consistently low latency.
   - Does not consume any data.
 
-DX provides NO ENCRYPTION and needs to be managed on a per application basis.
-There is a common way around this limitation.
-The Public VIF allows connections to AWS public services. Inside the VPC we
-already have a virtual private gateway, because this is used for any private
-VIFs running over the Direct Connect. Creating a virtual private gateway
-creates end points that are located inside the AWS public zone with public
-IP addresses. These end points have already been created and they already
-exist. We can create a VPN and instead of using the public internet as the
-transit network, you can use the public VIF running over Direct Connect.
+* DX provides NO ENCRYPTION (by default) and needs to be managed on a per application basis.
+  * Can run IPSEC VPN over a public VIF.
 
-You run an IPSEC VPN over the public VIF, over the Direct Connect connection,
-you get all of the benefits of Direct Connect such as high speeds, and all
-the benefits of IPSEC encryption.
+![](Pics/DirectConnect.png)
+
+**Exam notes**
+
+* Much longer to provision compared to VPN.
+* DX port provisioning is quick, but cross-connect takes much longer, due to physical cable extension to premises.
 
 ### 1.16.3. AWS Transit Gateway (TGW)
 
@@ -4487,6 +4479,8 @@ is required.
   - You can use these for cross-region peering attachments.
 - Can share between accounts using AWS Resource Access Manager (RAM)
 - You achieve a less network complexity if you implement a transit gateway (TGW)
+
+![](Pics/TransitGateway.png)
 
 ### 1.16.4. Storage Gateway
 
