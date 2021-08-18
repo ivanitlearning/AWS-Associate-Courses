@@ -4212,7 +4212,7 @@ Best practice is to create one OAI per CloudFront distribution to manage permiss
 
 ### 1.14.3.(1/2) Lambda@Edge
 
-- Permits to run lightweight Labda functions at Edge Locations
+- Permits to run lightweight Lambda functions at Edge Locations
  - Adjust data between Viewer & Origin
  - Only Node.JS and Python are supported
  - Only AWS Public Space is supported (NO VPC resources accessible)
@@ -4398,9 +4398,7 @@ VPC Peering is a service that lets you create a private and encrypted network li
 - Quick to provision, less than an hour.
 - VPNs connect VPCs and private on-prem networks.
 - Virtual Private Gateway (VGW) is the target on one or more route tables
-- Customer Gateway (CGW) can represent two things:
-  1. logical piece of configuration on AWS
-  2. A physical piece on-prem router which the VPN connects to.
+- Customer Gateway (CGW) device is a logical representation of the customer on-prem router which the VPN connects to 
 
 Differences between static and dynamic VPN.
 
@@ -4432,7 +4430,7 @@ Static| Dynamic |
   - 10 Gbps: 10GBASE-LR
 - This is a **cross connect** to your customer router (requires VLANs/BGP)
 - You can connect to a partner router if extending to your location.
-  - Essentially you get a DX port on a DX router that you either need to connect to directly or via an AWS partner.
+  - Essentially you get a port on a DX router that you either need to connect to directly or via an AWS partner.
 - This is a single fiber optic cable from the AWS Managed DX port to your network.
 - You can run Virtual Interfaces (VIFs) over a single DX connect fiber optic line.
 - There is a one-to-many relationship between a DX line and VIFs. Therefore, you can multiple VIFs running on a single DX line. 
@@ -4440,7 +4438,7 @@ Static| Dynamic |
   - Private VIF (VPC)
     - Connects to one AWS VPC
     - Can have as many Private VIFs as you want.
-  - **Public VIF** (Public Zone Services)
+  - Public VIF (Public Zone Services)
     - Allows connection to AWS public services, but **not** public internet
     - Can be used with a site-to-site VPN to enable a private encryption using IPSec.
 
@@ -4465,19 +4463,22 @@ Static| Dynamic |
 
 ### 1.16.3. AWS Transit Gateway (TGW)
 
-- Network transit hub to connect VPCs to on premises networks
+- Network transit hub connect VPCs to on premises networks
 - Significantly reduces network complexity.
-  - Supports transitive routing. No need to create a mesh topology.
+  - Supports transitive routing. No need to create a mesh topology via repeated VPC peerings.
 - Single network gateway object which makes it HA and scalable.
-- Create attachments to allow Transit Gateway to connect to other network objects.
+- Can attach to other network objects
   - VPC attachments
   - Site to Site VPN attachments
-  - Direct Connect attachments
-- VPC attachments are configured with a subnet in each AZ where service
-is required.
+  - Direct Connect (DX) attachments
+- Configuration for VPC connectivity and customer premises
+  1. Create VPC attachments in subnet in each AZ where service is required.
+  2. Add routes to other VPCs in the subnet's route tables
+  3. Transit gateways are then connected to customer gateways
 - Can be used to create global networks.
   - You can use these for cross-region peering attachments.
 - Can share between accounts using AWS Resource Access Manager (RAM)
+  - Can peer with different regions in the same or cross account
 - You achieve a less network complexity if you implement a transit gateway (TGW)
 
 ![](Pics/TransitGateway.png)
@@ -4489,24 +4490,25 @@ is required.
   - Allows for migration of existing infrastructure into AWS slowly.
 - Tape Gateway (VTL) Mode
   - Virtual Tapes are stored on S3
-- File Mode (SMB and NFS)
+- File Mode (SMB and NFS shares)
   - File Storage Backed by S3 Objects
 - Volume Mode (Gateway Stored)
   - Block Storage backed by S3 and EBS
   - Great for disaster recovery
-  - Data is kept locally
+  - Data is kept locally, but backed up to AWS in background.
   - Awesome for migrations
 - Volume Mode (Cache Mode)
   - Data added to gateway is not stored locally.
+  - Frequently accessed data is cached locally
   - Backup to EBS Snapshots
   - Primarily stored on AWS
   - Great for limited local storage capacity.
 
 ### 1.16.5. Snowball / Edge / Snowmobile
 
-Designed to move large amounts of data IN and OUT of AWS.
-Physical storage the size of a suitcase or truck.
-Ordered from AWS, use, then return.
+* Designed to move large amounts of data IN and OUT of AWS.
+* Physical storage the size of a suitcase or truck.
+* Ordered from AWS, use, then return.
 
 #### 1.16.5.1. Snowball
 
@@ -4514,8 +4516,8 @@ Ordered from AWS, use, then return.
 - 1 Gbps or 10 Gbps connection
 - 50TB or 80TB Capacity.
   - 10TB to 10PB of data is economical range.
-  - Good for multiple locations
-- No compute
+  - Can order multiple devices to multiple locations
+- Only storage, no compute
 
 #### 1.16.5.2. Snowball Edge
 
@@ -4534,22 +4536,24 @@ Ordered from AWS, use, then return.
 
 #### 1.16.5.3. Snowmobile
 
-Portable data center within a shipping container on a truck.
-This is a special order and is not available in high volume.
-Ideal for single location where 10 PB+ is required.
-Max is 100 PB per snowmobile.
+* Portable data center within a shipping container on a truck (literally a truck)
+* This is a special order and is not available in high volume.
+* Ideal for single location where 10 PB+ is required.
+* Max is 100 PB per snowmobile.
+* Expects to connect to data centre grade power and networking.
+* Can't split Snowmobile to to multiple locations or do road trip to each DC.
 
 ### 1.16.6. AWS Directory Service
 
-Directories stores objects, users, groups, computers, servers, file shares with
-a structure called a domain / tree. Multiple trees can be grouped into a forest.
+**What it does**
 
-Devices can join a directory so laptops, desktops, and servers can all have
-a centralized management and authentication. You can sign into multiple
-devices with the same username and password.
+* Directories stores objects, users, groups, computers, servers, file shares with a structure called a domain / tree. Multiple trees can be grouped into a forest.
 
-One common directory is **Active Directory** by Microsoft and its full name is
-**Microsoft Active Directory Domain Services** or AD DS.
+* Devices can join a directory so laptops, desktops, and servers can all have a centralized management and authentication. You can sign into multiple devices with the same username and password.
+
+* One common directory is **Active Directory** by Microsoft and its full name is **Microsoft Active Directory Domain Services** or AD DS.
+
+**Features**
 
 - AWS managed implementation.
 - Runs within a VPC as a private service.
@@ -4562,21 +4566,25 @@ One common directory is **Active Directory** by Microsoft and its full name is
 #### 1.16.6.1. Directory Modes
 
 - **Simple AD**: should be default. Designed for simple requirements.
-- **Microsoft AD**: is anything with Windows or if it needs a trust relationship
-with on-prem. This is not an emulation or adjusted by AWS.
-- **AD Connector**: Use AWS services without storing any directory info in the
-cloud, it proxies to your on-prem directory.
+  - Based on Samba 4 ie. anything that can join Samba can join Simple AD
+  - Works with numerous AWS services
+  - Works in isolation, but not with on-prem environment.
+- **AWS-managed Microsoft AD**: is anything with Windows or if it needs a AD trust relationship with on-prem. 
+  - This is not an emulation or adjusted by AWS.
+  - Full AD-DS running 2012 R2.
+  - Works with MSFT products like SharePoint and SQL Server.
+- **AD Connector**: For using AWS services which require directory services without provisioning directory on the cloud. Proxies to your on-prem directory service.
+  - Works over VPN.
 
 ### 1.16.7. AWS DataSync
 
 - Data transfer service TO and FROM AWS.
 - This is used for migrations or for large amounts of data processing transfers.
-- Designed to work at huge scales. Each agent can handle 10 Gbps and each job
-can handle 50 million files.
+- Designed to work at huge scales. Each agent can handle 10 Gbps and each job can handle 50 million files.
 - Transfers metadata and timestamps
 - Each agent is about 100 TB per day.
-- Can use bandwidth limiters to avoid customer impact
-- Supports incremental and scheduled transfer options
+- Can limit bandwidth to avoid link saturation.
+- Supports incremental and scheduled transfer options, automatic retries.
 - Compression and encryption in transit is also supported
 - Has built in data validation and automatic recovery from transit errors.
 - AWS service integration with S3, EFS, FSx for Windows servers.
@@ -4585,53 +4593,61 @@ can handle 50 million files.
 #### 1.16.7.1. AWS DataSync Components
 
 - Task
-  - job within datasync
+  - (Scheduled) job within datasync
   - defines what is being synced how quickly
-  - defines two locations involved in the job
+  - defines two locations (FROM and TO) involved in the job
 - Agent
-  - software to read and write to on prem such as NFS or SMB
-  - used to pull data off that store and move into AWS or vice versa
+  - Software to read and write to on prem such as NFS or SMB
+  - Runs on virtualisation platform such as VMWare.
+  - Used to pull data off that store and move into AWS or vice versa
 - Location
-  - every task has two locations `FROM` and `TO`
-  - example locations:
-    - network file systems (NFS), common in Linux or Unix
-    - server message block (SMB), common in Windows environments
-    - AWS storage services (EFS, FSx, and S3)
+  - Every task has two locations `FROM` and `TO`
+  - Target upload locations: NFS, SMB or AWS storage services (EFS, FSx, and S3)
 
 ### 1.16.8. FSx for Windows File Server
 
 - Fully managed native windows file servers/shares
 - Designed for integration with Windows environments.
-  - native Windows file system, not emulated server
-- Integrates with Directory Service or Self-Managed AD
+  - Native Windows file system, not emulated
+- Integrates with Directory Service or Self-Managed AD (on-prem)
 - Can be used in **Single** or **Multi-AZ** within a VPC.
   - This controls the network interfaces that are available.
   - Single mode use replication in the AZ to ensure resiliency.
+- Has KMS-at-rest encryption
 - Can perform full range of different backups
   - Client side and AWS side
   - Can perform automatic and on-demand backups.
-- File systems can be access using VPC, Peering, VPN, Direct Connect. Native
-windows filesystem or Directory Services.
+- File systems can be access using VPC, Peering, VPN, Direct Connect. Native windows filesystem or Directory Services.
 
 #### 1.16.8.1. Words to look for
 
-- VSS: User Driven Restores
-- Native File System (NFS) accessible over SMB
-- Windows permissions model
+- VSS: User Driven restore (right-click and restore previous versions)
+- File system accessible over SMB
+- Adopts Windows permissions model
 - Product supports Distribute File Systems (DFS), scale out file share.
 - Managed service, no file server admin
 - Integrates with DS and your own directory.
 
-### FSx for Lustre
+### 1.16.9. FSx for Lustre
 
-- Designed for HPC - Linux workloads Clients
+- Designed for HPC - Linux workloads Clients (POSIX)
 - Designed for Machine Learning, Big Data, Financial Modelling
 - 100 GB/s throughout & sub millisecond latencies
 - Deployment types **Persistent** or **Scratch**
-  - Scratch - Optimized for Short term no replication & fast ( Designed for pure performance) - NO HA, NO REPLICATION
-  - Persistent - longer term, HA ( IN ONE AZ), self-healing
+  - Scratch - Optimized for Short term no replication & fast ( Designed for pure performance) - No HA or replication
+  - Persistent - longer term, HA (in one AZ), self-healing
 - Accessible over VPN or Direct Connect
 - Can be backed up to S3 ( Manual or Automatic 0-35 days retention)
+  - Lazy-loaded from S3 into file system.
+- Metadata stored on metadata targets
+- Objects stored on object storage targets (OSTs)
+
+**Exam keywords:**
+
+* Lustre, very high-end performance requirements, POSIX, HPC, big data requirements.
+* Machine learning, Sagemaker
+
+![](Pics/FSxLustre.png)
 
 ---
 
@@ -4639,14 +4655,18 @@ windows filesystem or Directory Services.
 
 ### 1.17.1. AWS Secrets Manager
 
-- Share functionality with parameter store. Sometimes both are appropriate.
-- Designed specifically for secrets, passwords, API keys.
+- Shares functionality with parameter store. Sometimes both are appropriate.
+- **Exam note:** Designed specifically for secrets, passwords, API keys.
 - Usable via Console, CLI, API, or SDK (integration)
 - Supports the automatic rotation of secrets using Lambda.
-- Directly integrates with RDS and a limited set of AWS products. If lambda
-is invoked and changes a secret, the password can automatically change in RDS.
+- Directly integrates with RDS and a limited set of AWS products. 
+  - If lambda is invoked and changes a secret, the password can automatically change in RDS.
 - Secrets are encrypted at rest.
 - Integrates with IAM, can use IAM permissions to control access to secrets.
+- Differences with SSM parameter store:
+  - Secrets explicitly stated
+  - Rotation of secrets
+  - Integration with specific products like RDS.
 
 #### 1.17.1.1. Secrets Manager Example
 
@@ -4656,98 +4676,94 @@ is invoked and changes a secret, the password can automatically change in RDS.
 4. Periodically, a lambda function is invoked to rotate the secrets.
 5. The Lambda uses an execution role to get permissions.
 
-Secrets are secured using KMS so you never risk any leakage via physical access
-to the AWS hardware and KMS ensures role separation.
+Secrets are secured using KMS so you never risk any leakage via physical access to the AWS hardware and KMS ensures role separation.
 
 ### 1.17.2. AWS Shield and WAF (Web Application Firewall)
 
-Provides against DDoS attacks with AWS resources. This is a denial of
-service attack. Normally not possible to block them by using individual
-IP addresses. Without detailed analysis, the traffic looks like normal
-requests to your website.
+Provides against DDoS attacks with AWS resources. This is a denial of service attack. Normally not possible to block them by using individual IP addresses. Without detailed analysis, the traffic looks like normal requests to your website.
 
 - Shield Standard
-  - Free with Route53 and CloudFront as default
+  - **Free** with Route53 or CloudFront as default
   - Provides layer 3 and layer 4 protection against DDoS attacks.
+  
 - Shield advanced
-  - $3000 per month
+  - Cost: $3,000/month
   - Includes EC2, ELB, CloudFront, Global Acceleration and R53
-  - Provides access to DDoS advanced response team and financial insurance
-  against increased costs.
-
+    - Provides access to DDoS advanced response team and financial insurance against increased costs.
+  
 - WAF (web application firewall)
   - Layer 7 firewall (HTTP/s) firewall
   - Protects against complex layer 7 attacks:
     - SQL injections
     - cross-site scripting
-    - geo blocks
-    - rate awareness
+    - Geo blocks
+    - Rate awareness
   - WEBACL integrated with Load Balancers, API gateways, and CloudFront.
     - Rules are added to WEBACL and evaluated when traffic arrives.
+  
+  **Exam notes:**
+  
+  * Link 
+    * DDOS with Shield
+    * L7 HTTP(S) filtering with WAF
+    * Global perimeter protection provided by Shield and WAF.
 
-#### 1.17.2.1. Example of Architecture
+#### 1.17.2.1. Architecture example
 
-Shield standard automatically looks at the data before any data reaches
-past Route53.
-The user is directed to the closest CloudFront location. Again, shield
-standard looks at the data again before it moves on.
+![](Pics/ShieldAndWAF.png)
 
-WAF Rules are defined and included in a WEBACL which is associated to a
-cloud front distribution and deployed to the edge.
+* Shield standard automatically looks at the data before any data reaches past Route53. The user is directed to the closest CloudFront location. Again, shield standard looks at the data again before it moves on.
 
-Shield advanced can then intercept traffic when it reaches the load balancer.
-Once the data reaches the VPC, it has been filtered at Layer 3, 4, and 7
-already.
+* WAF Rules are defined and included in a WEBACL which is associated to a cloud front distribution and deployed to the edge.
 
-Layer 7 filtering is only provided by WAF.
+* Shield advanced can then intercept traffic when it reaches the load balancer. Once the data reaches the VPC, it has been filtered at Layer 3, 4, and 7 already.
 
 ### 1.17.3. CloudHSM
 
-KMS is the key management service within AWS. It is used for encryption within
-AWS and it integrates with other AWS products. Can generate keys, manage
-keys, and can integrate for encryption. The problem is this is a shared
-service. You're using a service which other accounts within AWS also use.
-Although the permissions are strict, AWS still does manage the hardware for KMS.
-KMS is a **Hardware Security Module** or HSM. These are industry standard pieces
-of hardware which are designed to manage keys and perform cryptographic
-operations.
+**Background**
 
-You can run your own HSM on premise.
-**Cloud HSM is a true "single tenant"hardware security module (HSM)** that's hosted within the AWS cloud.
-AWS provisions the HW, but it is impossible for them to help. There is no way
-to recover data from them if access is lost.
+* KMS is the key management service within AWS. It is used for encryption within AWS and it integrates with other AWS products. Can generate keys, manage keys, and can integrate for encryption. The problem is this is a shared service. You're using a service which other accounts within AWS also use.
 
-Fully FIPS 140-2 Level 3 (KMS is L2 overall, but some is L3)
-IF you require level 3 overall, you MUST use CloudHSM.
+* Although the permissions are strict, AWS still does manage the hardware for KMS. KMS is a **Hardware Security Module** or HSM. These are industry standard pieces of hardware which are designed to manage keys and perform cryptographic operations.
 
-KSM all actions are performed with AWS CLI and IAM roles.
+* You can run your own HSM on premise.
 
-HSM will not integrate with AWS by design and uses industry standard APIs.
+**Features**
 
-- **PKCS#11**
-- **Java Cryptography Extensions (JCE)**
-- **Microsoft CryptoNG (CNG) libraries**
+* **Cloud HSM is a true "single tenant"hardware security module (HSM)** that's hosted within the AWS cloud.
+  AWS provisions the HW, but it is impossible for them to recover data from them if access is lost.
 
-KMS can use CloudHSM as a **custom key store**, CloudHSM integrates with KMS.
+* Fully FIPS 140-2 Level 3 (KMS is L2 overall, but some is L3). 
+  * **IF you require level 3 overall, you MUST use CloudHSM.**
 
-HSM is not highly available and runs within one AZ. To be HA, you need at least
-two HSM devices and one in each AZ you use. Once HSM is in a cluster, they
-replicate all policies in sync automatically.
+* KSM all actions are performed with AWS CLI and IAM roles.
 
-HSM needs an endpoint in the subnet of the VPC to allow resources access
-to the cluster.
+* HSM will not integrate with AWS by design but uses industry standard APIs.
+  * **PKCS#11**
+  * **Java Cryptography Extensions (JCE)**
+  * **Microsoft CryptoNG (CNG) libraries**
 
-AWS has no access to the HSM appliances which store the keys.
+* KMS can use CloudHSM as a **custom key store**, CloudHSM integrates with KMS.
+
+**Architecture**
+
+* HSM is not highly available and runs within one AZ. To be HA, you need at least two HSM devices and one in each AZ you use. Once HSM is in a cluster, they replicate all policies in sync automatically.
+
+* HSM needs an endpoint in the subnet of the VPC (an ENI) to allow resources access to the cluster.
+
+* AWS has no access to the HSM appliances which store the keys.
+
+![](Pics/CloudHSM.png)
 
 #### 1.17.3.1. Cloud HSM Use Cases
 
-- No native AWS integration with AWS products. You can't use S3 SSE with
-CloudHSM.
-- Can offload the SSL/TLS processing from webservers. CloudHSM
-is much more efficient to do these encryption processes.
+- No native AWS integration with AWS products. You can't use S3 SSE with CloudHSM.
+  - But you can use it to encrypt objects before uploading to S3.
+- Can offload the SSL/TLS processing from webservers. CloudHSM is much more efficient to do these encryption processes.
 - Oracle Databases can use CloudHSM to enable **transparent data encryption (TDE)**
-- Can protect the private keys an issuing certificate authority.
+- Can protect the private keys  for an issuing certificate authority.
 - Anything that needs to interact with non AWS products.
+  - Not suitable for anything which requires AWS integration.
 
 ---
 
