@@ -4765,6 +4765,28 @@ Provides against DDoS attacks with AWS resources. This is a denial of service at
 - Anything that needs to interact with non AWS products.
   - Not suitable for anything which requires AWS integration.
 
+### 1.17.4. AWS Config
+
+* Records config changes over time on resources eg. SG on instances. Stored in S3 config bucket.
+* Regional service but can be configured cross-region and account aggregation.
+* Changes can generate SNS notifications and generate events via EventBridge  and Lambda
+  * Can configure config rules to evaluate resources against config rules
+
+### 1.17.5 Amazon Macie
+
+* Data security and privacy service for S3
+* [Policy and sensitive data findings](https://docs.aws.amazon.com/macie/latest/user/findings-types.html)
+* **Policy findings:**
+  * Generated when policies or settings for an S3 bucket are changed in a way that reduces the security of the bucket and its objects.
+
+* **Sensitive data findings:** Scans data in S3 buckets to find sensitive or private information
+  * Uses managed or custom data identifiers to identify sensitive data
+  * Data like SSH keys, credit and bank account numbers.
+  * Triggers configurable events via EventBridge to change policy on buckets
+  * This in turn can be used to trigger Lambda functions for remediations
+  * Policy findings like S3BucketEncryptionDisabled 
+* Can be used with AWS Orgs or by inviting accounts to the Macie account
+
 ---
 
 ## 1.18. NoSQL-and-DynamoDB
