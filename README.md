@@ -4660,7 +4660,7 @@ Static| Dynamic |
 - Usable via Console, CLI, API, or SDK (integration)
 - Supports the automatic rotation of secrets using Lambda.
 - Directly integrates with RDS and a limited set of AWS products. 
-  - If lambda is invoked and changes a secret, the password can automatically change in RDS.
+  - If Lambda is invoked and changes a secret, the password can automatically change in RDS.
 - Secrets are encrypted at rest.
 - Integrates with IAM, can use IAM permissions to control access to secrets.
 - Differences with SSM parameter store:
@@ -4774,17 +4774,17 @@ Provides against DDoS attacks with AWS resources. This is a denial of service at
 
 ### 1.17.5 Amazon Macie
 
-* Data security and privacy service for S3
-* [Policy and sensitive data findings](https://docs.aws.amazon.com/macie/latest/user/findings-types.html)
-* **Policy findings:**
-  * Generated when policies or settings for an S3 bucket are changed in a way that reduces the security of the bucket and its objects.
+* Data security and privacy service for S3 buckets
+* [Policy and sensitive data findings](https://docs.aws.amazon.com/macie/latest/user/findings-types.html):
+  * **Policy findings:**
+    * Generated when policies or settings for an S3 bucket are changed in a way that reduces the security of the bucket and its objects.
 
-* **Sensitive data findings:** Scans data in S3 buckets to find sensitive or private information
-  * Uses managed or custom data identifiers to identify sensitive data
-  * Data like SSH keys, credit and bank account numbers.
-  * Triggers configurable events via EventBridge to change policy on buckets
-  * This in turn can be used to trigger Lambda functions for remediations
-  * Policy findings like S3BucketEncryptionDisabled 
+  * **Sensitive data findings:** Scans data in S3 buckets to find sensitive or private information
+    * Uses managed or custom data identifiers to identify sensitive data
+    * Data like SSH keys, credit and bank account numbers.
+    * Triggers configurable events via EventBridge to change policy on buckets
+    * This in turn can be used to trigger Lambda functions for remediations
+    * Policy findings like S3BucketEncryptionDisabled 
 * Can be used with AWS Orgs or by inviting accounts to the Macie account
 
 ---
@@ -4793,7 +4793,7 @@ Provides against DDoS attacks with AWS resources. This is a denial of service at
 
 ### 1.18.1. DynamoDB Architecture
 
-NoSQL Database as a Service (DBaaS)
+NoSQL Database as a Service (DBaaS).
 
 - Wide column Key/Value database.
 - Not like RDS which is a Database Server as a Product.
@@ -4815,18 +4815,14 @@ NoSQL Database as a Service (DBaaS)
   - Composite (Partition and Sort)
 - Every item in the table needs a unique primary key.
 - Attributes may or may not be there. This is not necessary.
-- Items can be at most 400KB in size. This includes the primary key and
-attributes.
+- Items can be at most 400KB in size. This includes the primary key and attributes.
 
-In DynamoDB, capacity means speed. If you choose on-demand capacity model
-you don't have to worry about capacity. You only pay for the operations
-for the table.
-If you choose provisioned capacity, you must set this on a per table basis.
+In DynamoDB, capacity means speed. If you choose on-demand capacity model you don't have to worry about capacity. You only pay for the operations for the table. If you choose provisioned capacity, you must set this on a per table basis.
 
 Capacity is set per WCU or RCU
 
-1 WCU means you can write 1KB per second to that table
-1 RCU means you can read 4KB per second for that table
+* 1 WCU means you can write 1KB per second to that table
+* 1 RCU means you can read 4KB per second for that table
 
 #### 1.18.1.2. Dynamo DB Backups
 
