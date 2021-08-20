@@ -4920,8 +4920,8 @@ Operates in two modes
 
 * Strongly consistent reads always uses the leader node and is less scalable.
 
-Not every application can tolerate eventual consistency. If you have a stock database or medical information, you must use strongly consistent reads.
-If you can tolerate the cost savings you can scale better.
+* Not every application can tolerate eventual consistency. If you have a stock database or medical information, you must use strongly consistent reads.
+  * If you can tolerate the cost savings you can scale better.
 
 #### 1.18.2.5. WCU Example Calculation
 
@@ -4959,61 +4959,51 @@ Answer: $N_i \cdot S_i$ = $10 \cdot 1 = 10$ RCUs
 
 ### 1.18.3. DynamoDB Streams and Triggers
 
-DynamoDB stream is a time ordered list of changes to items in a DynamoDB
-table. A stream is a 24 hour rolling window of the changes.
-It uses Kinesis streams on the backend.
+* DynamoDB stream is a time ordered list of changes to items in a DynamoDB table. 
+* A stream is a 24 hour rolling window of the changes. It uses Kinesis streams on the backend.
 
-This is enabled on a per table basis. This records
+* Enabled on a per table basis. This records
+  * Inserts
+  * Updates
+  * Deletes
 
-- Inserts
-- Updates
-- Deletes
+* Different view types influence what is in the stream.
 
-Different view types influence what is in the stream.
+* There are four view types that it can be configured with:
+  * KEYS_ONLY : only shows the item that was modified (but not the changes)
+  * NEW_IMAGE : shows the final state for that item
+  * OLD_IMAGE : shows the initial state before the change
+  * NEW_AND_OLD_IMAGES : shows both before and after the change
 
-There are four view types that it can be configured with:
-
-- KEYS_ONLY : only shows the item that was modified
-- NEW_IMAGE : shows the final state for that item
-- OLD_IMAGE : shows the initial state before the change
-- NEW_AND_OLD_IMAGES : shows both before and after the change
-
-Pre or post change state might be empty if you use
-**insert** or **delete**
+Pre or post change state might be empty if you use **insert** or **delete**
 
 #### 1.18.3.1. Trigger Concepts
 
-Allow for actions to take place in the event of a change in data
+* Actions occur in the event of a change in data
 
-Item change generates an event that contains the data which
-was changed. The specifics depend on the view type.
-The action is taken using that data. This will combine the
-capabilities of stream and lambda. Lambda will complete some compute based on
-this trigger.
+* Item change generates an event that contains the data which was changed. Specifics depend on the view type.
+* Streams and Lambda together used to trigger event.
+* Used for reporting and analytics in the event of changes such as stock levels or data aggregation.
 
-This is great for reporting and analytics in the event of changes such as
-stock levels or data aggregation.
-Good for data aggregation for stock or voting apps.
-This can provide messages or notifications and eliminates the
-need to poll databases.
+* Good for data aggregation for stock or voting apps.
+  * This can provide messages or notifications and eliminates the need to poll databases.
 
 ### 1.18.4. DynamoDB Local (LSI) and Global (GSI) Secondary Indexes
 
 - Great for improving data retrieval in DynamoDB.
-- Query can only work on 1 PK value at a time and optionally a single
-or range of SK values.
+- Query can only work on 1 PK value at a time and optionally a single or range of SK values.
 - Indexes are a way to provide an alternative view on table data.
-- You have the ability to choose which attributes are projected
-to the table.
+- You have the ability to choose which attributes are projected to the table.
 
 #### 1.18.4.1. Local Secondary Indexes (LSI)
 
-- Choose alternative sort key with the same partition key on base table data.
+Stackoverflow explanation [here](https://stackoverflow.com/questions/50081459/global-vs-local-secondary-indexes-in-dynamodb/50096346)
+
+- Choose alternative sort key (SK) with the same partition key (PK) on base table data.
   - If item does not have sort key it will not show on the table.
 - These must be created with a base table in the beginning.
   - This cannot be added later.
 - Maximum of 5 LSIs per base table.
-- Uses the same partition key, but different sort key.
 - Shares the RCU and WCU with the table.
 - It makes a smaller table and makes **scan** operates easier.
 - In regards to Attributes, you can use:
@@ -5023,26 +5013,22 @@ to the table.
 
 #### 1.18.4.2. Global Secondary Index (GSI)
 
-- Can be created at any time and much more flexible.
+- Can be created at *any* time and much more flexible.
 - There is a default limit of 20 GSIs for each table.
-- Allows for alternative PK and SK.
+- Allows for alternative for both PK and SK.
 - GSI will have their own RCU and WCU allocations.
 - You can then choose which attributes are included in this table.
-- GSIs are **always** eventually consistent. Replication between
-base and GSI is Async
+- GSIs are **always** eventually consistent. Replication between base and GSI is Async
 
 #### 1.18.4.3. LSI and GSI Considerations
 
 - Must be careful which projections are used to manage capacity.
-- If you don't project a specific attribute, then you require the attribute when
-querying data, it will then fetch the data later in an inefficient way.
+- If you don't project a specific attribute (column), then you require the attribute when querying data, it will then fetch the data later in an inefficient way.
 - This means you should try to plan what will be used on the front.
 
-**GSI as default** and only use LSI when **strong consistency** is required
+* Recommend **GSI as default** and only use LSI when **strong consistency** is required
 
-Indexes are designed when data is in a base table needs an alternative
-access pattern. This is great for a security team or data science team
-to look at other attributes from the original purpose.
+* Indexes are designed so data in a base table can be accessed in an alternative pattern. This is great for a security team or data science team to look at other attributes from the original purpose.
 
 ### 1.18.5. DynamoDB Global Tables
 
