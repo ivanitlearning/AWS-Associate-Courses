@@ -4793,7 +4793,7 @@ Provides against DDoS attacks with AWS resources. This is a denial of service at
 
 ### 1.18.1. DynamoDB Architecture
 
-NoSQL Database as a Service (DBaaS).
+NoSQL Database-Table as a Service (DBaaS).
 
 - Wide column Key/Value database.
 - Not like RDS which is a Database Server as a Product.
@@ -4807,12 +4807,12 @@ NoSQL Database as a Service (DBaaS).
 
 #### 1.18.1.1. Dynamo DB Tables
 
-- **Table** a grouping of items which share the same primary key.
-- **Items** within a table are how you manage the data.
+- **Table** - a grouping of items which share the same primary key.
+- **Items** - within a table are how you manage the data.
   - There is no limit to the number of items in a table.
 - Two types of primary key:
   - Simple (Partition)
-  - Composite (Partition and Sort)
+  - Composite (Partition and Sort) - Combination of partition key (PK), sort key (SK) needs to be unique.
 - Every item in the table needs a unique primary key.
 - Attributes may or may not be there. This is not necessary.
 - Items can be at most 400KB in size. This includes the primary key and attributes.
@@ -4821,28 +4821,32 @@ In DynamoDB, capacity means speed. If you choose on-demand capacity model you do
 
 Capacity is set per WCU or RCU
 
-* 1 WCU means you can write 1KB per second to that table
-* 1 RCU means you can read 4KB per second for that table
+* 1 WCU => Can write 1KB per second to that table
+* 1 RCU => Can read 4KB per second for that table
+
+![](Pics/DynanoDB-Table-Intro.png)
 
 #### 1.18.1.2. Dynamo DB Backups
 
-**On-demand Backups**: Similar to manual RDS snapshots. Full backup of the table
-that is retained until you manually remove that backup. This can be used to
-restore data in the same region or cross-region. You can adjust indexes, or
-adjust encryption settings.
+**On-demand Backups**: 
 
-**Point-in-time Recovery**: Must be enabled on each table and is off by
-default. This allows continuous record of changes for 35 days to allow you to
-replay any point in that window to a 1 second granularity.
+* Similar to manual RDS snapshots. 
+* Full backup of the table that is retained until you manually remove that backup. 
+* Can be used to restore data in the same region or cross-region. You can adjust indexes, or adjust encryption settings.
 
-#### 1.18.1.3. Dynamo DB Considerations
+**Point-in-time Recovery**: 
 
-- NoSQL, you should jump towards DynamoDB.
-- Relational data, this is NOT DynamoDB.
-- If you see key value and DynamoDB is an answer, this is likely the proper
-choice.
+* Disabled by default. 
+* Continuous record of changes for 35 days 
+* Can restore any point in that window to a 1 second granularity.
 
-Access to Dynamo is from the console, CLI, or API. You don't have SQL access.
+#### 1.18.1.3. Exam Considerations
+
+- NoSQL => Prefer DynamoDB.
+- Relational data => NOT DynamoDB.
+- Key/value => DynamoDB
+
+* Access to Dynamo is from the console, CLI, or API. You **don't** have SQL access.
 
 Billing based on:
 
@@ -4856,79 +4860,74 @@ Can purchase reserved capacity with a cheaper rate for a longer term commit.
 
 #### 1.18.2.1. DynamoDB Reading and Writing
 
-**On-Demand**: Unknown or unpredictable load on a table. This is also good
-for as little admin overhead as possible. Pay a price per million
-Read or Write units. This is as much as 5 times the price as provisioned.
+* **On-Demand**: Unknown or unpredictable load on a table. This is also good for as little admin overhead as possible. Pay a price per million Read or Write units. This is as much as 5 times the price as provisioned.
 
-**Provisioned**: RCU and WCU set on a per table basis.
+* **Provisioned**: RCU and WCU set on a per table basis.
 
 Every operation consumes at least 1 RCU/WCU
 
-1 RCU = 1 x 4KB read operation per second. This rounds up.
-1 WCU = 1 x 1KB write operation per second.
+* 1 RCU = 1 x 4KB read operation per second. This rounds up.
+  * Since the max item size is 400kb, every read operation on that costs 400kb/4kb = 100 RCU / s
+* 1 WCU = 1 x 1KB write operation per second.
 
-Every single table has a WCU and RCU burst pool. This is 500 seconds
-of RCU or WCU as set by the table.
+* Every single table has a WCU and RCU burst pool that can be dipped into for operations when needed. This is 300 seconds of RCU or WCU as set by the table.
 
 #### 1.18.2.2. Query
 
-You have to pick one Partition Key (PK) value to start.
+Example:
 
-The PK can be the sensor unit, the Sort Key (SK) can be the day of the
-week you want to look at.
+* Pick one Partition Key (PK) value to start.
 
-Query accepts a single PK value and **optionally** a SK or range.
-Capacity consumed is the size of all returned items. Further filtering
-discards data, but capacity is still consumed.
+* The PK can be the sensor unit, the Sort Key (SK) can be the day of the week you want to look at.
+
+* Query accepts a single PK value and **optionally** a SK or range. Capacity consumed is the size of all returned items. Further filtering discards data, but capacity is still consumed.
 
 In this example you can only query for one weather station.
 
-If you query a PK it can return all fields items that match. It is always
-more efficient to pull as much data as needed per query to save RCU.
+* If you query a PK it can return all fields items that match. 
+  * More efficient to pull as much data as needed per query to save RCU
+  * Query rounds up to at least 1 RCU.
 
-You have to query for at least one item of PK and are charged for the
-response of that query operation.
+* You have to query for at least one item of PK and are charged for the response of that query operation.
 
-If you filter data and only look at one attribute, you will still be
-charged for pulling all the attributes against that query.
+* If you filter data and only look at one attribute (eg. yellow column), you will still be charged for pulling all the attributes against that query.
+
+![](Pics/DDB Query.png)
 
 #### 1.18.2.3. Scan
 
-Least efficient when pulling data from Dynamo, but the most flexible.
+* Least efficient when pulling data from Dynamo, but the most flexible.
 
-Scan moves through the table item by item consuming the capacity
-of every item. Even if you consume less than the whole table, it will
-charge based on that. It adds up all the values scanned and will charge
-rounding up.
+* Scan moves through the table item by item consuming the capacity of every item. Even if you consume less than the whole table, it will
+  charge based on that. It adds up all the values scanned and will charge rounding up.
+
+![](Pics/DDB Scan.png)
 
 #### 1.18.2.4. DynamoDB Consistency Model
 
-**Eventually** Consistent: easier to implement and scales better
-**Strongly (Immediately)** Consistent: more costly to achieve
+Operates in two modes
 
-Every piece of data is replicated between storage nodes. There is one
-Leader storage node and every other node follows.
+* **Eventually** Consistent: easier to implement and scales better
+* **Strongly (Immediately)** Consistent: more costly to achieve
 
-Writes are always directed to the **leader node**. Once the leader
-is complete, it is **consistent**. It then starts the process of replication.
-This typically takes milliseconds and assumes the lack of any faults on the
-storage nodes.
+**Principles**
 
-Eventual consistent could lead to stale data if a node is checked before
-replication completes. You get a discount for this risk.
+* Every piece of data is replicated between storage nodes. There is one Leader storage node and every other node follows.
 
-A strongly consistent read always uses the leader node and is less
-scalable.
+* Writes are always directed to the **leader node**. Once the leader is complete, it is **consistent**. It then starts the process of replication. This typically takes milliseconds and assumes the lack of any faults on the storage nodes.
 
-Not every application can tolerate eventual consistency. If you have a stock
-database or medical information, you must use strongly consistent reads.
+* Eventual consistent could lead to stale data if a node is checked before replication completes. You get a discount for this risk (50% off RCU)
+
+* Strongly consistent reads always uses the leader node and is less scalable.
+
+Not every application can tolerate eventual consistency. If you have a stock database or medical information, you must use strongly consistent reads.
 If you can tolerate the cost savings you can scale better.
 
 #### 1.18.2.5. WCU Example Calculation
 
-- Store 10 items per second with 2.5K average size per item.
-- Calculate WCU per item, round up, then multiply by average per second.
-- (2.5 KB / 1 KB) = 3 * 10 p/s = 30 WCU
+1. Store 10 items per second with 2.5K average size per item.
+2. Calculate WCU per item, round up, then multiply by average per second.
+3. (2.5 KB / 1 KB) = 3 * 10 p/s = 30 WCU
 
 To calculate the Write Capacity Unit we need:
 
