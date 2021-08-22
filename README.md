@@ -3633,8 +3633,7 @@ Autoscaling Groups will distribute EC2 instances to try and keep the number of i
 
 #### 1.12.4.1. Scaling Policies
 
-Scaling policies are rules that you can use to define autoscaling of instances.
-There are three types of scaling policies:
+Scaling policies are rules that you can use to define autoscaling of instances. 3 types of scaling policies:
 
 1. Manual Scaling - manually adjust the desired capacity
 2. Scheduled Scaling - useful for known periods of high or low usage. They are time based adjustments e.g. Sales Periods.
@@ -3643,15 +3642,16 @@ There are three types of scaling policies:
 	- Stepped: If CPU usage is above 50%, add one, if above 80% add three
 	- Target: Desired aggregate CPU = 40%, ASG will achieve this
 
-**Cooldown Period** controls how long to wait at the end of a scaling action before scaling again. This handles the minimum billable duration for an EC2 instance. Default 300 seconds.
+* **Cooldown Period** controls how long to wait at the end of a scaling action before scaling again. This handles the minimum billable duration for an EC2 instance. Default 300 seconds.
 
-Self healing occurs when an instance has failed and AWS provisions a new instance in its place. This will fix most problems that are isolated to one instance.
+* Self healing occurs when an instance has failed and AWS provisions a new instance in its place. This will fix most problems that are isolated to one instance.
 
-AGS can use the load balancer health checks rather than EC2.
-ALB status checks can be much richer than EC2 checks because they can monitor the status of HTTP and HTTPS requests. This makes them more application aware.
+#### 1.12.4.2 ASG features
+
+* ASG can use the load balancer health checks rather than EC2. ALB status checks can be much richer than EC2 checks because they can monitor the status of HTTP and HTTPS requests. This makes them more application aware.
 
 - Autoscaling Groups are free, only billed for the resources deployed.
-- Always use cool downs to avoid rapid scaling (min EC2 instance billable period)
+- Tips: Always use cool downs to avoid rapid scaling (min EC2 instance billable period)
 - Think about implementing more and smaller instances to allow granularity.
 - Generally, for anything client-facing you should always use Auto Scaling Groups (ASG) with Application Load Balancers (ALB) with autoscaling because they allow you to provide elasticity by abstracting the user away from individual servers. Since, the customers will be connecting through an ALB, they don't have any visibility of individual servers.
 - ASG defines WHEN (under what circumstances) and WHERE (VPCs, SG); Launch Templates defines WHAT.
@@ -4898,8 +4898,7 @@ In this example you can only query for one weather station.
 
 * Least efficient when pulling data from Dynamo, but the most flexible.
 
-* Scan moves through the table item by item consuming the capacity of every item. Even if you consume less than the whole table, it will
-  charge based on that. It adds up all the values scanned and will charge rounding up.
+* Scan moves through the table item by item consuming the capacity of every item. Even if you consume less than the whole table, it will charge based on that. It adds up all the values scanned and will charge rounding up.
 
 ![](Pics/DDB Scan.png)
 
@@ -5033,9 +5032,8 @@ Stackoverflow explanation [here](https://stackoverflow.com/questions/50081459/gl
 ### 1.18.5. DynamoDB Global Tables
 
 - Global tables provide multi-master cross-region replication.
-  - All tables are the same.
-- Tables are created in multiple AWS regions. In one of the tables, you
-configure the links between all of the tables.
+  - All tables are the same, no table is viewed as master.
+- Tables are created in multiple AWS regions. In one of the tables, you configure the links between all of the tables.
 - DynamoDB will enable replication between all of the tables.
   - Tables become table replicas.
 - Between the tables, **last writer wins** in conflict resolution.
@@ -5048,103 +5046,158 @@ configure the links between all of the tables.
 
 ### 1.18.6. DynamoDB Accelerator (DAX)
 
-This is an in memory cache for Dynamo.
+In memory cache for Dynamo.
 
-**Traditional Cache**: The application needs to access some data and checks
-the cache. If the cache doesn't have the data, this is known as a cache miss.
-The application then loads directly from the database. It then updates the
-cache with the new data. Subsequent queries will load data from the cache as
-a cache hit and it will be faster
+Comparison with traditional
 
-**DAX**: The application instance has DAX SDK added on. DAX and dynamoDB are one
-in the same. Application uses DAX SDK and makes a single call for the data which
-is returned by DAX. If DAX has the data, then the data is returned directly. If
-not it will talk to Dynamo and get the data. It will then cache it for future
-use. The benefit of this system is there is only one set of API calls using
-one SKD. It is tightly integrated and much less admin overhead.
+* **Traditional Cache**: The application needs to access some data and checks the cache. If the cache doesn't have the data, this is known as a cache miss. The application then loads directly from the database. It then updates the cache with the new data. Subsequent queries will load data from the cache as a cache hit and it will be faster
+
+* **DAX**: The application instance has DAX SDK added on. DAX and dynamoDB are one in the same. Application uses DAX SDK and makes a single call for the data which is returned by DAX. If DAX has the data, then the data is returned directly. If not it will talk to Dynamo and get the data. It will then cache it for future use. The benefit of this system is there is only one set of API calls using one SKD. It is tightly integrated and much less admin overhead.
 
 #### 1.18.6.1. DAX Architecture
 
-This runs from within a VPC and is designed to be deployed to multiple
-AZs in that VPC. Must be deployed across AZs to ensure it is highly available.
+This runs from *within a VPC* and is designed to be deployed to multiple AZs in that VPC. Must be deployed across AZs to ensure it is highly available.
 
-DAX is a cluster service where nodes are placed into different AZs. There is
-a **primary node** which is the read and write note. This replicates out to
-other nodes which are **replica nodes** and function as read replicas. With this
-architecture, we have an EC2 instance running an application and the DAX
-SDK. This will communicate with the cluster. On the other side, the cluster
-communicates with DynamoDB.
+* DAX is a cluster service where nodes are placed into different AZs. 
 
-DAX maintains two different caches. First is the **item cache** and this caches
-individual items which are retrieved via the **GetItem** or **BatchGetItem**
-operation. These operate on single items and must specify the items partition
-or sort key.
+* There's a **primary node** which is the read and write note. This replicates out to other nodes which are **replica nodes** and function as read replicas. With this architecture, we have an EC2 instance running an application and the DAX SDK. This will communicate with the cluster. On the other side, the cluster communicates with DynamoDB.
 
-There is a **query cache** which holds data and the parameters used for the
-original query or scan. Whole query or scan operations can be rerun
-and return the same cached data.
+Note: **GetItem** and **BatchGetItem** are read queries for DDB [covered here](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SQLtoNoSQL.ReadData.html), but not in the course.
 
-Every DAX cluster has an endpoint which will load balance across the cluster.
-If data is retrieved from DAX directly, then it's called a cache hit and the
-results can be returned in microseconds.
+DAX maintains two different caches. Ref [here](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DAX.concepts.html)
 
-Any cache misses, so when DAX has to consult DynamoDB, these are generally
-returned in single digit milliseconds. Now in writing data to DynamoDB,
-DAX can use write-through caching, so that data is written into DAX at the
-same time as being written into the database.
+* **Item cache** stores results from **GetItem** and **BatchGetItem** operations.  These operate on single items and must specify the items partition or sort key.
 
-If a cache miss occurs while reading, the data is also written to the primary
-node of the cluster and the data is retrieved. And then it's replicated from
-the primary node to the replica nodes.
+* **Query cache** stores results from **Query** and **Scan** operations. Whole query or scan operations can be rerun and return the same cached data.
 
-When writing data to DAX, it can use write-through. Data is written to the
-database, then written to DAX.
+Every DAX cluster has an endpoint which will load balance across the cluster. If data is retrieved from DAX directly, then it's called a cache hit and the results can be returned in microseconds.
+
+Any cache misses, so when DAX has to consult DynamoDB, these are generally returned in single digit milliseconds. Now in writing data to DynamoDB, DAX can use write-through caching, so that data is written into DAX at the same time as being written into the database.
+
+If a cache miss occurs while reading, the data is also written to the primary node of the cluster and the data is retrieved. And then it's replicated from the primary node to the replica nodes.
+
+When writing data to DAX, it can use write-through. Data is written to the database, then written to DAX.
+
+![](Pics/DDB Accelerator (DAX).png)
 
 #### 1.18.6.2. DAX Considerations
 
-- Primary node which writes and Replicas which support read operations.
-- Nodes are HA, if the primary node fails there will be an election and
-secondary nodes will be made primary.
-- In-memory cache allows for much faster read operations and significantly
-reduced costs. If you are performing the same set of read operations on the same
-set of data over and over again, you can achieve performance improvements
-by implementing DAX and caching those results.
-- With DAX you can scale up or scale out.
-- DAX supports write-through. If you write data to DynamoDB, you can
-use the DAX SDK. DAX will handle that data being committed to DynamoDB
-and also storing that data inside the cache.
-- DAX is not a public service and is deployed within a VPC. Anything
-that uses that data many times will benefit from DAX.
+- Primary node supports Write while Replica supports Reads.
+- Nodes are HA, if the primary node fails there will be an election and secondary nodes will be made primary.
+- In-memory cache allows for much faster read operations and **significantly reduced costs**. If you are performing the same set of read operations on the same set of data over and over again, you can achieve performance improvements by implementing DAX and caching those results.
+- With DAX you can scale up (larger DAX) or scale out (additional DAX instances)
+- DAX supports write-through. If you write data to DynamoDB, you can use the DAX SDK. DAX will handle that data being committed to DynamoDB and also storing that data inside the cache.
+- DAX is not a public service and is deployed within a VPC. Anything that uses that data many times will benefit from DAX.
 - Any questions which talk about caching with DynamoDB, assume it is DAX.
+- Not suitable for:
+  - Anything that requires strong consistency reads
+  - Apps that don't require low latency 
+  - Write-heavy, read-infrequent operations
+- **Exam note**:
+  - Look for caching requirement with DDB.
 
 ### 1.18.7. Amazon Athena
 
-- You can take data stored in S3 and perform Ad-hoc queries on data. Pay
-only for the data consumed.
-- Start off with structured, semi-structured and even unstructured data that is
-stored in its raw form on S3.
-- Athena uses **schema-on-read**, the original data is never changed
-and remains on S3 in its original form.
+- Allows you to take data stored in S3 and perform ad-hoc queries on data. Pay only for the data consumed.
+- Start off with structured, semi-structured and even unstructured data that is stored in its raw form on S3.
+- Athena uses **schema-on-read**, the original data is never changed and remains on S3 in its original form.
 - The schema which you define in advance, modifies data in flight when its read.
 - Normally with databases, you need to make a table and then load the data in.
-- With Athena you create a schema and load data on this schema on the fly in
-a relational style way without changing the data.
-- The output of a query can be sent to other services and can be
-performed in an event driven fully serverless way.
+- With Athena you create a schema and load data on this schema on the fly in a relational style way without changing the data.
+- The output of a query can be sent to other services and can be performed in an event driven fully serverless way.
 
 #### 1.18.7.1. Athena Explained
 
-The source data is stored on S3 and Athena can read from this data.
-In Athena you are defining a way to get the original data and defining
-how it should show up for what you want to see.
+* Source data is stored on S3 and Athena can read from this data. In Athena you are defining a way to get the original data and defining how it should show up for what you want to see.
 
-Tables are defined in advance in a data catalog and data is projected
-through when read. It allows SQL-like queries on data without transforming
-the data itself.
+* Table schema are defined in advance in a data catalog and data is projected through when read. It allows SQL-like queries on data without transforming the data itself.
 
-This can be saved in the console or fed to other visualization tools.
+* This can be saved in the console or fed to other visualization tools.
 
-You can optimize the original data set to reduce the amount of space uses
-for the data and reduce the costs for querying that data. For more information see the AWS [documentation.](https://aws.amazon.com/cloudtrail/pricing/)
+* You can optimize the original data set to reduce the amount of space uses for the data and reduce the costs for querying that data. For more information see the AWS [documentation.](https://aws.amazon.com/cloudtrail/pricing/)
 
 [^1]: For more information on Server Name Indication see the Cloudfare SNI learn[documentation.](https://www.cloudflare.com/learning/ssl/what-is-sni/)
+
+### 1.18.8. ElastiCache
+
+* In-memory database, offers high performance
+  * Eg. redis or memcached as a service.
+* Cache data for read-heavy workloads and low-latency requirements.
+  * Reduces database workloads.
+* Can store Session data and make application servers stateless.
+* Requires application code changes, can't be used if source can't be changed.
+
+#### 1.18.8.1 memcached vs Redis
+
+Two services offered
+
+|               memcached              |                                          Redis                                         |
+|:------------------------------------:|:--------------------------------------------------------------------------------------:|
+| Simple data structures (eg. strings) | Advanced data structures                                                               |
+| No replication                       | Replicate across AZs.                                                                  |
+| Multi nodes (sharding)               | Read replicas                                                                          |
+| No backups                           | Backup & restore (cache recovery)                                                      |
+| Multi-threaded                       | Transactions  (treat multi operations as one, either all work or none ie. consistency) |
+
+**Exam notes:**
+
+* Used for
+  * Read-heavy workloads
+  * Reduce cost of accessing DBs
+  * Need <ms access to data
+  * Store user session state data outside of EC2
+
+### 1.18.9 Amazon Redshift
+
+* Petabyte-scale data warehouse
+  * DBMS can pump data into this for long-term analysis and reporting.
+* OLAP (column-based) not OLTP (row-based)
+  * To get the average age of cats, you'll have to retrieve all the rows in a row-based DB but not in OLAP.
+* Pay-per-use like RDS.
+* Direct query
+  * S3 using Redshift Spectrum
+  * Other DBs using federated query
+* SQL-like interface JDBC/ODBC connections
+
+#### 1.18.9.1. Architecture
+
+* Server-based (not serverless)
+  * But quicker to provision than on-prem data warehouse
+* One AZ in a VPC (not HA)
+* VPC service - can be managed like one
+  * IAM permissions
+  * KMS at rest encryption
+  * CW monitoring
+* Need to enable enhanced VPC routing
+* Apps interact with it through leader node with the JDBC/ODBC connections
+
+**Components:**
+
+* Leader node - Query input, planning and aggregation
+* Compute node - Perform queries of data
+  * Partition into slices, each with portion of node's memory and disk space for workload
+  * Leader node distributes data to slices
+  * Slices work in parallel to complete operation
+  * Node has 2, 4, 16, 32 slices
+
+![](Pics/Redshift-Arch.png)
+
+Exam note: Need to know
+
+* Which products can be integrated
+* How redshift fits into architecture
+* What it can be used for
+* How to design redshift implementation
+
+#### 1.18.9.2. Redshift resilience and recovery
+
+* RS runs in a single AZ, so it's not resilient.
+
+* Can make backups to S3
+
+  * Automatic every 8 hours, 1 day retention default, up to 35 days.
+  * Manual snapshots by admin, lasts until removal.
+  * S3 is backed up across multiple AZs
+  * Backups can be copied to other regions as needed
+
+  
