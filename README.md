@@ -2078,7 +2078,7 @@ This isn't the only part of the chain, but it is a simplification. A system migh
 - Can snapshot backup to S3 which makes it region-resilient and allows data migration across AZs.
 - The snapshots can also be copied across regions for global resilience.
 
-![](Pics\EBS_Architecture.png)
+![](Pics/EBS_Architecture.png)
 
 - Two physical storage types available (SSD/HDD)
 - Varying level of performance (IOPS, T-put)
@@ -4030,11 +4030,11 @@ Remember this fanout arch, it will come in handy during exam
   - guarantee the order and at exactly once delivery
 - 3,000 messages p/s with batching or up to 300 messages p/s without
   
-    Standard Queue| FIFO Queue |
-    ---------|----------|---------
-    Multi lane highway | Single lane road with no way to overtake | 
-    guarantee the order and at least one delivery | guarantee the order and at exactly one delivery | 
-    empty| 3000 messages p/s with batching or up to 300 messages p/s without | 
+    Standard Queue| FIFO Queue 
+    ---------|----------
+    Multi lane highway | Single lane road with no way to overtake 
+    guarantee the order and at least one delivery | guarantee the order and at exactly one delivery 
+    empty| 3000 messages p/s with batching or up to 300 messages p/s without 
 
 Billed on **requests** not messages. A request is a single request to SQS.
 One request can return 0 - 10 messages up to 64KB data in total.
@@ -4324,7 +4324,7 @@ Format for Flow Logs
 
 **Demo notes:**
 
-1. When creating GW endpoints, you specify the VPC for which you want and the routing table.
+1. When creating GW endpoints, you specify the VPC for which you want and the routing table associated with the subnets the instance is in.
 
 ### 1.15.4. VPC Interface Endpoints
 
