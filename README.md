@@ -2545,8 +2545,7 @@ ECS runs into two modes: 1. Using EC2; 2. Using Fargate.
   - Dockerhub can be used as well.
 - **Container definition** tell ECS where your container is. It tells ECS which port your container uses (e.g. port 80, which is http). Container definition gives ECS just enough info about a single container.
   - A pointer to which image to use and the ports that will be exposed.
-- **Task definitions** store the resources used by the task.
-  - It also stores the **task role**, an IAM role that allows the task access to other AWS resources.
+- **Task definitions** store the resources used by the task such as **task role**, an IAM role that allows the task access to other AWS resources, task resources.
 
 > Task roles are the best practice way for giving containers within ECS permissions to access AWS products and services.
 
@@ -2554,7 +2553,7 @@ ECS runs into two modes: 1. Using EC2; 2. Using Fargate.
 
 See the [AWS documentation on container definition](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html) and [task definition](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskDefinition.html) for more information.
 
-ECS **Service** is configured via Service Definition and represents how many copies of a task you want to run for scaling and HA.
+* ECS **Service** is configured via Service Definition and represents how many copies of a task you want to run for scaling and HA.
 
 ### 1.7.3. ECS Cluster Types
 
@@ -2567,8 +2566,9 @@ ECS Cluster manages:
 #### 1.7.3.1. EC2 mode
 
 - ECS cluster is created within a VPC. It benefits from the multiple AZs that are within that VPC. You specify an initial size which will drive an **auto scaling group** (ASG).
-- ECS using EC2 mode is not a serverless solution, you need to worry about capacity and availability for your cluster.
+- ECS using EC2 mode is not a serverless solution, the EC2 hosts provisioned can be connected to.
 - The container instances are not delivered as a managed service, they are managed as normal EC2 instances. You can use spot pricing or prepaid EC2 servers.
+- There are charges for the EC2 hosts even without any containers running.
 
 Read [this](https://stackoverflow.com/questions/40575584/what-is-the-difference-between-amazon-ecs-and-amazon-ec2) to understand difference between EC2 and ECS.
 
@@ -2577,12 +2577,12 @@ Read [this](https://stackoverflow.com/questions/40575584/what-is-the-difference-
 #### 1.7.3.2. Fargate mode
 
 - Removes more of the management overhead from ECS, no need to manage EC2. **Fargate shared infrastructure** allows all customers to access from the same pool of resources. Fargate deployment still uses a cluster with a VPC where AZs are specified.
-- For ECS tasks, they are injected into the VPC. Each task is given an elastic network interface_ which has an IP address within the VPC. They then run like a VPC resource.
+- For ECS tasks, they are injected into the VPC. Each task is given an elastic network interface which has an IP address within the VPC. They then run like a VPC resource.
 - You only pay for the container resources you use.
 
 ![](Pics/ECS-Fargate.png)
 
-#### 1.7.3.3. EC2 vs ECS(EC2) vs Fargate
+#### 1.7.3.3. EC2 vs ECS(EC2) vs ECS Fargate
 
 If you already are using containers, use **ECS**.
 
@@ -4015,7 +4015,9 @@ Public service that provides fully managed highly available message queues.
 
 **Exam powerup**
 
-Remember this fanout arch, it will come in handy during exam
+* Object uploaded to S3 bucket will generate one event, and to take this one event and create 3 separate events in SQS queues you need this arch.
+
+* Remember this fanout arch, it will come in handy during exam
 
 ![](Pics/sns_and_sqs_fanout.png)
 
@@ -4490,14 +4492,14 @@ Static| Dynamic |
   - Allows for migration of existing infrastructure into AWS slowly.
 - Tape Gateway (VTL) Mode
   - Virtual Tapes are stored on S3
-- File Mode (SMB and NFS shares)
+- File Gateway (SMB and NFS shares)
   - File Storage Backed by S3 Objects
-- Volume Mode (Gateway Stored)
+- Volume Gateway (Stored)
   - Block Storage backed by S3 and EBS
   - Great for disaster recovery
   - Data is kept locally, but backed up to AWS in background.
   - Awesome for migrations
-- Volume Mode (Cache Mode)
+- Volume Gateway (Cache Mode)
   - Data added to gateway is not stored locally.
   - Frequently accessed data is cached locally
   - Backup to EBS Snapshots
