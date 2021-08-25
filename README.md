@@ -1942,8 +1942,7 @@ Servers are configured in three sections without virtualization.
 - User Mode
   - Runs applications.
   - Can make a **system call** to the Kernel to interact with the hardware.
-  - If an app tries to interact with the hardware without a system call, it
-  will cause a system error and can crash the server or at minimum the app.
+  - If an app tries to interact with the hardware without a system call, it will cause a system error and can crash the server or at minimum the app.
 
 #### 1.6.1.1. Emulated Virtualization - Software Virtualization
 
@@ -1993,7 +1992,9 @@ EC2 host contains
   - Storage networking
   - Data networking
 
-EC2 Networking (ENI)
+**Test notes:** There's a [limit of 20 instances](https://aws.amazon.com/ec2/faqs/#EC2_On-Demand_Instance_limits) per Region for each of these 
+
+#### EC2 Networking (ENI)
 
 When instances are provisioned within a specific subnet within a VPC
 A primary elastic network interface is provisioned in a subnet which maps to the physical hardware on the EC2 host. Subnets are also within one specific AZ. Instances can have multiple network interfaces, even within different subnets so long as they're within the same AZ.
@@ -2387,6 +2388,10 @@ Images of EC2 instances that can launch more EC2 instance.
 - Billing is for the storage capacity for the EBS snapshots the AMI references.
 
 ### 1.6.11. EC2 Pricing Models
+
+**Test notes:** There's are limits on how many EC2 instances you can launch
+
+* You are limited to running On-Demand Instances per your vCPU-based [On-Demand Instance limit](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-on-demand-instances.html#ec2-on-demand-instances-limits), purchasing 20 Reserved Instances, and requesting Spot Instances per your [dynamic Spot limit](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-spot-limits.html) per region. New AWS accounts may start with limits that are lower than the limits described here.
 
 #### 1.6.11.1. On-Demand Instances
 
@@ -2840,10 +2845,10 @@ Three types:
 ### 1.8.9. EBS Optimized
 
 * Historically network on EC2 was shared with the same network stack used for both data networking and EBS storage networking.
-
 * EBS optimized instance means that some stack optimizations have taken place and dedicated capacity has been provided for that instance for EBS usage.
-
 * Most new instances support this and have this enabled by default for no charge.
+
+**Test notes:** In order to achieve the 64,000 IOPS for a provisioned IOPS SSD, you must provision a Nitro-based EC2 instance. The maximum IOPS and throughput are guaranteed only on Instances built on the Nitro System provisioned with more than 32,000 IOPS. Other instances guarantee up to 32,000 IOPS only.
 
 ---
 
@@ -3564,6 +3569,7 @@ As long as 1+ servers are operational, the LB is operational. Clients shouldn't 
   - Backend connection: one connection between load balancer and target.
 - LB abstracts the client away from individual servers.
 - Used for high availability, fault tolerance, and scaling
+- LBs only work in one region, not across multiple regions.
 
 ### 1.12.2. Application Load Balancer (ALB)
 
@@ -4838,6 +4844,7 @@ NoSQL Database-Table as a Service (DBaaS).
 - Every item in the table needs a unique primary key.
 - Attributes may or may not be there. This is not necessary.
 - Items can be at most 400KB in size. This includes the primary key and attributes.
+- **Test note:** Partition keys should have [high-cardinality](https://stackoverflow.com/questions/45581744/how-does-the-dynamodb-partition-key-work) attributes: These are attributes that have distinct values for each item like e-mail id, employee_no, customerid, sessionid, ordered, and so on.
 
 In DynamoDB, capacity means speed. If you choose on-demand capacity model you don't have to worry about capacity. You only pay for the operations for the table. If you choose provisioned capacity, you must set this on a per table basis.
 
