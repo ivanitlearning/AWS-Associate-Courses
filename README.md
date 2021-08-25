@@ -786,10 +786,14 @@ JSON policy document that can be attached:
 - A specific Organizational Unit
 - A specific member only.
 
-The master account cannot be restricted by SCPs which means this should not be used because it is a security risk.
+The master/management account cannot be restricted by SCPs which means this should not be used because it is a security risk.
 
-SCPs limit what the account, **including root** can do inside that account.
-They don't grant permissions themselves, just act as a barrier.
+SCPs limit what the account, **including root** can do inside that account eg.
+
+* Allow only certain sized EC2 instances deployed
+* Prevent any usage of that account in certain regions
+
+They don't grant permissions themselves, can only limit them. You still need to grant permissions using IAM policies on specific identities.
 
 #### 1.3.7.1. Allow List vs Deny List
 
@@ -888,7 +892,7 @@ Two types of events. Default only logs Management Events
 Provide information about management operations performed on resources in the AWS account. Create an EC2 instance or terminating one.
 
 - Data Events:
-Objects being uploaded to S3 or a Lambda function being invoked. This is not enabled by default and must be enabled for that trail.
+Objects being uploaded to S3 or a Lambda function being invoked. This is not enabled by default and must be enabled for that trail. Includes [GetObject](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html#logging-data-events) for S3 or access.
 
 #### 1.3.9.1. CloudTrail Trail
 
@@ -2941,7 +2945,8 @@ There are three types of checks.
 
   - Geographical bias can be applied to countries
   - Eg. Saudi user can be directed to Australian rather than UK resource if Australian bias is large enough.
-
+- Use when you want to route traffic based on the location of your resources and, optionally, shift traffic from resources in one location to resources in another. [[Ref](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html)]
+  
   ![](Pics/Geoproximity_routing.png)
 
 ### 1.9.5. Route 53 Interoperability
@@ -3285,6 +3290,8 @@ Kept in sync using **asynchronous replication**
   * RDS Oracle supports integration with CloudHSM (managed by user, completely without AWS involved).
 
 ![](Pics/RDS-Encryption.png)
+
+**Notes from test:** Although RDS snapshots are stored in an S3 bucket, you can't [view the bucket used](https://stackoverflow.com/a/46445232/7908040) or choose to encrypt the bucket. The [only way](https://aws.amazon.com/premiumsupport/knowledge-center/encrypt-rds-snapshots/) is to copy the snapshot to the target region, enable encryption, encrypt it and restore the RDS-DB from there
 
 #### 1.10.8.2. RDS IAM Authentication
 
@@ -3636,7 +3643,7 @@ Autoscaling Groups will distribute EC2 instances to try and keep the number of i
 Scaling policies are rules that you can use to define autoscaling of instances. 3 types of scaling policies:
 
 1. Manual Scaling - manually adjust the desired capacity
-2. Scheduled Scaling - useful for known periods of high or low usage. They are time based adjustments e.g. Sales Periods.
+2. Scheduled Scaling - useful for known periods of high or low usage. They are time based adjustments e.g.  Sales Periods.  Use [scheduled actions](https://docs.aws.amazon.com/autoscaling/ec2/userguide/schedule_time.html) to configure this.
 3. Dynamic Scaling:
 	- Simple: If CPU is above 50%, add one to capacity
 	- Stepped: If CPU usage is above 50%, add one, if above 80% add three
@@ -3655,6 +3662,7 @@ Scaling policies are rules that you can use to define autoscaling of instances. 
 - Think about implementing more and smaller instances to allow granularity.
 - Generally, for anything client-facing you should always use Auto Scaling Groups (ASG) with Application Load Balancers (ALB) with autoscaling because they allow you to provide elasticity by abstracting the user away from individual servers. Since, the customers will be connecting through an ALB, they don't have any visibility of individual servers.
 - ASG defines WHEN (under what circumstances) and WHERE (VPCs, SG); Launch Templates defines WHAT.
+- ASG cannot span multiple Regions. **(Exam note)**
 
 ### 1.12.5. Network Load Balancer (NLB)
 
@@ -4304,7 +4312,7 @@ Format for Flow Logs
 - Egress-only is **outbound only** for IPv6. It is exactly the same as NAT, only outbound only.
 - To configure the Egress-only gateway, you must add default IPv6 route `::/0` added to routing table with `eigw-id` as target.
 
-### 1.15.3. VPC Gateway Endpoints
+### 1.15.3. VPC Endpoints (Gateway)
 
 - Provide _private_ access to S3 and DynamoDB
   - Allow a private only resource inside a VPC or any resource inside a private-only VPC access to S3 and DynamoDB. (Remember that both S3 and DynamoDB are public services)
@@ -4328,7 +4336,7 @@ Format for Flow Logs
 
 1. When creating GW endpoints, you specify the VPC for which you want and the routing table associated with the subnets the instance is in.
 
-### 1.15.4. VPC Interface Endpoints
+### 1.15.4. VPC Endpoints (Interface)
 
 - Provide private access to any AWS Public Services **except** S3 and DynamoDB
 - These are not HA by default and are added to specific subnets.
@@ -4490,21 +4498,31 @@ Static| Dynamic |
 - Hybrid Storage Virtual Application (On-premise)
   - Can be run inside AWS as part of certain disaster recovery scenarios
   - Allows for migration of existing infrastructure into AWS slowly.
+  - Uploads data via public HTTPS endpoint
 - Tape Gateway (VTL) Mode
+  
   - Virtual Tapes are stored on S3
 - File Gateway (SMB and NFS shares)
-  - File Storage Backed by S3 Objects
+  
+  - File Storage stored on S3 as objects (can implement lifecycle policies)
+  - Can integrate with Active Directory for permissions.
+  
+  ![](Pics/StorageGateway-File.png)
 - Volume Gateway (Stored)
   - Block Storage backed by S3 and EBS
   - Great for disaster recovery
   - Data is kept locally, but backed up to AWS in background.
   - Awesome for migrations
+  
+  ![](Pics/StorageGatway-VolumeStored.png)
 - Volume Gateway (Cache Mode)
   - Data added to gateway is not stored locally.
   - Frequently accessed data is cached locally
   - Backup to EBS Snapshots
   - Primarily stored on AWS
   - Great for limited local storage capacity.
+
+![](Pics/StorageGateway-VolumeCached.png)
 
 ### 1.16.5. Snowball / Edge / Snowmobile
 
@@ -4605,6 +4623,8 @@ Static| Dynamic |
 - Location
   - Every task has two locations `FROM` and `TO`
   - Target upload locations: NFS, SMB or AWS storage services (EFS, FSx, and S3)
+
+![](Pics/AWSDatasync.png)
 
 ### 1.16.8. FSx for Windows File Server
 
@@ -4894,7 +4914,7 @@ In this example you can only query for one weather station.
 
 * If you filter data and only look at one attribute (eg. yellow column), you will still be charged for pulling all the attributes against that query.
 
-![](Pics/DDB Query.png)
+![](Pics/DDB%20Query.png)
 
 #### 1.18.2.3. Scan
 
@@ -4902,7 +4922,7 @@ In this example you can only query for one weather station.
 
 * Scan moves through the table item by item consuming the capacity of every item. Even if you consume less than the whole table, it will charge based on that. It adds up all the values scanned and will charge rounding up.
 
-![](Pics/DDB Scan.png)
+![](Pics/DDB%20Scan.png)
 
 #### 1.18.2.4. DynamoDB Consistency Model
 
@@ -5080,7 +5100,7 @@ If a cache miss occurs while reading, the data is also written to the primary no
 
 When writing data to DAX, it can use write-through. Data is written to the database, then written to DAX.
 
-![](Pics/DDB Accelerator (DAX).png)
+![](Pics/DDB%20Accelerator%20(DAX).png)
 
 #### 1.18.6.2. DAX Considerations
 
