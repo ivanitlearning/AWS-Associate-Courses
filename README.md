@@ -704,43 +704,44 @@ Secure Token Service (sts:AssumeRole) this is what generates the temporary secur
 
 ### 1.3.5. When to use IAM Roles
 
-Lambda Execution Role.
+**Lambda Execution Role.**
 For a given lambda function, you cannot determine the number of principals which suggested a Role might be the ideal identity to use.
 
 - Trust Policy: to trust the Lambda Service
 - Permission Policy: to grant access to AWS services.
 
-When this is run, it uses the sts:AssumeRole to generate keys to CloudWatch and S3.
+When this is run, can for example assume the sts:AssumeRole to generate keys to CloudWatch and S3.
 
-It is better when possible to use an IAM Role versus attaching a policy.
+It is better when possible to use an IAM Role versus attaching a policy. 
 
-#### 1.3.5.1. Emergency or out of the usual situations
+Some scenarios are:
+
+#### A) Emergency or out of the usual situations
 
 Break Glass Situation - There is a key for something the team does not normally have access to. When you break the glass, you must have a reason to do.
 
 A role can have an Emergency Role which will allow further access if its really needed.
 
-#### 1.3.5.2. Adding AWS into existing corp environment
+#### B) Adding AWS into existing corp environment
 
-You may have an existing identity provider you are trying to allow access to.
-This may offer SSO (Single Sign On) or over 5000 identities.
-This is useful to reuse your existing identities for AWS.
-External accounts can't be used to access AWS directly.
-To solve this, you allow an IAM role in the AWS account to be assumed by one of the active directories.
-**ID Federation** allowing an external service the ability to assume a role.
+* You may have an existing identity provider (on-prem AD) you are trying to allow access to.
+* This may offer SSO (Single Sign On) or over 5000 identities.
+* This is useful to reuse your existing identities for AWS.
+* External accounts can't be used to access AWS directly.
+* To solve this, you allow an IAM role in the AWS account to be assumed by one of the AD domain controllers to allow access to AWS services like S3.
+* **ID Federation** allowing an external service the ability to assume a role.
 
-#### 1.3.5.3. Making an app with 1,000,000 users
+#### C) Making an app with 1,000,000 users
 
-**Web Identity Federation** uses IAM roles to allow broader access.
-These allow you to use an existing web identity such as google, facebook, or twitter to grant access to the app.
-We can trust these web identities and allow those identities to assume an IAM role to access web resources such as DynamoDB.
-No AWS Credentials are stored on the application.
-Can scale quickly and beyond.
+* **Web Identity Federation** uses IAM roles to allow broader access.
+* These allow you to use an existing web identity such as google, facebook, or twitter to grant access to the app, using [Amazon Cognito](#11311-amazon-cognito).
+* We can trust these web identities and allow those identities to assume an IAM role to access web resources such as DynamoDB.
+* No AWS Credentials are stored on the application.
+* Can scale quickly and beyond.
 
-#### 1.3.5.4. Cross Account Access
+#### D) Cross Account Access
 
-You can use a role in the partner account and use that to upload objects
-to AWS resources.
+You can use a role in the partner account and use that to upload objects to AWS resources.
 
 ### 1.3.6. AWS Organizations
 
@@ -1043,13 +1044,13 @@ In order to change a version state or delete a particular version of an object, 
 
 ### 1.4.4. S3 Performance Optimization
 
-Single PUT Upload
+#### 1.4.4.1. Single PUT Upload
 
 - Objects uploaded to S3 are sent as a single stream by default.
 - If the stream fails, the upload fails and requires a restart of the transfer.
 - Single PUT upload up to 5GB
 
-Multipart Upload
+#### 1.4.4.2. Multipart Upload
 
 - Data is broken up into smaller parts.
 - The minimum data size is 100 MB.
@@ -1060,7 +1061,7 @@ Multipart Upload
 - The risk of uploading large amounts of data is reduced.
 - Improves transfer rate to be the speed of all parts.
 
-S3 Accelerated Transfer
+#### 1.4.4.3. S3 Transfer Acceleration
 
 - Off by default.
 - Uses the network of AWS edge locations to speed up transfer.
@@ -1337,7 +1338,7 @@ All of the other storage classes trade some of these compromises for another.
 
 #### 1.4.9.2. S3 Standard-IA
 
-- Designed for less frequent rapid access when it is needed.
+- Designed for less frequent rapid access when it is needed (almost same as S3)
 - Cheaper rate to store data you will rarely need, but if you do need it, you need it quickly.
 - ~54% cheaper than S3 standard.
 - Minimum 128KB charge for each object.
@@ -1440,6 +1441,7 @@ There are two types of S3 replication available.
 Architecture for both is similar, only difference is if both buckets are in the same account or different accounts.
 
 The replication configuration is applied to the source bucket and configures S3 to replicate from this source bucket to a destination bucket.
+
 It also configures the IAM role to use for the replication process. The role is configured to allow the S3 service to assume it based on its trust policy. The role's permission policy allows it to read objects on the source bucket and replicate them to the destination bucket.
 
 When different accounts are used, the role is not by default trusted by the destination account. If configuring between accounts, you must add a bucket policy on the destination account to allow the IAM role from the source account access to the bucket.
@@ -1535,106 +1537,7 @@ Consists of source bucket (which is logged) and target bucket (where logs are st
 
 ## 1.5. Virtual-Private-Cloud-VPC
 
-### 1.5.1. Networking Refresher
-
-#### 1.5.1.1. IPv4 - RFC 791 (1981)
-
-Dotted decimal notation for human readability.
-
-- 4 numbers from 0 to 255 separated by a period.
-- Octet are the numbers between the period.
-
-There are just over 4 billion addresses. This was not very flexible because it was either too small or large for some corporations. Some IP addresses was always left unused.
-
-#### 1.5.1.2. Classful Addressing
-
-- Class A range
-  - Starts at `0.0.0.0` and ends at `127.255.255.255`.
-  - Split into 128 class A networks
-  - Handed out to large companies
-- Class B Range
-  - Half the range of class A.
-  - Starts at `128.0.0.0` and ends at `191.255.255.255`.
-- Class C Range
-  - Half of range class B
-  - Starts at `192.0.0.0` and ends at `223.255.255.255`.
-
-#### 1.5.1.3. Internet / Private IPs - RFC1918
-
-These can't communicate over the internet and are used internally only
-
-- One class A network: `10.0.0.0` - `10.255.255.255`
-- 16 Class B networks: `172.16.0.0` - `172.31.255.255`
-- 256 Class C networks: `192.168.0.0` - `192.168.255.255`
-
-#### 1.5.1.4. Classless inter-domain routing (CIDR)
-
-CIDR networks are represented by the starting IP address of the network
-called the network address and the prefix.
-
-CIDR Example: `10.0.0.0/16`
-
-- `10.0.0.0` is the first address on the network
-- /16 is the size of the network called the prefix.
-  - The bigger the prefix, the smaller the network
-  - The smaller the prefix, the bigger the network.
-- /16 provides 65,536 addresses.
-- `10.0.0.0/17` and `10.0.128.0/17` are each half of the original example.
-  - This is called **subnetting**
-
-#### 1.5.1.5. IP address notations to remember
-
-- `0.0.0.0/0` means all IP addresses
-- `10.0.0.0/8` means 10.ANYTHING - Class A
-- `10.0.0.0/16` means 10.0.ANYTHING - Class B
-- `10.0.0.0/24` means 10.0.0.ANYTHING - Class C
-- `10.0.0.0/32` means only 1 IP address
-
-`10.0.0.0/16` is the equivalent of `1234` as a password. You should consider other ranges that people might use to ensure it does not overlap.
-
-#### 1.5.1.6. Packets
-
-Contains:
-
-- source IP address
-- destination IP address
-- data the source IP wants to communicate with the destination IP.
-
-TCP and UDP are protocols built on top of IP.
-
-- TCPIP means TCP running with IP
-- UDPIP means UDP running with IP
-
-TCP/UDP Segment has a source and destination port number.
-This allows devices to have multiple conversations at the same time.
-In AWS when data goes through network devices, filters can be set based on
-IP addresses and port numbers.
-
-#### 1.5.1.7. IPv6 - RFC 8200 (2017)
-
-`2001:0db8:28ac:0000:0000:82ae:3910:7334`
-
-The value is hex and there are two octets per spacing or one hextet.
-The redundant zeros can be removed to create:
-
-`2001:0db8:28ac:0:0:82ae:3910:7334`
-
-or you can remove them all entirely once per address
-
-`2001:0db8:28ac::82ae:3910:7334`
-
-Each address is 128 bits long. They are addressed by the start of the network
-and the prefix.
-Since each grouping is 16 values, we can multiple the groups by this to achieve
-the prefix.
-
-`2001:0db8:28ac::/48` really means the network starts at
-`2001:0db8:28ac:0000:0000:0000:0000:0000` and finishes at
-`2001:0db8:28ac:ffff:ffff:ffff:ffff:ffff`
-
-`::/0` represents all IPv6 addresses
-
-### 1.5.2. VPC Sizing and Structure
+### 1.5.1. VPC Sizing and Structure
 
 VPC Consideration
 
@@ -1659,16 +1562,15 @@ An example using 4 AWS accounts.
   - 1 region in AUS
 - Total of 40 ranges, 10 ranges for each account.
 
-#### 1.5.2.1. How to size VPC
+#### 1.5.1.1. How to size VPC (example)
 
-A subnet is located in one availability zone.
-Try to split each subnet into tiers (web, application, db, spare).
-Since each Region has at least 3 AZ's, it is a good practice to start
-splitting the network into 4 different AZs.
-This allows for at least one subnet in each AZ, and one spare.
-Taking a /16 subnet and splitting it 16 ways will make each a /20.
+* A subnet is located in one availability zone.
+* Try to split each subnet into tiers (web, application, db, spare).
+* Since each Region has at least 3 AZ's, it is a good practice to start splitting the network into 4 different AZs.
+* This allows for at least one subnet in each AZ, and one spare.
+* Taking a /16 subnet and splitting it 16 ways will make each a /20.
 
-### 1.5.3. Custom VPC
+### 1.5.2. Custom VPC
 
 - Regional Isolated and Resilient Service.
   - Operates from all AZs in that region
@@ -1681,7 +1583,7 @@ Taking a /16 subnet and splitting it 16 ways will make each a /20.
   - Default allows on a per resource decision later on.
   - Dedicated locks any resourced created in that VPC to be on dedicated shardware which comes at a cost premium.
 
-#### 1.5.3.1. Custom VPC Facts
+#### 1.5.2.1. Custom VPC Facts
 
 IPv4 private and public IPs
 
@@ -1699,7 +1601,7 @@ Single assigned IPv6 /56 CIDR block
 - Range is either allocated by AWS as in you have no choice on which range to use, or you can select to use your own IPv6 addresses which you own.
 - IPv6 does not have private addresses, they are all routed as public by sdefault.
 
-#### 1.5.3.2. DNS provided by R53
+#### 1.5.2.2. DNS provided by R53
 
 Available on the base IP address of the VPC + 2.
 If the VPC is `10.0.0.0` then the DNS IP will be `10.0.0.2`
@@ -1712,7 +1614,7 @@ Two options that manage how DNS works in a VPC:
 - enableDnsSupport
   - If true (default enabled), instances in the VPC can use the DNS IP address.
 
-### 1.5.4. VPC Subnets
+### 1.5.3. VPC Subnets
 
 - AZ Resilient subnetwork of a VPC.
   - If the AZ fails, the subnet and services also fail.
@@ -1724,7 +1626,7 @@ Two options that manage how DNS works in a VPC:
   - (256 /64 subnets can fit in the /56 VPC)
 - Subnets can communicate with other subnets in the VPC by default.
 
-#### 1.5.4.1. Reserved IP addresses
+#### 1.5.3.1. Reserved IP addresses
 
 There are five IP addresses within every VPC subnet that you cannot use. Whatever size of the subnet, the IP addresses are five less than you expect.
 
@@ -1736,11 +1638,9 @@ If using `10.16.16.0/20` (`10.16.16.0` - `10.16.31.255`)
 - Network + 3: `10.16.16.3` - Reserved for future AWS use
 - Broadcast Address: `10.16.31.255` (Last IP in subnet)
 
-#### 1.5.4.2. DHCP Options Set
+#### 1.5.3.2. DHCP Options Set
 
-This is how computing devices receive IP addresses automatically. There is
-one options set applied to a VPC at one time and this configuration flows
-through to subnets.
+This is how computing devices receive IP addresses automatically. There is one options set applied to a VPC at one time and this configuration flows through to subnets.
 
 - This can be changed, can create new ones, but you cannot edit one.
 - If you want to change the settings
@@ -1748,7 +1648,7 @@ through to subnets.
   - Change the VPC allocation to the new one
   - Delete the old one
 
-#### 1.5.4.3. IP allocation Options
+#### 1.5.3.3. IP allocation Options
 
 - Auto Assign public IPv4 address
   - This will create a public IP address in addition to their private subnet.
@@ -1756,23 +1656,23 @@ through to subnets.
 - Auto Assign IPv6 address
   - For this to work, the subnet and VPC need an allocation of addresses.
 
-### 1.5.5. VPC Routing and Internet Gateway
+### 1.5.4. VPC Routing and Internet Gateway
 
 VPC Router is a highly available device available in every VPC which moves traffic from somewhere to somewhere else.
 Router has a network interface in every subnet in the VPC. Routes traffic between subnets.
 
-Route tables defines what the VPC router will do with traffic when data leaves that subnet.
-A VPC is created with a main route table. If you don't associate a custom route table with a subnet, it uses the main route table of the VPC.
+* Route tables defines what the VPC router will do with traffic when data leaves that subnet.
+  A VPC is created with a main route table. If you don't associate a custom route table with a subnet, it uses the main route table of the VPC.
 
-If you do associate a custom route table you create with a subnet, then the main route table is disassociated. A subnet can only have one route table associated at a time, but a route table can be associated by many subnets.
+* If you do associate a custom route table you create with a subnet, then the main route table is disassociated. A subnet can only have one route table associated at a time, but a route table can be associated by many subnets.
 
-#### 1.5.5.1. Route Tables
+#### 1.5.4.1. Route Tables
 
 When traffic leaves the subnet that this route table is associated with, the VPC router reviews the IP packets looking for the destination address. The traffic will try to match the route against the route table. If there are more than one routes found as a match, the prefix is used as a priority (longer prefix, more specific takes priority)
 
 The higher the prefix, the more specific the route, thus higher priority. If the target says local, that means the destination is in the VPC itself. Local route can never be updated, they're always present and the local route always takes priority. This is the exception to the prefix rule.
 
-#### 1.5.5.2. Internet Gateway
+#### 1.5.4.2. Internet Gateway
 
 A managed service that allows gateway traffic between the VPC and the internet or AWS Public Zones (S3, SQS, SNS, etc.)
 
@@ -1783,7 +1683,7 @@ A managed service that allows gateway traffic between the VPC and the internet o
   - Conversely an IGW can be created and attached to no VPC.
 - Runs from within the AWS public zone.
 
-#### 1.5.5.3. Using IGW
+#### 1.5.4.3. Using IGW
 
 In this example, an EC2 instance has:
 
@@ -1798,13 +1698,13 @@ In this example, an EC2 instance has:
 
 If the instance uses an IPv6 address, that public address is good to go. The IGW does not translate the packet and only pushes it to a gateway.
 
-#### 1.5.5.4. Bastion Host / Jumpbox
+#### 1.5.4.4. Bastion Host / Jumpbox
 
 It is an instance in a public subnet inside a VPC. These are used to allow incoming management connections. Once connected, you can then go on to access internal only VPC resources. Used as a management point or as an entry point for a private only VPC.
 
 This is an inbound management point. Can be configured to only allow specific IP addresses or to authenticate with SSH. It can also integrate with your on premise identification service.
 
-### 1.5.6. Network Access Control List (NACL)
+### 1.5.5. Network Access Control List (NACL)
 
 Network Access Control Lists (NACLs) are a type of security filter (like firewalls) which can filter traffic as it enters or leaves a subnet.
 
@@ -1837,7 +1737,7 @@ If all of those fields match, then the first rule will either allow or deny.
 
 The rule at the bottom with `*` is the **implicit deny** This cannot be edited and is defaulted on each rule list. If no other rules match the traffic being evaluated, it will be denied.
 
-#### 1.5.6.1. NACLs example below
+#### 1.5.5.1. NACLs example below
 
 - Bob wants to view a blog using https(tcp/443)
 - We need a NACL rule to allow TCP on port 443.
@@ -1852,7 +1752,7 @@ The rule at the bottom with `*` is the **implicit deny** This cannot be edited a
 - If the webserver is not managing the apps server, it may communicate back on a different port.
 - This back and forth communication can be hard to configure for.
 
-#### 1.5.6.2. NACL Exam PowerUp
+#### 1.5.5.2. NACL Exam PowerUp
 
 - NACLs are stateless (initiation/response are seen as different)
 - NACLs are attached to subnets and only filter data as it crosses the subnet boundary. Two EC2 instances in the same subnet will not check against the NACLs when moving data.
@@ -1864,7 +1764,7 @@ The rule at the bottom with `*` is the **implicit deny** This cannot be edited a
 
 NACLs are processed in order starting at the lowest rule number until it gets to the catch all. A rule with a lower rule number will be processed before another rule with a higher rule number. If it is denied a rule, it stops processing there.
 
-### 1.5.7. Security Groups
+### 1.5.6. Security Groups
 
 - SGs are boundaries which can filter traffic.
 - Attached to a resource (eg. EC2 instance) and not a subnet.
@@ -1877,14 +1777,14 @@ NACLs are processed in order starting at the lowest rule number until it gets to
 - SGs have a hidden implicit **Deny**, and explicit Allow but no explicit Deny.
 - SG cannot explicit deny anything so NACLs are used in conjunction with SGs to do explicit denies.
 
-#### 1.5.7.1. SGs vs NACL
+#### 1.5.6.1. SGs vs NACL
 
 - NACLs are used when products cannot use SGs, e.g. NAT Gateways.
 - NACLs are used when adding explicit deny, such as bad IPs or bad actors.
 - SGs is the default almost everywhere else because they are stateful.
 - NACLs are associated with a subnet and only filter traffic that crosses that boundary. If the resource is in the same subnet, it will not do anything, so use SG to filter traffic between two EC2 instances in the same subnet.
 
-### 1.5.8. Network Address Translation (NAT) Gateway
+### 1.5.7. Network Address Translation (NAT) Gateway
 
 Set of different processes that can address IP packets by changing their source or destination addresses.
 
@@ -2082,6 +1982,7 @@ This isn't the only part of the chain, but it is a simplification. A system migh
   - All of the data is replicated within that AZ. The entire AZ must have a major fault to go down.
 - Can snapshot backup to S3 which makes it region-resilient and allows data migration across AZs.
 - The snapshots can also be copied across regions for global resilience.
+- **Test note:** EBS volumes [support live configuration changes](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/requesting-ebs-volume-modifications.html) while in production which means that you can modify the volume type, volume size, and IOPS capacity without service interruptions.
 
 ![](Pics/EBS_Architecture.png)
 
@@ -2124,6 +2025,8 @@ Can configure IOPS separately from volume size. You pay for capacity and the IOP
 
 Good for latency sensitive workloads such as mongoDB. Multi-attach allows them to attach to multiple EC2 instances at once.
 
+**Test note:** Designed to meet the needs of I/O-intensive workloads, particularly database workloads, that are sensitive to storage performance and consistency. Small, random I/O operations.
+
 #### 1.6.5.4. HDD Volume Types
 
 - Mechanical storage type
@@ -2138,8 +2041,9 @@ Good for latency sensitive workloads such as mongoDB. Multi-attach allows them t
   - data warehouses
 - The access patterns should be sequential
   - Massive inefficiency for small reads and writes
+- **Test note**: More suitable for workloads with large, sequential I/O operations
 
-Two types
+**Two types**
 
 - **st1 - Throughput optimized**
   - Designed for frequent access, throughput-access and sequential.
@@ -2148,11 +2052,20 @@ Two types
   - 40 MB/s baseline per TiB
   - Burst of 250 MB/s per TiB
   - Max t-put of 500 MB/s
+  
 - **sc1 - Cold HDD**
   - Designed for less frequently accessed data, it fills slower.
   - 12 MB/s baseline per TiB
   - Burst of 80 MB/s per TiB
   - Max t-put of 250 MB/s
+  
+  | Features                       | SSD                                                          | HDD                                                          |
+  | :----------------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+  | Best for workloads with:       | small, random  I/O operations                                | large, sequential I/O operations                             |
+  | Usable as bootable volume?     | Yes                                                          | No                                                           |
+  | Suitable use cases             | - Best for transactional workloads <br />- Critical business apps that requires sustained IOPS <br />- Large DB workloads such as MongoDB, Oracle, MS-SQL... | - Best for large streaming workloads requiring consistent fast throughput at low price <br />- Big data, data warehouses, log processing <br />- Throughput-oriented storage for large volumes of data infrequently accessed |
+  | Cost                           | Moderate/High                                                | Low                                                          |
+  | Dominant Attribute Performance | IOPS                                                         | Throughput (MiB/s)                                           |
 
 #### 1.6.5.5. EBS Exam Power Up
 
@@ -3285,7 +3198,12 @@ Kept in sync using **asynchronous replication**
 
 #### 1.10.8.1. RDS Encryption
 
+**In-transit:**
+
 * SSL/TLS in transit can be made mandatory between client and RDS instance.
+
+**At-rest:**
+
 * Supports EBS volume encryption with KMS, handled by EBS host.
   * Encryption transparent to RDS, it just writes in plain text.
 * Use either your own CMK or AWS CMK to generate DEKs (data encryption keys).
@@ -3296,7 +3214,7 @@ Kept in sync using **asynchronous replication**
 
 ![](Pics/RDS-Encryption.png)
 
-**Notes from test:** Although RDS snapshots are stored in an S3 bucket, you can't [view the bucket used](https://stackoverflow.com/a/46445232/7908040) or choose to encrypt the bucket. The [only way](https://aws.amazon.com/premiumsupport/knowledge-center/encrypt-rds-snapshots/) is to copy the snapshot to the target region, enable encryption, encrypt it and restore the RDS-DB from there
+**Test notes:** Although RDS snapshots are stored in an S3 bucket, you can't [view the bucket used](https://stackoverflow.com/a/46445232/7908040) or choose to encrypt the bucket. The [only way](https://aws.amazon.com/premiumsupport/knowledge-center/encrypt-rds-snapshots/) is to copy the snapshot to the target region, enable encryption, encrypt it and restore the RDS-DB from there
 
 #### 1.10.8.2. RDS IAM Authentication
 
@@ -3524,6 +3442,8 @@ EFS moves the instances closer to being stateless.
   - Standard
   - Infrequent access
   - Can use lifecycle policies to move data between classes.
+- **Test notes**: For *File operation* and *allows concurrent connections from multiple EC2 instances*. There are various AWS storage options that you can choose but whenever these criteria show up, always consider using EFS instead of using EBS Volumes which is mainly used as a “block” storage and can only have one connection to one EC2 instance at a time.
+  - Note: You [*can* use](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volumes-multi.html) EBS to attach to multiple EC2 instances but only in same AZ
 
 #### 1.11.1.3 Notes from Demo
 
@@ -3712,7 +3632,7 @@ Part of AWS Version 2 series of load balancers.
 
 #### 1.12.6.3. Offload
 
-* Clients connect to the load balancer using HTTPS and are terminated on the load balancer. The LB needs an SSL certificate to decrypt the data, but on the backend the data is sent via HTTP. While there is a certificate required on the load balancer, this is not needed on the LB.
+* Clients connect to the load balancer using HTTPS and are terminated on the load balancer. The ELB needs an SSL certificate to decrypt the data, but on the backend the data is sent via HTTP. While there is a certificate required on the load balancer, this is not needed on the EC2 instances.
 
 * Data is in plaintext form across AWS's network.
 
@@ -3722,9 +3642,7 @@ If there is no stickiness, each time the customer logs on they will have a state
 
 There is an option available within elastic load balancers called Session Stickiness.
 
-![Session Stickiness](Learning-Aids/14-HA-and-Scaling/SessionStickiness.png)
-
-And within an application load balancer this is enabled on a target group. If enabled, the first time a user makes a request, the load balancer generates a cookie called AWSALB with a duration. A valid duration is between one second and seven days. For this time, sessions will be sent to the same backend instance. This will happen until:
+Within an application load balancer this is enabled on a target group. If enabled, the first time a user makes a request, the load balancer generates a cookie called AWSALB with a duration. A valid duration is between one second and seven days. For this time, sessions will be sent to the same backend instance. This will happen until:
 
 - A server failure, then the user will be moved to a different server.
 - The cookie expires, the whole process will repeat and will receive a new cookie
@@ -3827,16 +3745,14 @@ Best practice is to make it very small and very specialized. Lambda function cod
 
 * When invoked, it runs inside a runtime environment that matches the language the script is written in.
   The runtime environment is allocated a certain amount of memory and an appropriate amount of CPU. The more memory you allocate, the more CPU it gets, and the more the function costs to invoke per second.
-
 * Lambda functions can be given an IAM role or **execution role**. The execution role is passed into the runtime environment.
   Whenever that function executes, the code inside has access to whatever permissions the role's permission policy provides.
-
 * Lambda can be invoked in an **event-driven** or **manual** way. Each time you invoke a lambda function, the environment provided is new and ephemeral.
-
 * Lambda functions by default are public services and can access any websites. By default they cannot access private VPC resources, but can be configured to do so if needed. Once configured, they can only access resources within a VPC.
   Unless you have configured your VPC to have all of the configuration needed to have public internet access or access to the AWS public space endpoints, then the Lambda will not have access.
-
 * The Lambda runtime is stateless, so you should always use AWS services for input and output. Something like DynamoDB or S3. If a Lambda is invoked by an event, it gets details of the event given to it at startup.
+* You [can pass](https://aws.amazon.com/lambda/faqs/) sensitive information in environment variables by encrypting them with custom KMS keys:
+  * For sensitive information, such as database passwords, we recommend you use client-side encryption using [AWS Key Management Service](http://docs.aws.amazon.com/kms/latest/developerguide/overview.html) and store the resulting values as ciphertext in your environment variable. You will need to include logic in your AWS Lambda function code to decrypt these values.
 
 #### 1.13.2.2. Key Considerations
 
@@ -4059,8 +3975,9 @@ Since requests can return 0 messages, frequently polling a SQS Queue, makes it l
 Two ways to poll
 
 - short (immediate) : uses 1 request and can return 0 or more messages. If the queue is empty, it will return 0 and try again. This hurts queues that stay short
-
 - long (waitTimeSeconds) : it will wait for up to 20 seconds for messages to arrive on the queue. It will sit and wait if none currently exist.
+
+**Test note:** Using long polling might reduce the cost of using SQS, because you can reduce the number of empty receives.
 
 Messages can live on SQS Queue for up to 14 days. Offers 
 
@@ -4192,12 +4109,27 @@ Both can be combined
 #### 1.14.1.1. Caching Optimization
 
 * Parameters can be passed on the URL such as query string parameter. An example is `?language=en` and `?language=es`
-
 * Caching will cache each string parameter storing two different objects. You must use the same string parameters again to retrieve them. If you remove them and the object is not caching it will need to be fetched first.
-
 * If string parameters aren't involved in the caching, you can select no to forward them to the origin.
-
 * If the application does use **query string parameters**, you can use all of them for caching or just selected ones.
+* The `Cache-Control` and `Expires` headers control how long objects stay in the cache. The `Cache-Control max-age` directive lets you specify how long (in seconds) you want an object to remain in the cache before CloudFront gets the object again from the origin server.
+
+#### 1.14.1.2. Signed Cookies
+
+CloudFront signed URLs and signed cookies provide the same basic functionality: they allow you to control who can access your content. If you want to serve private content through CloudFront and you’re trying to decide whether to use signed URLs or signed cookies, consider the following:
+
+Use **signed URLs** for the following cases:
+
+- You want to use an RTMP distribution. Signed cookies aren’t supported for RTMP distributions.
+
+* You want to restrict access to individual files, for example, an installation download for your application.
+* Your users are using a client (for example, a custom HTTP client) that doesn’t support cookies.
+
+Use **signed cookies** for the following cases:
+
+* You want to provide access to multiple restricted files, for example, all of the files for a video in HLS format or all of the files in the subscribers’ area of a website.
+
+* You don’t want to change your current URLs.
 
 ### 1.14.2. AWS Certificate Manager (ACM)
 
