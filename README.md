@@ -22,6 +22,7 @@
 - [1.16. Hybrid-and-Migration](#116-hybrid-and-migration)
 - [1.17. Security-Deployment-Operations](#117-security-deployment-operations)
 - [1.18. NoSQL-and-DynamoDB](#118-nosql-and-dynamodb)
+- [1.19. TD comparison tables](#119-td-comparison-tables)
 
 ---
 
@@ -367,17 +368,19 @@ Three products in one
 
 #### 1.2.9.1. Namespace
 
-Container for monitoring data.
-Naming can be anything so long as it's not `AWS/service` such as `AWS/EC2`.
-This is used for all metric data of that service
+* Container for monitoring data.
+* Naming can be anything so long as it's not `AWS/service` such as `AWS/EC2`.
+* This is used for all metric data of that service
 
 #### 1.2.9.2. Metric
 
-Time ordered set of data points such as:
+Time ordered set of data points for these [default metrics](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/viewing_metrics_with_cloudwatch.html). 
 
-- CPU Usage
+- CPU utilisation
 - Network IN/OUT
-- Disk IO
+- Disk read/writes
+
+Custom ones can be added.
 
 This is not for a specific server. This could get things from different servers.
 
@@ -390,8 +393,8 @@ Anytime CPU Utilization is reported, the **datapoint** will report:
 
 #### 1.2.9.3. Alarms
 
-Has two states `ok` or `alarm`. A notification could be sent to an SNS topic or an action could be performed based on an alarm state.
-Third state can be insufficient data state. Not a problem, just wait.
+* Has two states `ok` or `alarm`. A notification could be sent to an SNS topic or an action could be performed based on an alarm state.
+* Third state can be insufficient data state. Not a problem, just wait.
 
 ### 1.2.10. Shared Responsibility Model
 
@@ -2059,13 +2062,13 @@ Good for latency sensitive workloads such as mongoDB. Multi-attach allows them t
   - Burst of 80 MB/s per TiB
   - Max t-put of 250 MB/s
   
-  | Features                       | SSD                                                          | HDD                                                          |
-  | :----------------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-  | Best for workloads with:       | small, random  I/O operations                                | large, sequential I/O operations                             |
-  | Usable as bootable volume?     | Yes                                                          | No                                                           |
-  | Suitable use cases             | - Best for transactional workloads <br />- Critical business apps that requires sustained IOPS <br />- Large DB workloads such as MongoDB, Oracle, MS-SQL... | - Best for large streaming workloads requiring consistent fast throughput at low price <br />- Big data, data warehouses, log processing <br />- Throughput-oriented storage for large volumes of data infrequently accessed |
-  | Cost                           | Moderate/High                                                | Low                                                          |
-  | Dominant Attribute Performance | IOPS                                                         | Throughput (MiB/s)                                           |
+    | Features                       | SSD                                                          | HDD                                                          |
+    | :----------------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+    | Best for workloads with:       | small, random  I/O operations                                | large, sequential I/O operations                             |
+    | Usable as bootable volume?     | Yes                                                          | No                                                           |
+    | Suitable use cases             | - Best for transactional workloads <br />- Critical business apps that requires sustained IOPS <br />- Large DB workloads such as MongoDB, Oracle, MS-SQL... | - Best for large streaming workloads requiring consistent fast throughput at low price <br />- Big data, data warehouses, log processing <br />- Throughput-oriented storage for large volumes of data infrequently accessed |
+    | Cost                           | Moderate/High                                                | Low                                                          |
+    | Dominant Attribute Performance | IOPS                                                         | Throughput (MiB/s)                                           |
 
 #### 1.6.5.5. EBS Exam Power Up
 
@@ -2165,15 +2168,13 @@ The data is incrementally stored which means doing a snapshot every 5 minutes wi
 
 #### 1.6.8.3. EBS Encryption
 
-Provides at rest encryption for block volumes and snapshots.
-
 When you don't have EBS encryption, the volume is not encrypted. The physical hardware itself may be performing at rest encryption, but that is a separate thing.
 
 When you set up an EBS volume initially, EBS uses KMS and a customer master key. This can be the EBS default (CMK) which is referred to as `aws/ebs` or it could be a customer managed CMK which you manage yourself.
 
 That key is used by EBS when an encrypted volume is created. The CMK generates an encrypted **data encryption key (DEK)** which is stored with the volume with on the physical disk. This key can only be decrypted using KMS when a role with the proper permissions to decrypt that DEK.
 
-When the volume is first used, EBS asks CMS to decrypt the key and stores the decrypted key in memory on the EC2 host while it's being used. At all other times it's stored on the volume in encrypted form.
+When the volume is first used, EBS asks KMS to decrypt the key and stores the decrypted key in memory on the EC2 host while it's being used. At all other times it's stored on the volume in encrypted form.
 
 When the EC2 instance is using the encrypted volume, it can use the decrypted data encryption key to move data on and off the volume. It is used for all cryptographic operations when data is being used to and from the volume.
 
@@ -2184,6 +2185,13 @@ If the EBS volume is ever moved, the key is discarded.
 If a snapshot is made of an encrypted EBS volume, the same data encryption key is used for that snapshot. Anything made from this snapshot is also encrypted in the same way.
 
 Every time you create a new EBS volume from scratch, it creates a new data encryption key.
+
+When you create an encrypted EBS volume and attach it to a supported instance type, the following types of data [are encrypted](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html):
+
+- Data at rest inside the volume
+- All data moving between the volume and the instance
+- All snapshots created from the volume
+- All volumes created from those snapshots
 
 ##### 1.6.8.3.1. EBS Encryption Exam Power Up
 
@@ -2333,13 +2341,13 @@ Images of EC2 instances that can launch more EC2 instance.
   - All up front
   - Partial upfront 
   - No upfront
-
 - Best discounts are for 3 years all up front.
 - Reserved in region, or AZ with capacity reservation.
 - Reserved instances takes priority for AZ capacity.
 - Can perform scheduled reservation when you can commit to specific time windows.
 - Great if you have a known stead state usage, email usage, domain server or when you need to reserve capacity in a given region or AZ.
 - Cheapest option with no tolerance for disruption.
+- Reserve Instances can be listed for sale in the [Reserved Instance Marketplace](https://aws.amazon.com/ec2/purchasing-options/reserved-instances/marketplace/).
 
 ### 1.6.12. Instance Status Checks and Autorecovery
 
@@ -3530,10 +3538,11 @@ LB billed based on two things:
   - path-based `/cat` or `/dog`
   - host-based if you want to use different DNS names.
 - Support EC2, ECS, EKS (k8s), Lambda, HTTPS, HTTP/2 and websockets.
-- ALB can use Server Name Indication (SNI)[^1] for multiple SSL certs attached to that LB.
+- ALB can use [Server Name Indication (SNI)](https://www.cloudflare.com/learning/ssl/what-is-sni/) for multiple SSL certs attached to that LB.
   - LB can direct individual domain names using SSL certs at different target groups.
 - AWS does not suggest using Classic Load Balancer (CLB), these are legacy. All achievable with ALB.
   - This can only use one SSL certificate.
+- **Test note:** You can assign an Elastic IP address on a Network LB [but not](https://stackoverflow.com/a/55243777/7908040) (one per AZ) an Application LB.
 
 ### 1.12.3. Launch Configuration and Templates
 
@@ -3588,7 +3597,18 @@ Scaling policies are rules that you can use to define autoscaling of instances. 
 - Think about implementing more and smaller instances to allow granularity.
 - Generally, for anything client-facing you should always use Auto Scaling Groups (ASG) with Application Load Balancers (ALB) with autoscaling because they allow you to provide elasticity by abstracting the user away from individual servers. Since, the customers will be connecting through an ALB, they don't have any visibility of individual servers.
 - ASG defines WHEN (under what circumstances) and WHERE (VPCs, SG); Launch Templates defines WHAT.
-- ASG cannot span multiple Regions. **(Exam note)**
+- **Exam note**: ASG cannot span multiple Regions.
+
+#### 1.12.4.3. Auto-scaling metrics
+
+Only 4 pre-defined metrics are available [by default](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-scaling-target-tracking.html#available-metrics)
+
+- `ASGAverageCPUUtilization`—Average CPU utilization of the Auto Scaling group.
+- `ASGAverageNetworkIn`—Average number of bytes received on all network interfaces by the Auto Scaling group.
+- `ASGAverageNetworkOut`—Average number of bytes sent out on all network interfaces by the Auto Scaling group.
+- `ALBRequestCountPerTarget`—Number of requests completed per target in an Application Load Balancer target group.
+
+Other custom metrics can be created by installing a CloudWatch agent on the instances.
 
 ### 1.12.5. Network Load Balancer (NLB)
 
@@ -3603,11 +3623,20 @@ Part of AWS Version 2 series of load balancers.
 5. Can perform SSL pass through.
 6. NLB can load balance non-HTTP/S applications, doesn't care about anything above TCP/UDP. This means it can handle load balancing for FTP or things that aren't HTTP or HTTPS.
 
-### 1.12.6. SSL Offload and Session Stickiness
+### 1.12.6. Gateway Load Balancers (GWLB)
+
+* Used to run 3rd party security appliances like firewalls, IDS, IPS
+* Traffic enters/leaves GWLB endpoints (similar to interface endpoints within VPCs)
+* Load-balances packets across backend security appliances
+* Traffic forwarded to security appliances encapsulated in protocol GENEVE
+
+![](Pics/GWLB.png)
+
+### 1.12.7. SSL Offload and Session Stickiness
 
 ![](Pics/SSLOffload.png)
 
-#### 1.12.6.1. Bridging - Default mode
+#### 1.12.7.1. Bridging - Default mode
 
 * One or more clients makes one or more connections to a load balancer.
   The load balancer is configured so its **listener** uses HTTPS, SSL connections occur between the client and the load balancer.
@@ -3622,7 +3651,7 @@ Part of AWS Version 2 series of load balancers.
 
 * The main benefit is the elastic load balancer gets to see the unencrypted HTTP and can take actions based on what's contained in this plain text protocol.
 
-#### 1.12.6.2. Pass-through - Network Load Balancer
+#### 1.12.7.2. Pass-through - Network Load Balancer
 
 * The client connects, but the load balancer passes the connection along without decrypting the data at all. The instances still need the SSL certificates, but the load balancer does not. Specifically it's a network load balancer which is able to perform this style of connection.
 
@@ -3630,13 +3659,13 @@ Part of AWS Version 2 series of load balancers.
 
 * Negative is you don't get any load balancing based on the HTTP part because that is never exposed to the load balancer. The EC2 instances still need the compute cryptographic overhead.
 
-#### 1.12.6.3. Offload
+#### 1.12.7.3. Offload
 
 * Clients connect to the load balancer using HTTPS and are terminated on the load balancer. The ELB needs an SSL certificate to decrypt the data, but on the backend the data is sent via HTTP. While there is a certificate required on the load balancer, this is not needed on the EC2 instances.
 
 * Data is in plaintext form across AWS's network.
 
-#### 1.12.6.4. Connection Stickiness
+#### 1.12.7.4. Connection Stickiness
 
 If there is no stickiness, each time the customer logs on they will have a stateless experience. If the state is stored on a particular server, sessions can't be load balanced across multiple servers.
 
@@ -4261,10 +4290,10 @@ Format for Flow Logs
 
 - When you allocate a gateway endpoint to a subnet, a ***prefix list*** is added to the route table. The target is the gateway endpoint. Any traffic destined for S3, goes via the gateway endpoint. The gateway endpoint is highly available for all AZs in a region by default.
 - With a gateway endpoint you set which subnet will be used with it and it will configure automatically. A gateway endpoint is a VPC gateway object.
-- Endpoint policy controls what things can be connected to by that endpoint.
 - Gateway endpoints can only be used to access services in the same region. Can't access cross-region services. You cannot, for instance, access an S3 bucket located in the `ap-southeast-2` region from a gateway endpoint in the `us-east-1` region.
 - Prevent Leaky Buckets: S3 buckets can be set to private only by allowing access ONLY from a gateway endpoint. For anything else, the _implicit deny_ will apply.
-- Configure endpoint policy to control what the Gateway Endpoint can be used for.
+- Configure **endpoint policy** to control what the Gateway Endpoint can be used for.
+  - You can configure specific S3 bucket policies but this requires setup for every S3 bucket.
 
 **Exam note:** Gateway endpoints only accessible from inside that specific VPC.
 
@@ -4433,11 +4462,14 @@ Static| Dynamic |
 
 ### 1.16.4. Storage Gateway
 
-- Hybrid Storage Virtual Application (On-premise)
-  - Can be run inside AWS as part of certain disaster recovery scenarios
-  - Allows for migration of existing infrastructure into AWS slowly.
-  - Uploads data via public HTTPS endpoint
-- Tape Gateway (VTL) Mode
+Hybrid Storage Virtual Application (On-premise)
+- Can be run inside AWS as part of certain disaster recovery scenarios
+- Allows for migration of existing infrastructure into AWS slowly.
+- Uploads data via public HTTPS endpoint
+
+#### 1.16.4.1 Available modes:
+
+- Tape Gateway (VTL)
   
   - Virtual Tapes are stored on S3
 - File Gateway (SMB and NFS shares)
@@ -5107,6 +5139,7 @@ Two services offered
   * Reduce cost of accessing DBs
   * Need <ms access to data
   * Store user session state data outside of EC2
+* **Test notes**: Calls to return identical or static datasets -> prefer ElastiCache over read replicas.
 
 ### 1.18.9 Amazon Redshift
 
@@ -5153,7 +5186,6 @@ Exam note: Need to know
 #### 1.18.9.2. Redshift resilience and recovery
 
 * RS runs in a single AZ, so it's not resilient.
-
 * Can make backups to S3
 
   * Automatic every 8 hours, 1 day retention default, up to 35 days.
@@ -5161,4 +5193,30 @@ Exam note: Need to know
   * S3 is backed up across multiple AZs
   * Backups can be copied to other regions as needed
 
-  
+### 1.19. TD comparison tables
+
+#### 1.19.1. Storage
+
+[S3 vs EBS vs EFS](https://tutorialsdojo.com/amazon-s3-vs-ebs-vs-efs/)
+
+[S3 Pre-signed URLs vs CloudFront Signed URLs vs Origin Access Identity (OAI)](https://tutorialsdojo.com/s3-pre-signed-urls-vs-cloudfront-signed-urls-vs-origin-access-identity-oai/)
+
+#### 1.19.2. Transferring data to AWS
+
+[S3 transfer acceleration vs DX vs VPN vs Snowball](https://tutorialsdojo.com/s3-transfer-acceleration-vs-direct-connect-vs-vpn-vs-snowball-vs-snowmobile/)
+
+[AWS DataSync vs Storage Gateway](https://tutorialsdojo.com/aws-datasync-vs-storage-gateway/)
+
+#### 1.19.3. Databases
+
+[RDS vs DynamoDB](https://tutorialsdojo.com/amazon-rds-vs-dynamodb/)
+
+[Aurora vs RDS](https://tutorialsdojo.com/amazon-aurora-vs-amazon-rds/)
+
+#### 1.19.4 AWS secrets
+
+[Secrets Manager vs Systems Manager Parameter Store](https://tutorialsdojo.com/aws-secrets-manager-vs-systems-manager-parameter-store/)
+
+#### 1.19.5 Security
+
+[Security Groups vs NACL](https://tutorialsdojo.com/security-group-vs-nacl/)
