@@ -378,9 +378,9 @@ Time ordered set of data points for these [default metrics](https://docs.aws.ama
 
 - CPU utilisation
 - Network IN/OUT
-- Disk read/writes
+- Disk reads/writes (**not** disk utilisation)
 
-Custom ones can be added.
+Custom ones can be added (such as memory and disk utilisation)
 
 This is not for a specific server. This could get things from different servers.
 
@@ -922,6 +922,8 @@ When the services log, they log in the region they are created or to `us-east-1`
 A trail can store events in an S3 bucket as a compressed JSON file. It can also use CloudWatch Logs to output the data.
 
 CloudTrail products can create an organizational trail. This allows a single management point for all the APIs and management events for that org.
+
+* **Test note:** For `--is-multi-region-trail` it will only cover the activities of the regional services (EC2, S3, RDS etc.) and not for global services such as IAM, CloudFront, AWS WAF, and Route 53. In order to satisfy the requirement, you have to add the `--include-global-service-events` parameter in your AWS CLI command.
 
 #### 1.3.9.2. CloudTrail Exam PowerUp
 
@@ -1516,7 +1518,7 @@ Works on file types:
 
 - CSV, JSON, Parquet, BZIP2.
 
-### 1.4.14 S3 Events notification
+### 1.4.14. S3 Events notification
 
 - Notifications generated when events occur in a bucket like
   - Object creation (Put, Post, Copy, CompleteMultiPartUpload)
@@ -1524,8 +1526,9 @@ Works on file types:
   - Object restore (from Glacier or Deep Archive)
   - S3 replication (missing 15min threshold, failed replication etc)
 - Delivered to SNS, SQS, Lambda
+- **Test note:** You can only add 1 SQS or SNS at a time for Amazon S3 events notification. If you need to send the events to multiple subscribers, you should implement a message fanout pattern with Amazon SNS and Amazon SQS.
 
-### 1.4.15 S3 Access Logs
+### 1.4.15. S3 Access Logs
 
 Consists of source bucket (which is logged) and target bucket (where logs are stored). To enable need
 
@@ -2344,10 +2347,15 @@ Images of EC2 instances that can launch more EC2 instance.
 - Best discounts are for 3 years all up front.
 - Reserved in region, or AZ with capacity reservation.
 - Reserved instances takes priority for AZ capacity.
+- Cannot reserve capacity to multiple regions.
 - Can perform scheduled reservation when you can commit to specific time windows.
 - Great if you have a known stead state usage, email usage, domain server or when you need to reserve capacity in a given region or AZ.
 - Cheapest option with no tolerance for disruption.
 - Reserve Instances can be listed for sale in the [Reserved Instance Marketplace](https://aws.amazon.com/ec2/purchasing-options/reserved-instances/marketplace/).
+- [Convertible Reserved Instance](https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-reservation-models/standard-vs.-convertible-offering-classes.html)s:
+  - Not as discounted as Standard Reserved
+  - Enables you to *exchange* one or more Convertible Reserved Instances for another Convertible Reserved Instance with a different configuration, including instance family, operating system, and tenancy.
+  - Can't be sold on the Reserved Instance Marketplace.
 
 ### 1.6.12. Instance Status Checks and Autorecovery
 
@@ -3077,6 +3085,8 @@ Billing is per instance and hourly rate for that compute. You are billed for sto
 
 * To use RDS need to first create a subnet group, associate it with AZs and select the subnets of the VPC. This tells RDS which subnets to place things into.
 
+**Test note:** RDS events only provide operational events such as DB instance events, DB parameter group events, DB security group events, and DB snapshot events. Monitoring data-modifying events (`INSERT`, `DELETE`, `UPDATE`) can be achieved thru native functions or stored procedures
+
 ### 1.10.5. RDS Multi AZ (High-Availability)
 
 This is an option that you can enable on RDS instances.
@@ -3284,14 +3294,17 @@ With Aurora you can have **up to 15 replicas** and any of them can be a failover
 
 Aurora clusters like RDS use endpoints, so these are DNS addresses which are used to connect to the cluster. Unlike RDS, Aurora clusters have multiple endpoints that are available for an application.
 
-Two endpoints at a minimum
-
 - **Cluster endpoint** always points at the primary instance.
   - This is used for read and write applications.
 - **Reader endpoint**
   - Will point at primary instance if no replicas.
   - Will load balance across all available replicas for read operations.
   - Automatically updates to load balance for read after every replica added.
+- **Instance endpoint** [[Ref](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Overview.Endpoints.html#Aurora.Endpoints.Instance)]
+  - To diagnose capacity or performance issues that affect one specific instance in an Aurora cluster. While connected to a specific instance, you can examine its status variables, metrics, and so on. Doing this can help you determine what's happening for that instance that's different from what's happening for other instances in the cluster.
+- **Custom endpoint** [[Ref](https://aws.amazon.com/about-aws/whats-new/2018/11/amazon-aurora-simplifies-workload-management-with-custom-endpoints/)]
+  - Allows distribute and load balance workloads across different sets of database instances in your Aurora cluster.
+  - For example, you may provision a set of Aurora Replicas to use an instance type with higher memory capacity in order to run an analytics workload. A custom endpoint can then help you route the analytics workload to these appropriately-configured instances, while keeping other instances in your cluster isolated from this workload.
 
 #### 1.10.10.2. Costs
 
@@ -3824,6 +3837,7 @@ API stands for Application Programming Interface. It's a way that you can take a
   - Provides managed AWS endpoints.
   - Can also perform authentication to prove you are who you claim.
   - You can create an API and present it to your customers for use.
+- Stands in between client and EC2 instance, Lambda function or Fargate.
 - Allows you to create, publish, monitor, and secure APIs (and it does these tasks as a service).
 - Billed based on:
   - number of API calls
@@ -3837,6 +3851,12 @@ Great during an architecture evolution because the endpoints don't change.
 1. Create a managed API and point at the existing monolithic application.
 2. Using API gateway allows the business to evolve along the way slowly. This might move some of the data to fargate and aurora architecture.
 3. Move to a full serverless architecture with DynamoDB.
+
+**Test notes:**
+
+* Amazon API Gateway [will automatically scale](https://aws.amazon.com/api-gateway/faqs/) to handle the amount of traffic your API receives.
+* Can [be throttled](https://aws.amazon.com/api-gateway/faqs/) to protect the backend systems from traffic spikes
+  * Amazon API Gateway provides throttling at multiple levels including global and by service call. Throttling limits can be set for standard rates and bursts. For example, API owners can set a rate limit of 1,000 requests per second for a specific method in their REST APIs, and also configure Amazon API Gateway to handle a burst of 2,000 requests per second for a few seconds. Amazon API Gateway tracks the number of requests per second. Any requests over the limit will receive a 429 HTTP response.
 
 ### 1.13.5. Serverless
 
@@ -4014,6 +4034,12 @@ Messages can live on SQS Queue for up to 14 days. Offers
 * Encrypted in transit with SQS and any clients.
 
 Access to a queue is based on identity policies or a queue policy. Queue policies only can allow access from an outside account. This is a resource policy.
+
+**Comparison with Amazon MQ:**
+
+**Q: When should I use Amazon MQ vs. Amazon SQS and SNS?**
+
+Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://aws.amazon.com/sns/) are messaging services that are suitable for anyone from startups to enterprises. If you're using messaging with existing applications, and want to move your messaging to the cloud quickly and easily, we recommend you consider Amazon MQ. It supports **industry-standard APIs and protocols** so you can switch from any standards-based message broker to Amazon MQ **without rewriting the messaging code** in your applications. If you are building **brand new applications** in the cloud, we recommend you **consider Amazon SQS and Amazon SNS**. Amazon SQS and SNS are lightweight, fully managed message queue and topic services that scale almost infinitely and provide simple, easy-to-use APIs. You can use Amazon SQS and SNS to decouple and scale microservices, distributed systems, and serverless applications, and improve reliability.
 
 ### 1.13.9. Kinesis
 
@@ -4454,7 +4480,7 @@ Static| Dynamic |
   3. Transit gateways are then connected to customer gateways
 - Can be used to create global networks.
   - You can use these for cross-region peering attachments.
-- Can share between accounts using AWS Resource Access Manager (RAM)
+- Can share resources between AWS accounts using AWS Resource Access Manager (RAM)
   - Can peer with different regions in the same or cross account
 - You achieve a less network complexity if you implement a transit gateway (TGW)
 
@@ -4840,6 +4866,7 @@ Capacity is set per WCU or RCU
 - Key/value => DynamoDB
 
 * Access to Dynamo is from the console, CLI, or API. You **don't** have SQL access.
+* DynamoDB has no read replicas. If exam qn mentions it, it's not DynamoDB.
 
 Billing based on:
 
@@ -5148,8 +5175,8 @@ Two services offered
 * OLAP (column-based) not OLTP (row-based)
   * To get the average age of cats, you'll have to retrieve all the rows in a row-based DB but not in OLAP.
 * Pay-per-use like RDS.
-* Direct query
-  * S3 using Redshift Spectrum
+* Direct querying of:
+  * S3 using Redshift Spectrum (similar to Athena). See [this](https://stackoverflow.com/questions/50250114/athena-vs-redshift-spectrum) for differences.
   * Other DBs using federated query
 * SQL-like interface JDBC/ODBC connections
 
