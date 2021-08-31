@@ -380,16 +380,14 @@ Time ordered set of data points for these [default metrics](https://docs.aws.ama
 - Network IN/OUT
 - Disk reads/writes (**not** disk utilisation)
 
-Custom ones can be added (such as memory and disk utilisation)
+Custom ones can be added (such as memory and disk utilisation) by installing CW agent. This is not for a specific server. This could get things from different servers.
 
-This is not for a specific server. This could get things from different servers.
-
-Anytime CPU Utilization is reported, the **datapoint** will report:
+For example, any time CPU Utilization is reported, the **datapoint** will report:
 
 - Timestamp = 2019-12-03
 - Value = 98.3
 
-**Dimensions** could be used to get metrics for a specific instance or type of instance, among others. They separate data points for different **things** or **perspectives** within the same metric.
+**Dimensions** could be used to get metrics for a specific instance or type of instance, among others. They separate data points for different **things** or **perspectives** within the same metric such as Instance IDs
 
 #### 1.2.9.3. Alarms
 
@@ -1047,6 +1045,10 @@ MFA is required to delete versions of an object.
 
 In order to change a version state or delete a particular version of an object, you need to provide the serial number of your MFA token as well as the code it generates. These are concatenated and passed with any API calls.
 
+#### 1.4.3.2 S3 Object Lock
+
+With [S3 Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html), you can store objects using a *write-once-read-many* (WORM) model. Object Lock can help prevent objects from being deleted or overwritten for a fixed amount of time or indefinitely. You can use Object Lock to help meet regulatory requirements that require WORM storage, or to simply add another layer of protection against object changes and deletion.
+
 ### 1.4.4. S3 Performance Optimization
 
 #### 1.4.4.1. Single PUT Upload
@@ -1139,7 +1141,7 @@ One party would take another party's public key and encrypt some data to create 
   - Some features are compliant with Level 3.
   - All features are compliant with Level 2.
 
-#### 1.4.6.1. CMKs - Customer Master Keys
+#### 1.4.6.1. Customer Master Keys (CMK)
 
 - Managed by KMS and used within cryptographic operations.
 - AWS services, applications, and the user can all use them.
@@ -1171,12 +1173,15 @@ When the DEK is generated, KMS provides two version.
   - This is encrypted by the CMK that generated it.
   - In the future it can be decrypted by KMS using the CMK assuming you have the permissions.
 
-Architecture
+**Workflow:**
 
-1. DEK is generated right before something is encrypted.
+1. DEK is generated before something is encrypted.
 2. The data is encrypted with the plaintext version of the DEK.
 3. Discard the plaintext data version of the DEK.
 4. The encrypted DEK is stored next to the ciphertext generated earlier.
+5. When needed, the DEK is decrypted with the CMK then used to decrypt the ciphertext.
+
+![](Pics/KMS-Keys.png)
 
 #### 1.4.6.3. KMS Key Concepts
 
@@ -1184,8 +1189,7 @@ Architecture
   - Never leave the region or KMS.
   - Cannot extract a CMK.
 - AWS managed CMKs
-  - Created automatically by AWS when using a service such
-  as S3 which uses KMS for encryption.
+  - Created automatically by AWS when using a service such as S3 which uses KMS for encryption.
 - Customer managed CMKS
   - Created explicitly by the customer.
   - Much more more configurable, for example the key policy can be edited.
@@ -1267,13 +1271,11 @@ Both types are encryption at rest. Data sent from a user to S3 is automatically 
 - Customer still needs to generate and manage the key.
 - S3 will see the unencrypted object throughout this process.
 
-SSE-C Encryption Steps
+**SSE-C Encryption Steps:**
 
-1. When placing an object in S3, you provide encryption key and plaintext object
-2. Once the key and object arrive, it is encrypted.
-3. A hash of the key is taken and attached to the object.
-The hash can identify if the specific key was used to encrypt the object.
-4. The key is then discarded after the hash is taken.
+1. You provide encryption key and plaintext.
+2. A hash of the key is taken and attached to the object. The hash can identify if the specific key was used to encrypt the object.
+4. Object is encrypted. The key is then discarded after the hash is taken.
 5. The encrypted and one-way hash are stored persistently on storage.
 
 To decrypt the object, you must tell S3 which object to decrypt and provide it with the key used to encrypt it. If the key that you supply is correct, the proper hash, S3 will decrypt the object, discard the key, and return the plaintext version of the object.
@@ -1282,7 +1284,7 @@ To decrypt the object, you must tell S3 which object to decrypt and provide it w
 
 AWS handles both the encryption and decryption process as well as the key generation and management. This provides very little control over how the keys are used, but has little admin overhead.
 
-SSE-S3 Encryption Steps
+**SSE-S3 Encryption Steps:**
 
 1. When putting data into S3, only need to provide plaintext.
 2. S3 generates fully managed and rotated **master key** automatically.
@@ -1290,7 +1292,7 @@ SSE-S3 Encryption Steps
 4. The master key is used to encrypt the specific object key, and the unencrypted version of that key is discarded.
 5. The encrypted file and encrypted key are stored side by side in S3.
 
-Three Problems with this method:
+3 problems with this method:
 
 - Not good for regulatory environment where keys and access must be controlled.
 - No way to control key material rotation.
@@ -1321,10 +1323,6 @@ The best benefit is the role separation. To decrypt any object, you need access 
 | SSE-KMS     | S3 and KMS     | S3                    | Rotation Control<br />Role Separation |
 
 ### 1.4.9. S3 Object Storage Classes
-
-Picking a storage class can be done while uploading a specific object.
-The default is S3 standard. Once an object is uploaded to a specific class,
-it can be easily changed as long as some conditions are met.
 
 Objects in S3 are stored in a specific region.
 
@@ -1587,7 +1585,7 @@ An example using 4 AWS accounts.
 - Hybrid networking to allow connection to other cloud or on-prem networking.
 - Default or Dedicated Tenancy. This refers to how the hardware is configured.
   - Default allows on a per resource decision later on.
-  - Dedicated locks any resourced created in that VPC to be on dedicated shardware which comes at a cost premium.
+  - Dedicated locks any resourced created in that VPC to be on dedicated hardware which comes at a cost premium.
 
 #### 1.5.2.1. Custom VPC Facts
 
@@ -1605,7 +1603,13 @@ Single assigned IPv6 /56 CIDR block
 - Still being matured, not everything works the same as IPv4.
 - With increasing use of IPv6, this should be added as a default
 - Range is either allocated by AWS as in you have no choice on which range to use, or you can select to use your own IPv6 addresses which you own.
-- IPv6 does not have private addresses, they are all routed as public by sdefault.
+- IPv6 does not have private addresses, they are all routed as public by default.
+
+**Test notes:**
+
+* Need to add new IPv4 subnet first before creating IPv6 subnet.
+* Default IP addressing system is IPv4. Can support dual-stack mode or IPv4 only, but not IPv6 only.
+* Can't disable IPv4 support since this is default.
 
 #### 1.5.2.2. DNS provided by R53
 
@@ -1709,6 +1713,8 @@ If the instance uses an IPv6 address, that public address is good to go. The IGW
 It is an instance in a public subnet inside a VPC. These are used to allow incoming management connections. Once connected, you can then go on to access internal only VPC resources. Used as a management point or as an entry point for a private only VPC.
 
 This is an inbound management point. Can be configured to only allow specific IP addresses or to authenticate with SSH. It can also integrate with your on premise identification service.
+
+**Test notes:** Don't need a large EC2 instance for bastion hosts. A small one will do.
 
 ### 1.5.5. Network Access Control List (NACL)
 
@@ -1989,6 +1995,7 @@ This isn't the only part of the chain, but it is a simplification. A system migh
 - Can snapshot backup to S3 which makes it region-resilient and allows data migration across AZs.
 - The snapshots can also be copied across regions for global resilience.
 - **Test note:** EBS volumes [support live configuration changes](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/requesting-ebs-volume-modifications.html) while in production which means that you can modify the volume type, volume size, and IOPS capacity without service interruptions.
+- **Test note:** You can use [Amazon Data Lifecycle Manager](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html) to automate the creation, retention, and deletion of EBS snapshots and EBS-backed AMIs.
 
 ![](Pics/EBS_Architecture.png)
 
@@ -3553,6 +3560,7 @@ LB billed based on two things:
 - Support EC2, ECS, EKS (k8s), Lambda, HTTPS, HTTP/2 and websockets.
 - ALB can use [Server Name Indication (SNI)](https://www.cloudflare.com/learning/ssl/what-is-sni/) for multiple SSL certs attached to that LB.
   - LB can direct individual domain names using SSL certs at different target groups.
+  - When multiple websites are hosted on one server and share a single IP address, and each website has its own SSL certificate, the server may not know which SSL certificate to show when a client device tries to securely connect to one of the websites. This is because the SSL/TLS handshake occurs before the client device indicates over HTTP which website it's connecting to. SNI solves this.
 - AWS does not suggest using Classic Load Balancer (CLB), these are legacy. All achievable with ALB.
   - This can only use one SSL certificate.
 - **Test note:** You can assign an Elastic IP address on a Network LB [but not](https://stackoverflow.com/a/55243777/7908040) (one per AZ) an Application LB.
@@ -4491,7 +4499,8 @@ Static| Dynamic |
 Hybrid Storage Virtual Application (On-premise)
 - Can be run inside AWS as part of certain disaster recovery scenarios
 - Allows for migration of existing infrastructure into AWS slowly.
-- Uploads data via public HTTPS endpoint
+- Typically not meant for moving data or migrating to cloud.
+- Uploads data via public HTTPS endpoint.
 
 #### 1.16.4.1 Available modes:
 
@@ -4718,6 +4727,7 @@ Provides against DDoS attacks with AWS resources. This is a denial of service at
     - Rate awareness
   - WEBACL integrated with Load Balancers, API gateways, and CloudFront.
     - Rules are added to WEBACL and evaluated when traffic arrives.
+    -  Web ACL consists of rules that you can configure to string match or regex match one or more request attributes, such as the URI, query-string, HTTP method, or header key. In addition, by using AWS WAF's rate-based rules, you can automatically block the IP addresses of bad actors when requests matching a rule exceed a threshold that you define. Requests from offending client IP addresses will receive 403 Forbidden error responses and will remain blocked until request rates drop below the threshold.
   
   **Exam notes:**
   
@@ -4765,22 +4775,25 @@ Provides against DDoS attacks with AWS resources. This is a denial of service at
 
 **Architecture**
 
+* No visibility of CloudHSM VPC it resides in. Injected into your VPC via ENIs.
+* CloudHSM client need to be installed on EC2 instances to handle the industry standard API.
+
 * HSM is not highly available and runs within one AZ. To be HA, you need at least two HSM devices and one in each AZ you use. Once HSM is in a cluster, they replicate all policies in sync automatically.
 
 * HSM needs an endpoint in the subnet of the VPC (an ENI) to allow resources access to the cluster.
 
-* AWS has no access to the HSM appliances which store the keys.
+* AWS has no access to the HSM appliances which store and manages the keys. But they can do software updates to the application.
 
 ![](Pics/CloudHSM.png)
 
-#### 1.17.3.1. Cloud HSM Use Cases
+#### 1.17.3.1. CloudHSM Use Cases
 
 - No native AWS integration with AWS products. You can't use S3 SSE with CloudHSM.
   - But you can use it to encrypt objects before uploading to S3.
-- Can offload the SSL/TLS processing from webservers. CloudHSM is much more efficient to do these encryption processes.
+- Can offload the SSL/TLS processing from webservers. CloudHSM is much more efficient as its specifically built for it.
 - Oracle Databases can use CloudHSM to enable **transparent data encryption (TDE)**
 - Can protect the private keys  for an issuing certificate authority.
-- Anything that needs to interact with non AWS products.
+- Anything that needs to interact with non AWS products because it uses industry APIs.
   - Not suitable for anything which requires AWS integration.
 
 ### 1.17.4. AWS Config
