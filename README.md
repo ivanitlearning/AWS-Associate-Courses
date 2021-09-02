@@ -1516,6 +1516,10 @@ Works on file types:
 
 - CSV, JSON, Parquet, BZIP2.
 
+#### 1.4.14. [Provisioned Capacity](https://docs.aws.amazon.com/amazonglacier/latest/dev/downloading-an-archive-two-steps.html)
+
+Provisioned capacity helps ensure that your retrieval capacity for expedited retrievals is available when you need it. Each unit of capacity provides that at least three expedited retrievals can be performed every five minutes and provides up to 150 MB/s of retrieval throughput.
+
 ### 1.4.14. S3 Events notification
 
 - Notifications generated when events occur in a bucket like
@@ -1605,12 +1609,6 @@ Single assigned IPv6 /56 CIDR block
 - Range is either allocated by AWS as in you have no choice on which range to use, or you can select to use your own IPv6 addresses which you own.
 - IPv6 does not have private addresses, they are all routed as public by default.
 
-**Test notes:**
-
-* Need to add new IPv4 subnet first before creating IPv6 subnet.
-* Default IP addressing system is IPv4. Can support dual-stack mode or IPv4 only, but not IPv6 only.
-* Can't disable IPv4 support since this is default.
-
 #### 1.5.2.2. DNS provided by R53
 
 Available on the base IP address of the VPC + 2.
@@ -1635,6 +1633,11 @@ Two options that manage how DNS works in a VPC:
 - Subnet can optionally be allocated IPv6 CIDR block.
   - (256 /64 subnets can fit in the /56 VPC)
 - Subnets can communicate with other subnets in the VPC by default.
+- **Test notes:**
+
+  * Need to add new IPv4 subnet first before creating IPv6 subnet.
+  * Default IP addressing system is IPv4. Can support dual-stack mode or IPv4 only, but not IPv6 only.
+  * Can't disable IPv4 support since this is default.
 
 #### 1.5.3.1. Reserved IP addresses
 
@@ -1661,7 +1664,7 @@ This is how computing devices receive IP addresses automatically. There is one o
 #### 1.5.3.3. IP allocation Options
 
 - Auto Assign public IPv4 address
-  - This will create a public IP address in addition to their private subnet.
+  - This will create a public IP address in addition to their private IP address which is assigned automatically.
   - This is needed to make a subnet public.
 - Auto Assign IPv6 address
   - For this to work, the subnet and VPC need an allocation of addresses.
@@ -1695,6 +1698,19 @@ A managed service that allows gateway traffic between the VPC and the internet o
 
 #### 1.5.4.3. Using IGW
 
+![](Pics/InternetGatewayArchitecture.png)
+
+This gives the instance a public IPv4 address (can connect to it from internet)
+
+**Steps:**
+
+1. Create IGW
+2. Attach IGW to VPC
+3. Create custom route table
+4. Associate route table with subnet you want to make public
+5. Add default routes in RT to point to IGW
+6. Subnet allocate public IPv4 (and 6 is needed) addresses
+
 In this example, an EC2 instance has:
 
 - Private IP address of 10.16.16.20
@@ -1718,17 +1734,17 @@ This is an inbound management point. Can be configured to only allow specific IP
 
 ### 1.5.5. Network Access Control List (NACL)
 
-Network Access Control Lists (NACLs) are a type of security filter (like firewalls) which can filter traffic as it enters or leaves a subnet.
+* Network Access Control Lists (NACLs) are a type of security filter (like firewalls) which can filter traffic as it enters or leaves a subnet.
 
-All VPCs have a default NACL, this is associated with all subnets of that VPC by default.
-NACLs are used when traffic enters or leaves a subnet. Since they are attached to a subnet and not a resource, they only filter
-data as it crosses in or out. If two EC2 instances in a VPC communicate, the NACL does nothing because it is not involved.
+* All VPCs have a default NACL, this is associated with all subnets of that VPC by default.
+  NACLs are used when traffic enters or leaves a subnet. Since they are attached to a subnet and not a resource, they only filter
+  data as it crosses in or out. If two EC2 instances in a VPC communicate, the NACL does nothing because it is not involved.
 
-NACLs have an inbound and outbound sets of rules.
+* NACLs have an inbound and outbound sets of rules.
 
-When a specific rule set has been called, the one with the lowest rule number first. As soon as one rule is matched, the processing stops for that particular piece of traffic.
+* When a specific rule set has been called, the one with the lowest rule number first. As soon as one rule is matched, the processing stops for that particular piece of traffic.
 
-The action can be for the traffic to **allow** or **deny** the traffic.
+* The action can be for the traffic to **allow** or **deny** the traffic.
 
 Each rule has the following fields related to traffic
 
@@ -1800,6 +1816,8 @@ NACLs are processed in order starting at the lowest rule number until it gets to
 
 Set of different processes that can address IP packets by changing their source or destination addresses.
 
+![](Pics/NATArchitecture.png)
+
 **IP masquerading**, hides CIDR block behind one IP. This allows many IPv4 addresses to use one public IP for **outgoing** internet access. Incoming connections don't work.
 
 - Must run from a public subnet to allow for public IP address.
@@ -1833,6 +1851,7 @@ Set of different processes that can address IP packets by changing their source 
   | Bastion servers |                        Not supported.                        |                  Can use as bastion server                   |
 
 - NAT not required for IPv6, all IPv6 addresses are publicly routable.
+
 - NATGWs cannot work with IPv6. To make IPv6 publicly routable
   - ::/0 route + IGW for bi-directional connectivity.
   - ::/0 route + egress-only IGW - outbound only.
@@ -1889,7 +1908,7 @@ Tenancy:
 - **Shared** - Instances are run on shared hardware, but isolated from other customers.
 - **Dedicated** - Instances are run on hardware that's dedicates to a single customer. Dedicated instances may share hardware with other instances from the same AWS account that are not Dedicated instances.
 - **Dedicated host** - Instances are run on a physical server fully dedicated for your use. Pay for entire host, don't pay for instances.
-  
+  - See [this](https://stackoverflow.com/questions/64309679/aws-dedicated-host-vs-dedicated-instance-why-the-first-is-more-expensive-than) for dedicated instances vs dedicated hosts.
 - AZ resilient service. They run within only one AZ system.
   - You can't access them cross zone.
 
@@ -1904,7 +1923,9 @@ EC2 host contains
   - Storage networking
   - Data networking
 
-**Test notes:** There's a [limit of 20 instances](https://aws.amazon.com/ec2/faqs/#EC2_On-Demand_Instance_limits) per Region for each of these 
+**Test notes:** You are limited to running On-Demand Instances per your vCPU-based [On-Demand Instance limit](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-on-demand-instances.html#ec2-on-demand-instances-limits), purchasing 20 Reserved Instances, and requesting Spot Instances per your [dynamic Spot limit](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-spot-limits.html) per region. New AWS accounts may start with limits that are lower than the limits described here.
+
+If you need more instances, complete the [Amazon EC2 limit increase request form](https://aws.amazon.com/support/createCase?type=service_limit_increase&serviceLimitIncreaseType=ec2-instances) with your use case, and your limit increase will be considered. Limit increases are tied to the region they were requested for.
 
 #### EC2 Networking (ENI)
 
@@ -3631,6 +3652,13 @@ Only 4 pre-defined metrics are available [by default](https://docs.aws.amazon.co
 
 Other custom metrics can be created by installing a CloudWatch agent on the instances.
 
+#### 1.12.4.4. Termination order of ASG instances
+
+The default AS instance [termination policy](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-instance-termination.html#common-scenarios-termination) is:
+
+1. Oldest launch configuration/template
+2. Instance closest to next billing hour
+
 ### 1.12.5. Network Load Balancer (NLB)
 
 Part of AWS Version 2 series of load balancers.
@@ -4067,7 +4095,9 @@ Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://a
 
 **Kinesis data records (1MB)** are stored across shards and are the blocks of data for a stream.
 
-**Kinesis Data Firehose** connects to a Kinesis stream. It can move the data from a stream onto S3 or another service. Kinesis Firehose allows for the long term persistence of storage of kinesis data into services like S3. 
+**Kinesis Data Firehose** connects to a Kinesis stream. It can move the data from a stream onto S3 or another service. Kinesis Firehose allows for the long term persistence of storage of kinesis data into services like S3.
+
+**Test notes:** Kinesis can process data in real-time. Take note of question's requirements.
 
 ### 1.13.10. Differences between SQS queues and Kinesis streams
 
@@ -4177,7 +4207,7 @@ Both can be combined
 * If the application does use **query string parameters**, you can use all of them for caching or just selected ones.
 * The `Cache-Control` and `Expires` headers control how long objects stay in the cache. The `Cache-Control max-age` directive lets you specify how long (in seconds) you want an object to remain in the cache before CloudFront gets the object again from the origin server.
 
-#### 1.14.1.2. Signed Cookies
+#### 1.14.1.2. Signed URLs/Cookies
 
 CloudFront signed URLs and signed cookies provide the same basic functionality: they allow you to control who can access your content. If you want to serve private content through CloudFront and you’re trying to decide whether to use signed URLs or signed cookies, consider the following:
 
@@ -4889,6 +4919,8 @@ Billing based on:
 
 Can purchase reserved capacity with a cheaper rate for a longer term commit.
 
+**Test note:** You can [enable Auto Scaling](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/AutoScaling.html) with DynamoDB.
+
 ### 1.18.2. DynamoDB Operations, Consistency, and Performance
 
 #### 1.18.2.1. DynamoDB Reading and Writing
@@ -5084,7 +5116,6 @@ In memory cache for Dynamo.
 Comparison with traditional
 
 * **Traditional Cache**: The application needs to access some data and checks the cache. If the cache doesn't have the data, this is known as a cache miss. The application then loads directly from the database. It then updates the cache with the new data. Subsequent queries will load data from the cache as a cache hit and it will be faster
-
 * **DAX**: The application instance has DAX SDK added on. DAX and dynamoDB are one in the same. Application uses DAX SDK and makes a single call for the data which is returned by DAX. If DAX has the data, then the data is returned directly. If not it will talk to Dynamo and get the data. It will then cache it for future use. The benefit of this system is there is only one set of API calls using one SKD. It is tightly integrated and much less admin overhead.
 
 #### 1.18.6.1. DAX Architecture
@@ -5231,7 +5262,7 @@ Exam note: Need to know
   * Automatic every 8 hours, 1 day retention default, up to 35 days.
   * Manual snapshots by admin, lasts until removal.
   * S3 is backed up across multiple AZs
-  * Backups can be copied to other regions as needed
+  * Backups can be copied to other regions as needed ([cross-region snapshot copy](https://aws.amazon.com/blogs/aws/automated-cross-region-snapshot-copy-for-amazon-redshift/))
 
 ### 1.19. TD comparison tables
 
