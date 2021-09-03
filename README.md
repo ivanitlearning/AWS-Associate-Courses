@@ -2879,7 +2879,9 @@ There are three types of checks.
   * Two records of the same name and the same type. One is set to be the primary and the other is the secondary. 
   * Route 53 knows the health of both instances. 
   * As long as the primary is healthy, it will respond with this one. If the health check with the primary fails, the backup will be
-    returned instead. This is set to implement active - passive failover.
+    returned instead. This is set to implement active-passive failover. The [differences](https://acloud.guru/forums/aws-csa-2019/discussion/-Lp56r1R5uwW3OzvPj2Z/Active-Active%20Failover%20vs%20Active-Passive%20Failover) are:
+    * [Active-active](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-failover-types.html#dns-failover-types-active-active): Multiple identical instances, R53 will stop including the ones that fail health checks in responses.
+    * [Active-passive](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-failover-types.html#dns-failover-types-active-passive): Passive instances don't get any traffic until the active one fails and R53 excludes them.
 
 - **Weighted**:
 
@@ -3390,7 +3392,7 @@ Introduces the idea of secondary regions with up to 16 read only replicas. Repli
 - Global read scaling
   - Low latency performance improvements for international customers.
 - The application can perform read operations against the read replicas.
-- Replication takes ~1s to happen between regions.
+- Replication takes ~1s to happen between regions (good for 1s RPO)
 - It is one way replication; primary to secondary only.
 - No additional CPU usage is needed, it happens on the storage layer.
 - Secondary regions can have 16 replicas.
@@ -3490,9 +3492,10 @@ EFS moves the instances closer to being stateless.
 - Two storage classes available:
   - Standard
   - Infrequent access
-  - Can use lifecycle policies to move data between classes.
-- **Test notes**: For *File operation* and *allows concurrent connections from multiple EC2 instances*. There are various AWS storage options that you can choose but whenever these criteria show up, always consider using EFS instead of using EBS Volumes which is mainly used as a “block” storage and can only have one connection to one EC2 instance at a time.
-  - Note: You [*can* use](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volumes-multi.html) EBS to attach to multiple EC2 instances but only in same AZ
+- Can use [lifecycle policies](https://docs.aws.amazon.com/efs/latest/ug/lifecycle-management-efs.html) to move data between classes.
+- Also has [Intelligent Tiering](https://docs.aws.amazon.com/efs/latest/ug/lifecycle-management-efs.html) like S3.
+- **Test notes**: When you see keywords *File operation* and *allows concurrent connections from multiple EC2 instances*. There are various AWS storage options that you can choose but whenever these criteria show up, always consider using EFS instead of using EBS Volumes which is mainly used as a “block” storage and can only have one connection to one EC2 instance at a time.
+  - Note: You [can use](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volumes-multi.html) EBS to attach to multiple EC2 instances but only in same AZ
 
 #### 1.11.1.3 Notes from Demo
 
@@ -3627,7 +3630,6 @@ Scaling policies are rules that you can use to define autoscaling of instances. 
 	- Target: Desired aggregate CPU = 40%, ASG will achieve this
 
 * **Cooldown Period** controls how long to wait at the end of a scaling action before scaling again. This handles the minimum billable duration for an EC2 instance. Default 300 seconds.
-
 * Self healing occurs when an instance has failed and AWS provisions a new instance in its place. This will fix most problems that are isolated to one instance.
 
 #### 1.12.4.2 ASG features
