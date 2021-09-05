@@ -2007,7 +2007,7 @@ full instance type
 
 This isn't the only part of the chain, but it is a simplification. A system might have a throughput cap. The IOPS might decrease as the block size increases.
 
-### 1.6.5. Elastic Block Store (EBS)
+### 1.6.5. Elastic Block Storage (EBS)
 
 - Allocate block storage **volumes** to instances.
 - Volumes are isolated to one AZ.
@@ -2015,8 +2015,9 @@ This isn't the only part of the chain, but it is a simplification. A system migh
   - All of the data is replicated within that AZ. The entire AZ must have a major fault to go down.
 - Can snapshot backup to S3 which makes it region-resilient and allows data migration across AZs.
 - The snapshots can also be copied across regions for global resilience.
-- **Test note:** EBS volumes [support live configuration changes](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/requesting-ebs-volume-modifications.html) while in production which means that you can modify the volume type, volume size, and IOPS capacity without service interruptions.
-- **Test note:** You can use [Amazon Data Lifecycle Manager](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html) to automate the creation, retention, and deletion of EBS snapshots and EBS-backed AMIs.
+- **Test notes:** 
+  - EBS volumes [support live configuration changes](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/requesting-ebs-volume-modifications.html) while in production which means that you can modify the volume type, volume size, and IOPS capacity without service interruptions.
+  - You can use [Amazon Data Lifecycle Manager](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html) to automate the creation, retention, and deletion of EBS snapshots and EBS-backed AMIs.
 
 ![](Pics/EBS_Architecture.png)
 
@@ -2035,13 +2036,15 @@ This isn't the only part of the chain, but it is a simplification. A system migh
 
 #### 1.6.5.1. General Purpose SSD (gp2)
 
-Uses a performance bucket architecture based on the IOPS it can deliver. The GP2 starts with 5.4M IOPS allocated. It is all available instantly.
+* Volume size: 1 GB - 16 TB
 
-You can consume the capacity quickly or slowly over the life of the volume. The capacity is filled back based upon the volume size. Min of 100 IOPS added back to the bucket per second.
+* Uses a performance bucket architecture based on the IOPS it can deliver. The GP2 starts with 5.4M IOPS allocated. It is all available instantly.
 
-Above that, there are 3 IOPS/GiB of volume size. The max is 16,000 IOPS. This is the **baseline performance**
+* You can consume the capacity quickly or slowly over the life of the volume. The capacity is filled back based upon the volume size. Min of 100 IOPS added back to the bucket per second.
 
-Default for boot volumes and should be the default for data volumes. Can only be attached to one EC2 instance at a time.
+* Above that, there are 3 IOPS/GiB of volume size. The max is 16,000 IOPS. This is the **baseline performance**
+
+* Default for boot volumes and should be the default for data volumes. Can only be attached to one EC2 instance at a time.
 
 #### 1.6.5.2. General Purppose SSD (gp3)
 
@@ -2051,13 +2054,14 @@ Default for boot volumes and should be the default for data volumes. Can only be
 - Can pay for better performance up to 16,000 IOPS or 1,000 MB/s.
 - Offers 1000 MB/s, 4x faster max throughput.
 
-#### 1.6.5.3. Provisioned IOPS SSD (io1)
+#### 1.6.5.3. Provisioned IOPS SSD (io1/2)
 
-Can configure IOPS separately from volume size. You pay for capacity and the IOPs set on the volume. This is good if your volume size is small but need a lot of IOPS.
+* Can configure IOPS separately from volume size. You pay for capacity and the IOPs set on the volume. This is good if your volume size is small but need a lot of IOPS.
 
-50:1 IOPS to GiB Ratio  64,000 is the max IOPS per volume assuming 16 KiB I/O.
+* 50:1 IOPS to GiB Ratio  64,000 is the max IOPS per volume assuming 16 KiB I/O. 
+  * IO2 offers up to 256,000 IOPS or 4000 MB/s throughput.
 
-Good for latency sensitive workloads such as mongoDB. Multi-attach allows them to attach to multiple EC2 instances at once.
+* Good for latency sensitive workloads such as MongoDB. Multi-attach allows them to attach to multiple EC2 instances at once.
 
 **Test note:** Designed to meet the needs of I/O-intensive workloads, particularly database workloads, that are sensitive to storage performance and consistency. Small, random I/O operations.
 
@@ -2066,7 +2070,7 @@ Good for latency sensitive workloads such as mongoDB. Multi-attach allows them t
 - Mechanical storage type
 - Great value
 - Great for high throughput vs IOPs
-- 125 GB - 16 TiB
+- 125 GB - 16 TB
 - **Cannot** be used for EC2 boot volumes.
 - Good for streaming data on a hard disk.
   - Media conversion with large amounts of storage.
@@ -2085,13 +2089,13 @@ Good for latency sensitive workloads such as mongoDB. Multi-attach allows them t
   - Starts at 1 TiB of credit per TiB of volume size.
   - 40 MB/s baseline per TiB
   - Burst of 250 MB/s per TiB
-  - Max t-put of 500 MB/s
+  - Max throughput of 500 MB/s
   
 - **sc1 - Cold HDD**
   - Designed for less frequently accessed data, it fills slower.
   - 12 MB/s baseline per TiB
   - Burst of 80 MB/s per TiB
-  - Max t-put of 250 MB/s
+  - Max throughput of 250 MB/s
   
     | Features                       | SSD                                                          | HDD                                                          |
     | :----------------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
@@ -2114,12 +2118,12 @@ Good for latency sensitive workloads such as mongoDB. Multi-attach allows them t
 ### 1.6.6. EC2 Instance Store
 
 - Local **block storage** attached to an instance.
-- Physically connected to one EC2 host.
+- Physically connected to **one** EC2 host.
   - They are isolated to that one specific host.
   - Instances on that host can access them.
-- Highest storage performance in AWS.
+- Highest storage performance in AWS (up to 2M IOPS for some instances)
 - Included in instance price, use it or lose it since you already paid for it.
-- Can be attached ONLY at launch. Cannot be attached later.
+- Can be attached **ONLY at launch**. Cannot be attached later.
 
 Each instance has a collection of volumes that are locked to that specific host. If the instance moves, the data is lost.
 
@@ -2168,16 +2172,26 @@ If the read/write can be handled by EBS, that should be default.
 - Rigid lifecycle link between storage and the instance.
   - This ensures the data is erased when the instance goes down.
 
+**Exam notes:** 
+
+- Cheap => st1 or sc1
+- Throughput/streaming => st1
+- Bootable => Not HDD
+- Up to 16,000 IOPS => gp2/3
+- 16,000 - 64,000 (256,000) IOPS => io1/2
+- A lot of RAID 0 EBS volumes => up to 260,00 IOPS
+- Higher than 260,000 => Instance stores
+
 ### 1.6.8. EBS Snapshots, restore, and fast snapshot restore
 
 - Efficient way to backup EBS volumes to S3. The data becomes region resilient.
 - Can be used to migrate data between hosts.
 
-Snapshots are incremental volume copies to S3. The first is a **full copy** of `data` on the volume. This can take some time. EBS won't be impacted, but will take time in the background. Future snaps are incremental, consume less space and are quicker to perform.
+* Snapshots are incremental volume copies to S3. The first is a **full copy** of `data` on the volume. This can take some time. EBS won't be impacted, but will take time in the background. Future snaps are incremental, consume less space and are quicker to perform.
 
-If you delete an incremental snapshot, it moves data to ensure subsequent snapshots will work properly.
+* If you delete an incremental snapshot, it moves data to ensure subsequent snapshots will work properly.
 
-Volumes can be created (restored) from snapshots. Snapshots can be used to move EBS volumes between AZs. Snapshots can be used to migrate data between volumes.
+* Volumes can be created (restored) from snapshots. Snapshots can be used to move EBS volumes between AZs. Snapshots can be used to migrate data between volumes.
 
 #### 1.6.8.1. Snapshot and volume performance
 
@@ -3459,8 +3473,8 @@ EFS moves the instances closer to being stateless.
 - EFS is an implementation of NFSv4
 - EFS file systems are created and mounted in Linux.
 - EFS storage exists separately from an EC2 instance like EBS does.
-  - EBS is block storage
-  - EFS is file storage
+  - E**B**S is block storage
+  - E**F**S is file storage
 - Media can be shared between many EC2 instances.
 - EFS is a private service.
   - Isolated to the VPC its provisioned into.
@@ -3485,15 +3499,17 @@ EFS moves the instances closer to being stateless.
 - Two performance modes:
   - **General purpose** is good for _latency sensitive_ use cases.
     - General purpose should be default for 99.9% of uses.
-  - **Max I/O performance** mode can scale to higher levels of aggregate throughput and IOPS but it does have increased latencies.
+  - **Max I/O performance** mode can scale to higher levels of aggregate throughput and IOPS but has increased latencies.
 - Two throughput modes:
-  - Bursting works like GP2 volumes inside EBS with a burst pool. The more data you store in the FS, the better performance you get.
-  - Provisioned t-put modes can specify t-put requirements separately from size.
+  - **Bursting** works like GP2 volumes inside EBS with a burst pool. The more data you store in the FS, the better performance you get.
+  - **Provisioned** throughput mode allow you to specify throughput requirements separately from size.
+- AWS recommends bursting throughput [by default](https://docs.aws.amazon.com/efs/latest/ug/performance.html), unless you're migrating large amounts of data and only for that duration.
 - Two storage classes available:
-  - Standard
-  - Infrequent access
+  - Standard 
+  - Infrequent access (IA)
 - Can use [lifecycle policies](https://docs.aws.amazon.com/efs/latest/ug/lifecycle-management-efs.html) to move data between classes.
-- Also has [Intelligent Tiering](https://docs.aws.amazon.com/efs/latest/ug/lifecycle-management-efs.html) like S3.
+  - Also has [Intelligent Tiering](https://docs.aws.amazon.com/efs/latest/ug/lifecycle-management-efs.html) like S3.
+  - 90 days max to transition to EFS-IA
 - **Test notes**: When you see keywords *File operation* and *allows concurrent connections from multiple EC2 instances*. There are various AWS storage options that you can choose but whenever these criteria show up, always consider using EFS instead of using EBS Volumes which is mainly used as a “block” storage and can only have one connection to one EC2 instance at a time.
   - Note: You [can use](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volumes-multi.html) EBS to attach to multiple EC2 instances but only in same AZ
 
@@ -4052,8 +4068,8 @@ Public service that provides fully managed highly available message queues.
     Standard Queue| FIFO Queue 
     ---------|----------
     Multi lane highway | Single lane road with no way to overtake 
-    guarantee the order and at least one delivery | guarantee the order and at exactly one delivery 
-    empty| 3000 messages p/s with batching or up to 300 messages p/s without 
+    Guarantee the order and at least one delivery | Guarantee the order and at exactly **one** delivery 
+    | 3000 messages p/s with batching or up to 300 messages p/s without 
 
 Billed on **requests** not messages. A request is a single request to SQS.
 One request can return 0 - 10 messages up to 64KB data in total.
@@ -4479,10 +4495,10 @@ Static| Dynamic |
 - There is a one-to-many relationship between a DX line and VIFs. Therefore, you can multiple VIFs running on a single DX line. 
 - VIFs are of two types:
   - Private VIF (VPC)
-    - Connects to one AWS VPC
-    - Can have as many Private VIFs as you want.
+    - Connects to **one** AWS VPC
+    - Can have as many Private VIFs as you want in 1 DX connection.
   - Public VIF (Public Zone Services)
-    - Allows connection to AWS public services, but **not** public internet
+    - Allows connection to AWS public services (eg. S3, DynamoDB, SNS, SQS) but **not** public internet
     - Can be used with a site-to-site VPN to enable a private encryption using IPSec.
 
 * Has one physical cable with **no high availability and no encryption**.
@@ -4506,11 +4522,11 @@ Static| Dynamic |
 
 ### 1.16.3. AWS Transit Gateway (TGW)
 
-- Network transit hub connect VPCs to on premises networks
+- **Network transit hub** connect VPCs to on premises networks
 - Significantly reduces network complexity.
   - Supports transitive routing. No need to create a mesh topology via repeated VPC peerings.
 - Single network gateway object which makes it HA and scalable.
-- Can attach to other network objects
+- Attachments allow for connections to other network types
   - VPC attachments
   - Site to Site VPN attachments
   - Direct Connect (DX) attachments
@@ -4521,7 +4537,7 @@ Static| Dynamic |
 - Can be used to create global networks.
   - You can use these for cross-region peering attachments.
 - Can share resources between AWS accounts using AWS Resource Access Manager (RAM)
-  - Can peer with different regions in the same or cross account
+  - Can peer with other TGWs in different regions in the same or cross account
 - You achieve a less network complexity if you implement a transit gateway (TGW)
 
 ![](Pics/TransitGateway.png)
@@ -5212,7 +5228,9 @@ Two services offered
   * Reduce cost of accessing DBs
   * Need <ms access to data
   * Store user session state data outside of EC2
-* **Test notes**: Calls to return identical or static datasets -> prefer ElastiCache over read replicas.
+* **Test notes**: 
+  * Calls to return identical or static datasets -> prefer ElastiCache over read replicas.
+  * If you see "dynamic reads", ElastiCache which caches static reads is unlikely to help.
 
 ### 1.18.9 Amazon Redshift
 
