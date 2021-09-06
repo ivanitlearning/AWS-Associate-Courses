@@ -4452,7 +4452,7 @@ VPC Peering is a service that lets you create a private and encrypted network li
 
 ### 1.16.1. AWS Site-to-Site VPN
 
-- A logical connection between a VPC and on-premise network encrypted in transit using IPSec, running over the public internet (in most cases).
+- A logical connection between a VPC and on-premise network encrypted in transit using IPSec, running over the public internet (in most cases) or over DX (in some cases).
 - This can be fully Highly Available if you design it correctly
 - Quick to provision, less than an hour.
 - VPNs connect VPCs and private on-prem networks.
@@ -4461,14 +4461,15 @@ VPC Peering is a service that lets you create a private and encrypted network li
 
 Differences between static and dynamic VPN.
 
-Static| Dynamic |
----------|----------|
- Uses static networking config | Uses border gateway protocol (BGP) | C1
- Networks for remote side statically configured on the VPN connection | BGP is configured on both the customer and AWS side using (ASN). Networks are exchanged via BGP. | C2
- Routes for remote side added to route tables as static routes | Routes can be added statically or configured dynamically by using a feature called ***route propagation*** on the route tables in the VPC| C3
+Static| Dynamic 
+---------|----------
+ Uses static networking config | Uses border gateway protocol (BGP) 
+ Networks for remote side statically configured on the VPN connection | BGP is configured on both the customer and AWS side using (ASN). Networks are exchanged via BGP. 
+ Routes for remote side added to route tables as static routes | Routes can be added statically or configured dynamically by using a feature called ***route propagation*** on the route tables in the VPC
 
 - VPN connection itself stores the config and links to one VGW and one CGW
 - Speed cap on VPN with two tunnels of **1.25 Gbps** (gigabits per second). Can't use VPN if requirement exceeds this.
+  - VGW has a cap of 1.25 Gbps (for all connected VPNs)
   - AWS limit, will need to check speed supported by customer router.
   - Will be processing overhead on encrypting and decrypting data. At high speeds, this overhead can be significant.
 - Latency is inconsistent because it uses the public internet.
@@ -4478,7 +4479,7 @@ Static| Dynamic |
   - On-premises internet connection costs
 - VPN setup in a few hours or less
 - Great as a backup especially for Direct Connect (DX)
-- Can be used with Direct Connect (DX)
+- Can be used on top Direct Connect (DX) for encryption.
 
 ### 1.16.2. AWS Direct Connect (DX)
 
@@ -4654,14 +4655,14 @@ Hybrid Storage Virtual Application (On-premise)
 - Data transfer service TO and FROM AWS.
 - This is used for migrations or for large amounts of data processing transfers.
 - Designed to work at huge scales. Each agent can handle 10 Gbps and each job can handle 50 million files.
-- Transfers metadata and timestamps
 - Each agent is about 100 TB per day.
+- Transfers metadata and timestamps
 - Can limit bandwidth to avoid link saturation.
 - Supports incremental and scheduled transfer options, automatic retries.
 - Compression and encryption in transit is also supported
-- Has built in data validation and automatic recovery from transit errors.
+- Has built in **data validation** and automatic recovery from transit errors.
 - AWS service integration with S3, EFS, FSx for Windows servers.
-- Pay as you use product.
+- Pay as you use product, per GB moved by product.
 
 #### 1.16.7.1. AWS DataSync Components
 
