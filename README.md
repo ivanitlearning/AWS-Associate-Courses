@@ -2189,7 +2189,7 @@ If the read/write can be handled by EBS, that should be default.
 
 * Snapshots are incremental volume copies to S3. The first is a **full copy** of `data` on the volume. This can take some time. EBS won't be impacted, but will take time in the background. Future snaps are incremental, consume less space and are quicker to perform.
 
-* If you delete an incremental snapshot, it moves data to ensure subsequent snapshots will work properly.
+* Even if you delete an incremental snapshot, it moves data to ensure subsequent snapshots will work properly; self-sufficient.
 
 * Volumes can be created (restored) from snapshots. Snapshots can be used to move EBS volumes between AZs. Snapshots can be used to migrate data between volumes.
 
@@ -2199,17 +2199,17 @@ If the read/write can be handled by EBS, that should be default.
 - When restoring from S3, performs **Lazy Restore**
   - If you restore a volume, it will transfer it slowly in the background.
   - If you attempt to read data that hasn't been restored yet, it will immediately pull it from S3, but this will achieve lower levels of performance than reading from EBS directly.
-  - You can force a read of every block all data immediately using `dd`
+  - You can force a read of every block all data immediately using `dd` to speed up.
 
 Fast Snapshot Restore (FSR) allows for immediate restoration. You can create 50 of these FSRs per region (add up all the snapshots per AZs). When you enable it on a snapshot, you pick the snapshot specifically and the AZ that you want to be able to do instant restores to. Each combination of Snapshot and AZ counts as one FSR set. You can have 50 FSR sets per region. FSR is not free and can get expensive with lost of different snapshots.
 
 #### 1.6.8.2. Snapshot Consumption and Billing
 
-Billed using a GB/month metric. Eg. 20 GB stored for half a month, represents 10 GB-month.
+* Billed using a GB/month metric. Eg. 20 GB stored for half a month, represents 10 GB-month.
 
-This is used data, not allocated data. If you have a 40 GB volume but only use 10 GB, you will only be charged for the allocated data. This is *not* how EBS itself works where you are charged for the entire volume instead of actual usage.
+* This is *used data*, not allocated data. If you have a 40 GB volume but only use 10 GB, you will only be charged for the allocated data. This is *not* how EBS itself works where you are charged for the entire volume instead of actual usage.
 
-The data is incrementally stored which means doing a snapshot every 5 minutes will not necessarily increase the charge as opposed to doing one every hour.
+* The data is incrementally stored which means doing a snapshot every 5 minutes will not necessarily increase the charge as opposed to doing one every hour.
 
 #### 1.6.8.3. EBS Encryption
 
@@ -2244,7 +2244,7 @@ When you create an encrypted EBS volume and attach it to a supported instance ty
   - It will use the default CMK unless a different one is chosen.
   - Each volume uses 1 unique DEK (data encryption key)
   - Snapshots and future volume use the same DEK
-- Can't change a volume to NOT be encrypted.
+- Volumes can't be changed to plaintext once encrypted
   - You could mount an unencrypted volume and copy things over but you can't change the original volume.
 - The OS itself isn't aware of the encryption, there is no performance loss.
   - The volume itself is encrypted using AES256
@@ -2306,7 +2306,6 @@ Secondary interfaces function in all the same ways as primary interfaces except 
 - Different security groups are attached to different interfaces.
 - The OS never sees the IPv4 public address.
 - You always configure the private IPv4 private address on the interface.
-- Never configure an OS with a public IPv4 address.
 - IPv4 Public IPs are Dynamic, stopping and starting will change it, while restarting won't.
 - Public DNS for a given instance will resolve to the primary private IP address in a VPC, outside the VPC it resolves to the public address. The former is done so the intra-VPC connection never leaves the VPC.
 
@@ -4158,10 +4157,9 @@ Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://a
 
 #### 1.13.11.1 User Pools
 
-* After signing in, users get a JSON Web token (JWT)
+* After signing in, users get a JSON Web token (JWT) (User Pool tokens)
   * Works with MFA, directory management, profiles, social sign-ins with FB, Google etc. and other security providers (eg. SAMLs).
 * Note most AWS services don't accept JWTs, some like API Gateways accept them.
-* User pool token = JWT
 
 ![](Pics/UserPools.png)
 
@@ -4169,13 +4167,14 @@ Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://a
 
 * Offers temporary AWS credentials
 * Swaps federated identities (eg. FB, Google, Apple, SAML logins) or User Pool logins for temp AWS creds. Process known as Federation.
+  * However this requires you handle each type of federated identity token (FB, Google, Amazon, Apple etc.)
 * Works by assuming IAM roles on behalf of the identity
 
 ![](Pics/IdentityPools.png)
 
 Both can be combined 
 
-* Benefit is that the identity pool need only be configured to accept a single external identity provider, User Pool, instead of the numerous external ID providers.
+* Benefit is that the identity pool need only be configured to accept a single external identity provider, User Pool, instead of the numerous external ID providers (federated tokens)
 
 ![](Pics/UserAndIdentityPools.png)
 
@@ -5244,6 +5243,7 @@ Two services offered
   * S3 using Redshift Spectrum (similar to Athena). See [this](https://stackoverflow.com/questions/50250114/athena-vs-redshift-spectrum) for differences.
   * Other DBs using federated query
 * SQL-like interface JDBC/ODBC connections
+* You can use Redshift to analyze all your data using standard SQL and your existing Business Intelligence (BI) tools. It also allows you to run complex analytic queries against terabytes to petabytes of structured and semi-structured data, using sophisticated query optimization, columnar storage on high-performance storage, and massively parallel query execution.
 
 #### 1.18.9.1. Architecture
 
@@ -5268,7 +5268,7 @@ Two services offered
 
 ![](Pics/Redshift-Arch.png)
 
-Exam note: Need to know
+**Exam note:** Need to know
 
 * Which products can be integrated
 * How redshift fits into architecture
