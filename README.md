@@ -3826,7 +3826,7 @@ A mature event-driven architecuture only consumes resources while handling event
 
 - Function-as-a-service (FaaS)
   - Service accepts functions.
-- Event driven invocation (execution) based on an event occurring.
+- Event driven invocation (execution).
 - **Lambda function** is piece of code in one language.
 - Lambda functions use a **runtime** (e.g. Python 3.6)
 - Runs in a **runtime environment**.
@@ -3843,7 +3843,7 @@ Best practice is to make it very small and very specialized. Lambda function cod
 * Lambda functions can be given an IAM role or **execution role**. The execution role is passed into the runtime environment.
   Whenever that function executes, the code inside has access to whatever permissions the role's permission policy provides.
 * Lambda can be invoked in an **event-driven** or **manual** way. Each time you invoke a lambda function, the environment provided is new and ephemeral.
-* Lambda functions by default are public services and can access any websites. By default they cannot access private VPC resources, but can be configured to do so if needed. Once configured, they can only access resources within a VPC.
+* Lambda functions by default are public services and can access any websites. By default they cannot access private VPC resources, but can be configured to do so if needed. Once configured, they **can only** access resources within a VPC.
   Unless you have configured your VPC to have all of the configuration needed to have public internet access or access to the AWS public space endpoints, then the Lambda will not have access.
 * The Lambda runtime is stateless, so you should always use AWS services for input and output. Something like DynamoDB or S3. If a Lambda is invoked by an event, it gets details of the event given to it at startup.
 * You [can pass](https://aws.amazon.com/lambda/faqs/) sensitive information in environment variables by encrypting them with custom KMS keys:
@@ -3856,7 +3856,7 @@ Best practice is to make it very small and very specialized. Lambda function cod
 - Use the execution role which is assumed when needed.
 - Always load data from other services from public APIs or S3.
 - Store data to other services (e.g. S3) because Lambda is non-persistent.
-- 1M free requests and 400,000 GB-seconds of compute per month.
+- 1M free requests and 400,000 GB-seconds of compute per month - Hard to exceed free tier so use as much as possible.
 
 ### 1.13.3. CloudWatch Events and EventBridge
 
@@ -3891,6 +3891,7 @@ API stands for Application Programming Interface. It's a way that you can take a
   - Can also perform authentication to prove you are who you claim.
   - You can create an API and present it to your customers for use.
 - Stands in between client and EC2 instance, Lambda function or Fargate.
+  - Can also connect to on-prem infrastructure.
 - Allows you to create, publish, monitor, and secure APIs (and it does these tasks as a service).
 - Billed based on:
   - number of API calls
@@ -4000,8 +4001,7 @@ State machines are provided permission to interact with other AWS services via I
 
 #### 1.13.7.1. Step Function States
 
-States are the things inside a workflow, the things which occur. These states
-are available.
+States are the things inside a workflow, the things which occur. These states are available:
 
 - Succeed and Fail
   - the process will succeed or fail.
@@ -4014,8 +4014,7 @@ are available.
   - will create parallel branches based on a choice
 - Map
   - accepts a list of things
-  - for each item in that list, performs an action or set of actions based on
-  that particular item.
+  - for each item in that list, performs an action or set of actions based on that particular item.
 - Task
   - represents a single unit of work performed by a State Machine.
   - it allows the state machine to actually do things.
