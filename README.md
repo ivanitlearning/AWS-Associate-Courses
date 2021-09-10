@@ -212,7 +212,14 @@ Charged for EBS storage  only.
 
 No charges, deletes the disk and prevents all future charges.
 
-#### 1.2.5.5. AMI (Server Image)
+#### 1.2.5.5. Hibernated State ([ref](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html))
+
+- The EBS root volume is restored to its previous state
+- The RAM contents are reloaded (hibernate preserves memory, unlike stopping)
+- The processes that were previously running on the instance are resumed
+- Previously attached data volumes are reattached and the instance retains its instance ID
+
+#### 1.2.5.6. AMI (Server Image)
 
 AMI can be used to create an instance or can be created from an instance.
 AMIs in one region are not available from other regions.
@@ -232,7 +239,7 @@ Contains:
 - Block Device Mapping: links the volumes that the AMI has and how they're presented to the operating system. Determines which volume is a boot volume and which volume is a data volume.
 
 
-#### 1.2.5.6. Connecting to EC2
+#### 1.2.5.7. Connecting to EC2
 
 AMI Types:
 
