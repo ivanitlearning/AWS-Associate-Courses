@@ -921,7 +921,9 @@ A trail can store events in an S3 bucket as a compressed JSON file. It can also 
 
 CloudTrail products can create an organizational trail. This allows a single management point for all the APIs and management events for that org.
 
-* **Test note:** For `--is-multi-region-trail` it will only cover the activities of the regional services (EC2, S3, RDS etc.) and not for global services such as IAM, CloudFront, AWS WAF, and Route 53. In order to satisfy the requirement, you have to add the `--include-global-service-events` parameter in your AWS CLI command.
+* **Test note:** 
+  * For `--is-multi-region-trail` it will only cover the activities of the regional services (EC2, S3, RDS etc.) and not for global services such as IAM, CloudFront, AWS WAF, and Route 53. In order to satisfy the requirement, you have to add the `--include-global-service-events` parameter in your AWS CLI command.
+  * By default, CloudTrail event log files are encrypted using Amazon S3 server-side encryption (SSE). You can also choose to encrypt your log files with an AWS Key Management Service (AWS KMS) key.
 
 #### 1.3.9.2. CloudTrail Exam PowerUp
 
@@ -1520,7 +1522,7 @@ Works on file types:
 
 Provisioned capacity helps ensure that your retrieval capacity for expedited retrievals is available when you need it. Each unit of capacity provides that at least three expedited retrievals can be performed every five minutes and provides up to 150 MB/s of retrieval throughput.
 
-### 1.4.14. S3 Events notification
+### 1.4.15. S3 Events notification
 
 - Notifications generated when events occur in a bucket like
   - Object creation (Put, Post, Copy, CompleteMultiPartUpload)
@@ -1530,7 +1532,7 @@ Provisioned capacity helps ensure that your retrieval capacity for expedited ret
 - Delivered to SNS, SQS, Lambda
 - **Test note:** You can only add 1 SQS or SNS at a time for Amazon S3 events notification. If you need to send the events to multiple subscribers, you should implement a message fanout pattern with Amazon SNS and Amazon SQS.
 
-### 1.4.15. S3 Access Logs
+### 1.4.16. S3 Access Logs
 
 Consists of source bucket (which is logged) and target bucket (where logs are stored). To enable need
 
@@ -1898,6 +1900,12 @@ What matters for a VM is the input and output operations such as network transfe
 #### 1.6.1.4. SR-IOV (Singe Route IO virtualization)
 
 Allows a network or any card to present itself as many mini cards. As far as the HV is concerned, they are real dedicated cards for their use. No translation needs to be done by the HV. The physical card handles it all. In EC2 this feature is called **enhanced networking**.
+
+**Test notes:** 
+
+* Amazon EC2 provides enhanced networking capabilities through the Elastic Network Adapter (ENA). It supports network speeds of up to 100 Gbps for supported instance types. Elastic Network Adapters (ENAs) provide traditional IP networking features that are required to support VPC networking.
+
+* An Elastic Fabric Adapter (EFA) is simply an Elastic Network Adapter (ENA) with added capabilities. It provides all of the functionality of an ENA, with additional OS-bypass functionality. OS-bypass is an access model that allows HPC and machine learning applications to communicate directly with the network interface hardware to provide low-latency, reliable transport functionality. Not supported on Windows instances.
 
 ### 1.6.2. EC2 Architecture and Resilience
 
@@ -2639,16 +2647,24 @@ This is executed as any other command by being passed into the instance as part 
 
 * Starts off with a **CloudFormation template**. This has a logical resource within it which is to create an EC2 instance.
   This has a specific section called `Metadata`. This then passes in the information passed in as `UserData`. cfn-init gets variables passed into the user data by CloudFormation template.
-
-* It knows the desired state and can work towards a final configuration. This can monitor the user data and change things as the EC2 data changes.
-
+* It knows the desired state and can work towards a final configuration. This can monitor the user data and change things as the EC2 data changes, unlike user-data which only works once.
 * Check **/var/log/cfn-init-cmd.log** for commands used.
+
+![](Pics/cfn-init.png)
 
 #### 1.8.2.2. CreationPolicy and Signals
 
 If you pass in user data, there is no way for CloudFormation to know if the EC2 instance was provisioned properly. It may be marked as complete, but the instance could be broken.
 
 A **CreationPolicy** is something which is added to a logical resource inside a CloudFormation template. You create it and supply a timeout value. This waits for a signal from the resource itself (`cfn-signal`) before moving to a create complete state.
+
+```yaml
+Fn::Base64: !Sub |
+  #!/bin/bash -xe
+  yum -y update
+  /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource EC2Instance --configsets wordpress_install --region ${AWS::Region}
+  /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource EC2Instance --region ${AWS::Region}
+```
 
 ### 1.8.3. EC2 Instance Roles
 
@@ -2671,7 +2687,7 @@ EC2 and the secure token service ensure the credentials never expire.
 - Should always use roles compared to storing long term credentials
 - CLI tools use role credentials automatically
 
-### 1.8.4. AWS System Manager Parameter Store
+### 1.8.4. AWS Systems Manager Parameter Store
 
 Passing secrets into an EC2 instance is bad practice because anyone who has access to the meta-data has access to the secrets.
 
@@ -3332,6 +3348,7 @@ With Aurora you can have **up to 15 replicas** and any of them can be a failover
   - Storage which is freed up can be re-used.
   - If you reduce a lot of storage, you will need to create a brand new cluster and migrate data from the old cluster to the new cluster to lower costs.
 - Storage is for the cluster and not the instances which means Replicas can be added and removed without requiring storage, provisioning, or removal.
+- **Test notes:** If you do not have an Amazon Aurora Replica (i.e. single instance) and are not running Aurora Serverless, Aurora will attempt to create a new DB Instance in the same Availability Zone as the original instance. This replacement of the original instance is done on a best-effort basis and may not succeed, for example, if there is an issue that is broadly affecting the Availability Zone.
 
 #### 1.10.10.1. Aurora Endpoints
 
@@ -3372,18 +3389,14 @@ Aurora clusters like RDS use endpoints, so these are DNS addresses which are use
 ### 1.10.11. Aurora Serverless
 
 * Provides a version of Aurora database product without managing the resources. You still create a cluster, but it uses ACUs or Aurora Capacity Units. Similar to Fargate for ECS.
-
 * For a cluster, you can set a min and max ACU based on the load and can even go down to 0 and paused. In this case you would only be billed for storage consumed.
   * In demo you can see the capacity drop to 0 after the Wordpress instance is not visited.
-
 * Billing is based on resources used on a per-second basis.
-
 * Same resilience as Aurora (6 copies across AZs).
-
 * ACUs are stateless and shared across many AWS customers without local storage. They can be allocated to your Aurora Serverless cluster rapidly when required. Once ACUs are allocated to a cluster, they have access to cluster storage in the same way as an Aurora Provisioned cluster.
-
 * When an application interacts with the DB they are actually communicating with the proxy fleet. The proxy fleet brokers an application with the ACU and ensures you can scale in and out without worrying about usage. This is managed by AWS on your behalf.
 * Only need to pick min and max values for ACUs.
+* **Test notes:** If you are running Aurora Serverless and the DB instance or AZ become unavailable, Aurora will automatically recreate the DB instance in a different AZ.
 
 #### 1.10.11.1. Aurora Serverless - Use Cases
 
@@ -3602,7 +3615,9 @@ LB billed based on two things:
   - When multiple websites are hosted on one server and share a single IP address, and each website has its own SSL certificate, the server may not know which SSL certificate to show when a client device tries to securely connect to one of the websites. This is because the SSL/TLS handshake occurs before the client device indicates over HTTP which website it's connecting to. SNI solves this.
 - AWS does not suggest using Classic Load Balancer (CLB), these are legacy. All achievable with ALB.
   - This can only use one SSL certificate.
-- **Test note:** You can assign an Elastic IP address on a Network LB [but not](https://stackoverflow.com/a/55243777/7908040) (one per AZ) an Application LB.
+- **Test notes:** 
+  - You can assign an Elastic IP address on a Network LB [but not](https://stackoverflow.com/a/55243777/7908040) (one per AZ) an Application LB.
+  - ALBs support Weighted Target Groups routing. With this feature, you will be able to do weighted routing of the traffic forwarded by a rule to multiple target groups.
 
 ### 1.12.3. Launch Configuration and Templates
 
@@ -4113,7 +4128,7 @@ Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://a
 
 **Kinesis Data Firehose** connects to a Kinesis stream. It can move the data from a stream onto S3 or another service. Kinesis Firehose allows for the long term persistence of storage of kinesis data into services like S3.
 
-**Test notes:** Kinesis can process data in real-time. Take note of question's requirements.
+**Test notes:** Kinesis can process data in **real-time**. Take note of question's requirements.
 
 ### 1.13.10. Differences between SQS queues and Kinesis streams
 
