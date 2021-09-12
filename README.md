@@ -4965,7 +4965,7 @@ Billing based on:
 
 Can purchase reserved capacity with a cheaper rate for a longer term commit.
 
-**Test note:** You can [enable Auto Scaling](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/AutoScaling.html) with DynamoDB.
+**Test note:** You can [enable Auto Scaling](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/AutoScaling.html) with DynamoDB. This automates capacity management for your tables and global secondary indexes.
 
 ### 1.18.2. DynamoDB Operations, Consistency, and Performance
 
