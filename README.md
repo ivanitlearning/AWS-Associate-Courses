@@ -616,15 +616,24 @@ There are two ways to authenticate:
 - Username and Password
 - Access Keys (CLI)
 
-Once the **Principal** has authenticated, it becomes an **authenticated identity**
+Once the **Principal** has authenticated, it becomes an **authenticated identity**.
+
+**Access Keys** (for IAM users only)
+
+* Like username/password, they don't rotate.
+* IAM user can have 0, 1 or 2 access keys.
+* Can be created, deleted, made inactive.
+* Two parts:
+  * Access key ID can be retrieved any time.
+  * Secret access key shown once only.
+* If made inactive, any commands that use that access key will fail.
 
 #### 1.3.2.1. Amazon Resource Name (ARN)
 
 Uniquely identify resources within any AWS accounts.
 
 This allows you to refer to a single or group of resources.
-This prevents individual resources from the same account but in
-different regions from being confused.
+This prevents individual resources from the same account but in different regions from being confused.
 
 ARN generally follows the same format:
 
@@ -668,8 +677,7 @@ AWS merges all of the policies from all groups the user is in together.
 
 - The 5000 IAM user limit applies to groups.
 - There is **no all users** IAM group.
-  - You can create a group and add all users into that group, but it needs to be
-  created and managed on your own.
+  - You can create a group and add all users into that group, but it needs to be created and managed on your own.
 - No Nesting: You cannot have groups within groups.
 - 300 Group Limit per account. This can be fixed with a support ticket.
 
@@ -2267,6 +2275,7 @@ When you create an encrypted EBS volume and attach it to a supported instance ty
   - The OS does not see any encryption. It simply writes data out and reads data in from a disk, hence there is no performance impact.
   - If an exam question says it uses another encryption algo that isn't AES256, or it suggests you need an OS to encrypt or hold the keys, then you need to perform full disk encryption at the operating system level. This encryption can occur on top of EBS encryption or without it; they're two separate things.
     - Note that using full-disk encryption inside an OS *will* incur a CPU performance penalty
+- **Encryption by default** is a Region-specific setting. If you enable it for a Region, you cannot disable it for individual volumes or snapshots in that Region.
 
 ### 1.6.9. EC2 Network Interfaces, Instance IPs and DNS
 
@@ -2575,6 +2584,8 @@ Read [this](https://stackoverflow.com/questions/40575584/what-is-the-difference-
 - You only pay for the container resources you use.
 
 ![](Pics/ECS-Fargate.png)
+
+* **Test notes:** You can place an ALB and NLB in front of your AWS Fargate cluster.
 
 #### 1.7.3.3. EC2 vs ECS(EC2) vs ECS Fargate
 
@@ -3582,8 +3593,6 @@ As long as 1+ servers are operational, the LB is operational. Clients shouldn't 
 
 ALB is a layer 7 or Application Layer Load Balancer. It is capable of inspecting data that passes through it. It can understand the application layer `http` and `https` and take actions based on things in those protocols like paths, headers, and hosts.
 
-![OSI Model](Learning-Aids/14-HA-and-Scaling/OSINetworkModel.png)
-
 * All AWS load balancers are scalable and highly available. Capacity that you have as part of an ALB increases automatically based on the load which passes through that ALB. 
 
 * Its made up of multiple ALB nodes each running in different AZs.
@@ -4148,11 +4157,9 @@ Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://a
 
 #### SQS
 
-- 1 thing sending messages to the queue
+- 1 group or thing sending messages to the queue, 1 group or thing reading from queue
 
-- One consumption group from that tier
-
-- Allow for async communications
+- Allow for asynchronous communications
 
 - Once the message is processed, it is deleted
 
@@ -5218,8 +5225,6 @@ When writing data to DAX, it can use write-through. Data is written to the datab
 * This can be saved in the console or fed to other visualization tools.
 
 * You can optimize the original data set to reduce the amount of space uses for the data and reduce the costs for querying that data. For more information see the AWS [documentation.](https://aws.amazon.com/cloudtrail/pricing/)
-
-[^1]: For more information on Server Name Indication see the Cloudfare SNI learn[documentation.](https://www.cloudflare.com/learning/ssl/what-is-sni/)
 
 ### 1.18.8. ElastiCache
 
