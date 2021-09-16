@@ -38,9 +38,10 @@ These are notes for Cantrill's SOA-C02 course.
 
 ### 1.3.1 Tag examples
 
+```
 aws:createdBy
-
 Root:12345678
+```
 
 ## 1.4 SAML 2.0 Identity Federation
 
