@@ -203,3 +203,110 @@ Can use both of these, 1 or none.
 * To add/remove legal hold, need `s3:PutObjectLegalHold` permission.
 * Use cases:
   * Prevent accidental deletion of critical object versions.
+
+# 3. Security
+
+## 3.1. Policy Interpretation
+
+Example of `NotAction` [statement](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_examples_aws_deny-requested-region.html)
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenyAllOutsideRequestedRegions",
+            "Effect": "Deny",
+            "NotAction": [
+                "cloudfront:*",
+                "iam:*",
+                "route53:*",
+                "support:*"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringNotEquals": {
+                    "aws:RequestedRegion": [
+                        "eu-central-1",
+                        "eu-west-1",
+                        "eu-west-2",
+                        "eu-west-3"
+                    ]
+                }
+            }
+        }
+    ]
+}
+```
+
+This denies actions to everything but those 4 global services in the list outside of the listed regions. These 4 global services run out of us-east-1 region. Will need an allow statement to mean anything.
+
+## 3.2. Permissions Evaluation
+
+### 3.2.1. Policy evaluation logic
+
+Policies are evaluated in this order
+
+1. Explicit deny
+2. SCPs (deny only)
+3. Resource policy (allow only)
+4. Permissions boundary (deny only)
+5. Session policy (deny only)
+6. Identity policy (deny or allow)
+
+### 3.2.2. Multi-account
+
+Account A might allow something but account B also needs to allow it too or it gets denied (ie. A accessing a bucket in B)
+
+## 3.2. AWS Inspector
+
+* Scans EC2 instances and **instance OS**.
+* Checks for vulnerabilities and deviations against best practices.
+* Provides a report of findings ordered by priority.
+
+### 3.2.1 Network Reachability package [[Ref](https://docs.aws.amazon.com/inspector/latest/userguide/inspector_network-reachability.html)]
+
+* Network assessment works without agent, but can install agent for additional details.
+* Checks reachability and accessibility of ports end-to-end. Works for EC2, ALB, DX, ELB, ENI, IGW, ACLs, RTs, SGs, subnets, VPCs, VGWs, & VPC Peering
+  * **RecognizedPortWithListener** – A recognized port is externally reachable from the public internet through a specific networking component, and a process is listening on the port.
+  * **RecognizedPortNoListener** – A port is externally reachable from the public internet through a specific networking component, and there are no processes listening on the port.
+  * **RecognizedPortNoAgent** – A port is externally reachable from the public internet through a specific networking component. The presence of a process listening on the port can't be determined without installing an agent on the target instance.
+
+* **Exam notes:** Look for keywords such as
+  * *Host assessments*, *agent required*.
+  * Common vulnerabilities and exposures (CVE) - will flag CVEs found on instance ports
+  * Center for Internet Security (CIS) Benchmarks 
+  * **Security best practices** for Amazon Inspector
+
+## 3.3. GuardDuty
+
+* Continuous security monitoring service.
+* Learns patterns of what occurs normally within any managed accounts.
+* Uses AI/ML with updated threat intelligence feeds 
+* Configured to notify or event-driven protection/remediation
+* Supports multiple accounts (**Master** and **Member**)
+* Takes logs from
+  * DNS logs
+  * VPC flow logs
+  * CloudTrail Event logs
+  * CloudTrail Management Events
+  * CloudTrail S3 Data Events
+* Findings can trigger CW Events or EventBridge to send notifications to SNS or Lambda invocation
+
+## 3.4. Trusted Advisor
+
+* Account level service, needs no agents
+* Does cost optimisation, performance, security, fault tolerance and service limits.
+* Mostly **not free**, except for **basic** & **developer** 7 core checks
+* Anything more requires Business or Enterprise plans
+
+### 3.4.1. 7 core checks
+
+1. S3 bucket permissions - **not** objects
+2. Security groups - Specific ports for unrestricted access (ie. 0.0.0.0/0 or ::/0)
+3. IAM use
+4. MFA on Root Account - checks whether MFA enabled for root.
+5. EBS public snapshots - checks for EBS snapshots marked for public access
+6. RDS public snapshots - same but for RDS snapshot
+7. 50 most common service limit - checks whether you're over 80% of these
+
