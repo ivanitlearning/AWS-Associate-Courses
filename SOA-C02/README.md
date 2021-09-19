@@ -295,12 +295,13 @@ Account A might allow something but account B also needs to allow it too or it g
 
 ## 3.4. Trusted Advisor
 
-* Account level service, needs no agents
+* Compares your current settings with what you should have for best practices
+* Account level service, needs no agents to work.
 * Does cost optimisation, performance, security, fault tolerance and service limits.
-* Mostly **not free**, except for **basic** & **developer** 7 core checks
+* Mostly **not free**, except for **basic** or **developer** 7 core checks
 * Anything more requires Business or Enterprise plans
 
-### 3.4.1. 7 core checks
+### 3.4.1. Basic 7 core checks
 
 1. S3 bucket permissions - **not** objects
 2. Security groups - Specific ports for unrestricted access (ie. 0.0.0.0/0 or ::/0)
@@ -309,4 +310,308 @@ Account A might allow something but account B also needs to allow it too or it g
 5. EBS public snapshots - checks for EBS snapshots marked for public access
 6. RDS public snapshots - same but for RDS snapshot
 7. 50 most common service limit - checks whether you're over 80% of these
+
+### 3.4.2. Business and Enterprise support
+
+* 115 further checks (covering costs, security, fault, tolerant, performance and service limit)
+* Also covers AWS Support API programmatically
+  * Get details of TA checks
+  * Refresh TA checks
+  * Checks status of TA checks, individually or all
+  * Open a support ticket, search cases by dates and case identifiers
+  * Add email comms to existing cases and resolve cases
+
+* CloudWatch integration: Define event-driven actions if one TA checks surface issues
+
+## 4. EC2
+
+### 4.1. EC2 instance connect
+
+* [List](https://ip-ranges.amazonaws.com/ip-ranges.json) of AWS address IP ranges for for EC2 instance connect.
+
+### 4.2. EC2 savings plan
+
+* Hourly commitment for 1 or 3 year term ($20 per hour for 3 years)
+* General compute dollar amts
+  * Eg. Compute products EC2, Fargate, Lambda have on demand rate but also have savings plan rate.
+  * Service is billed at discounted savings plan rate until finished, then revert to normal on-demand rate.
+  * Used to transition away from EC2 to Fargate, then to Lambda
+
+### 4.3. EC2 termination shutdown protection and shutdown
+
+* Protects EC2 instances from termination by sloppy admin.
+* Right-click -> Instance settings -> Change termination protection -> Enable
+* Now termination requires `disableApiTermination` attribute to terminate EC2.
+* Can segregate permissions to allow only senior admins to terminate
+* Can also change shutdown behaviour to either stop/terminate when shutdown from inside OS.
+  * Right-click -> Instance settings -> Change shutdown behaviour
+
+## 5. Monitoring, Logging & Auditing
+
+### 5.1 CloudWatch - Architecture Concepts
+
+* Public service - public space endpoints
+* AWS service integration - management plane
+* Agent integration - Provides richer metrics from within EC2 
+* On-premises integration via Agent/API
+* Application integration via Agent/API
+* View data via console UI, CLI, API, dashboards & anomaly detection
+* Alarms - react to metrics, can be used to notify or perform actions
+* On-premises VMs and Internet apps, VPC applications
+
+### 5.2 CloudWatch - Data
+
+* Namespace = container for metrics eg. AWS/EC2 & AWS/Lambda
+* Datapoint = Timestamp, Value, unit of measure
+* Metric .. time ordered set of data points
+* .. CPUUtilisation, Networking, DiskWriteBytes - EC2
+* Every metric has a MetricName (CPUUtilisation) and a Namespace (AWS/EC2)
+* Dimension .. 
+* Key/value
+* **Resolution** - Minimum time period you can get one particular data point for. Eg. Standard (60s), High (1s)
+  * 60s - Data retained for 15 days
+  * 5 min - Data retained for 63 days
+  * 1 hr - Data retained for 455 days
+* As data ages, its aggregated and stored for longer with lower resolution
+* **Statistics** - Aggregation over a period (eg. Min, Max, Sum, Average...)
+  * Percentile - Eg. 95th, 75th percentile
+
+### 5.3 CloudWatch Alarm
+
+* Alarm - watches a metric over a time period
+* In two states: Alarm or OK.
+* Set value of metric vs threshold over time
+* One or more actions
+
+### 5.4 CloudWatch Logs
+
+* **Public service** - Store, monitor, access logging data
+* Install CW Agent for system or custom application logging
+* Sources: 
+  * AWS, on-premises, IOT or any application
+  * VPC flow logs
+  * CloudTrail
+  * Elastic beanstalk, ECS container logs, API GW, Lambda execution logs
+  * Route53 - Log DNS requests
+* **Exam note:** Default logging endpoint for AWS.
+
+#### 5.4.1. CloudWatch Logs - Subscription filters
+
+* Log stream is a sequence of log events that share the same source. Each separate source of logs in CloudWatch Logs makes up a separate log stream.
+* Log group is a group of log streams that share the same retention, monitoring, and access control settings
+
+* Real-time logging:
+  * AWS managed Lambda function allows logging data to be delivered realtime to AWS Elasticsearch
+* Near real-time logging:
+  * Custom Lambda function can be used to export data 
+  * Can use subscription filters - Eg. Kinesis data firehose allows *near realtime* delivery of logging to S3
+
+* Can aggregate logs from various sources into Kinesis data streams, data firehose into S3
+
+![](Pics/Cloudwatch-Logs-Aggregation.png)
+
+#### 5.4.2 CloudWatch Logs - Exam notes
+
+* Default for any log management scenarios
+  * On-premises and AWS
+* Export to S3 with `CreateExportTask` - 12 hours, not real time
+* Near-realtime or persist logs - Kinesis firehose
+* Firehose for any "firehose destinations"
+* Realtime - Lambda (delivers to almost anything) or Kinesis Data stream (KCL consumers)
+* Metric filter - scan log data, generate CloudWatch metric which you can set alarms on
+
+### 5.5 AWS X-Ray
+
+* Takes data from many AWS services and gives you single overview of session flow - Distributed tracing
+* **Components:**
+  * **Tracing header** - Generated by first service with unique trace ID, used to track request through application
+  * **Segments** - Data blocks - host/IP, request, response work done, issues encountered
+  * **Subsegments** - More granular version of above, calls to other services as part of a segment (endpoints etc)
+  * **Service graph** - Generates a JSON doc detailing services and resources which make up the application
+  * **Service map** - Visual representation of service graph (eg. below)
+
+![](Pics/X-ray-diagram.png)
+
+How it collects:
+
+* EC2 - Installed X-Ray agent
+* ECS - Agent installed as part of any tasks running in the service
+* Lambda - Enable X-ray data collection option
+* Beanstalk - Agent pre-installed
+* API Gateway - Enabled on per-stage basis
+* SNS & SQS - Can be enabled to send data to X-ray
+
+* All of these require IAM permissions
+
+## 6. Infrastructure as Code (CloudFormation)
+
+### 6.1 Template and Pseudo Parameters
+
+#### 6.1.1. Template parameters
+
+* Template parameters accept input via console/CLI/API when a stack is created/updated
+* Can be referenced from within Logical Resources 
+* Can be configured with Defaults, AllowedValues, Min and Max length & AllowedPatterns, NoEcho & Type
+
+![](Pics/Template-Parameters.png)
+
+#### 6.1.2. Pseudo parameters
+
+* Pseudo parameters are similar to template parameters only are provided by AWS based on environment when creating the stack.
+  * **AWS::Region** will always reflect the region the stack is being created in.
+  * **AWS::StackName** and **AWS::StackId** will match the specific Stack being created
+  * **AWS::AccountId** will be set by AWS to the actual account ID the stack is being created within.
+
+### 6.2. Intrinsic Functions
+
+#### 6.2.1. **Ref** & Fn::**GetAtt**
+
+Reference a resource you created, such as a VPC so that a subnet can be created inside.
+
+* !Ref Instance points to the ID of the instance created. When used with logical resources, the physical ID is usually returned.
+  * Eg. i-12345679acfgsd0
+* !GetAtt LogicalResource.Attribute can be used to retrieve any attribute associated with the resource.
+  * Eg. PublicIP 54.91.129.183, PublicDNSName ec2-54-91-129-183.compute-1.amazonaws.com
+
+#### 6.2.2. Fn::**GetAZs** & Fn::**Select**
+
+* GetAZs "us-east-1" or "" (current region) - Returns a list of AZs from a Region
+  * ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
+* Assuming default VPC or its subnets are not modified
+* AvailabilityZone: !Select [ 0, !GetAZs, '' ] - Returns an object from a list of object. Lists start at index 0.
+
+#### 6.2.3. Fn::**Join** & Fn::**Split**
+
+* !Split [ "|", "roffle|truffles|penny|winkie"] returns a list ["roffle","truffles","penny", "winkie"] 
+
+* Join can be used to concatenate a Web path to the DNS name of a public EC2 instance for people to use.
+* !Join [delimiter, ["value1", "value2" ... "valueN"]]
+  * Value: !Join [ '', [ 'http://', !GetAtt Instance.DNSName ] ] - Adds http:// to the DNS name of the EC2 instance
+
+#### 6.2.4. Fn::Base64 & Fn::Sub
+
+* Fn::**Base64** - Base64 used for providing user-data to EC2 instances for automated builds. 
+
+* Fn::**Sub** - Allows you to substitute things within text based on runtime information
+
+* Fn::Base64: !Sub | 
+
+  ```yaml
+  Fn::Base64: !Sub | 
+    #!/bin/bash -xe
+    yum -y update
+    echo "something ${Instance.InstanceId}" >> /var/www/html/index.html
+  ```
+* ${Instance.InstanceId} can't do self-reference, only other instance IDs. Note the above is invalid.
+
+#### 6.2.5. Fn::Cidr
+
+* Used to generate a number of smaller CIDR ranges from a larger PC range
+
+```yaml
+VPC:
+  Type: AWS::EC2::VPC
+  Properties: 
+    CidrBlock: "10.16.0.0/16"
+Subnet1:
+  Type: AWS::EC2::Subnet
+  Properties:
+    CidrBlock: !Select [ "0", !Cidr [ !GetAtt VPC.CidrBlock, "16", "12" ]]
+    VpcId: !Ref VPC
+```
+
+* Here we are telling CF we want 16 subnets and the size (12) of each subnet. This outputs a list of subnets to use.
+
+Conditions (Fn::**IF**, **And**, **Equals**, **Not** & **Or**) - Typical conditions, if X do Y else
+
+### 6.3. CloudFormation Mappings
+
+Structure: **!FindInMap [ MapName, TopLevelKey, SecondLevelKey ]** 
+
+Given this
+
+```yaml
+Mappings:
+  RegionMap:
+    us-east-1:
+      HVM64: "ami-0ff8a915034f43254"
+      HVMG2: "ami-0a3ed46234422bcee"
+    us-east-2:
+      HVM64: "ami-0ed3a4567c4f43423"
+      HVMG2: "ami-066ee5fd4a9ef77f1"
+```
+
+**!FindInMap [ "RegionMap", !Ref 'AWS::Region',"HVM64"]** 
+
+* Looks for RegionMap in CF template
+* Finds the current region in the console
+* Returns value in "HVM64"
+
+### 6.4. CloudFormation Output
+
+* Optional, may not be present
+* Values declared in this section are visible using CLI or console UI
+* Accessible from a parent stack when using **nesting**
+* Can be exported allowing cross-stack references
+
+```yaml
+Outputs:
+  WordpressURL:
+    Description: "Instance Web URL"
+    Value: !Join [ '', [ 'http://', !GetAtt Instance.DNSName ] ]
+```
+
+* Description visible from CLI and console UI and passed back to parent stack when nested stacks are used
+
+### 6.5. CloudFormation Conditions
+
+* Created in optional Conditions section of template
+* Evaluated to TRUE or FALSE.
+* Processed **before** resources are created, associated with logical resources to control if they're created or not.
+  * Eg. Create different number of resources based on ONEAZ, TWOAZ
+* Example:
+
+Here if EnvType is not "prod", then only "Wordpress" EC2 instance is created. If EnvType is "prod" then in addition, Wordpress2, MyEIP, MyEIP2 is also triggered. Another EC2 instance is created, and both are assigned Elastic IPs.
+
+![](Pics/CF-conditions.png)
+
+### 6.6. CloudFormation DependsOn
+
+* CF tries to efficient, tries to do things in parallel (create, update and delete resources)
+* Determines a dependency order (VPC -> Subnet -> EC2)
+* DependsOn lets you explicitly define dependencies so CF will not build that resource until dependencies are met.
+
+```yaml
+InternetGatewayAttachment:
+  Type: 'AWS::EC2::VPCGatewayAttachment'
+  Properties:
+    VpcId: !Ref VPC
+    InternetGatewayId: !Ref InternetGateway
+```
+
+* This creates an implicit dependency on `VPC` and `InternetGateway`. It works without specifying `DependsOn`.
+* However Elastic IP doesn't work, there's no `!Ref` in the template:
+
+```yaml
+WPEIP:
+  Type: AWS::EC2::EIP
+```
+
+* Will encounter errors if 
+  * CF tries to create EIP before attaching IGW
+  * CF tries to delete attached IGW before EIP
+
+* Adding DependsOn fixes the issue
+
+```yaml
+WPEIP:
+  Type: AWS::EC2::EIP
+  DependsOn: InternetGatewayAttachment
+  Properties:
+    InstanceId: !Ref WordpressEC2
+```
+
+### 6.7 CloudFormation WaitCondition, CreationPolicy & `cfn-signal`
+
+#### 6.7.1. CloudFormation Signal
 

@@ -398,8 +398,8 @@ For example, any time CPU Utilization is reported, the **datapoint** will report
 
 #### 1.2.9.3. Alarms
 
-* Has two states `ok` or `alarm`. A notification could be sent to an SNS topic or an action could be performed based on an alarm state.
-* Third state can be insufficient data state. Not a problem, just wait.
+* Two valid states `ok` or `alarm`. A notification could be sent to an SNS topic or an action could be performed based on an alarm state.
+* Third state is insufficient data state. Not a problem, just wait.
 
 ### 1.2.10. Shared Responsibility Model
 
@@ -2404,23 +2404,37 @@ Images of EC2 instances that can launch more EC2 instance.
 
 - Up to 75% off on-demand.
 - The trade off is commitment.
-- Buying capacity in advance for 1 or 3 years.
+- Buying capacity in advance for 1 or 3 years  (no 2 years option)
+- Once reserved, you pay regardless of whether you use it.
 - Flexibility on how to pay
-  - All up front
+  - All up front (cheapest, no per-s cost)
   - Partial upfront 
-  - No upfront
-- Best discounts are for 3 years all up front.
+  - No upfront (least discount)
 - Reserved in region, or AZ with capacity reservation.
 - Reserved instances takes priority for AZ capacity.
 - Cannot reserve capacity to multiple regions.
-- Can perform scheduled reservation when you can commit to specific time windows.
+
 - Great if you have a known stead state usage, email usage, domain server or when you need to reserve capacity in a given region or AZ.
 - Cheapest option with no tolerance for disruption.
+- If you provision an instance larger than what is reserved, you still get a discount on the larger instance than on-demand.
 - Reserve Instances can be listed for sale in the [Reserved Instance Marketplace](https://aws.amazon.com/ec2/purchasing-options/reserved-instances/marketplace/).
 - [Convertible Reserved Instance](https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-reservation-models/standard-vs.-convertible-offering-classes.html)s:
   - Not as discounted as Standard Reserved
   - Enables you to *exchange* one or more Convertible Reserved Instances for another Convertible Reserved Instance with a different configuration, including instance family, operating system, and tenancy.
   - Can't be sold on the Reserved Instance Marketplace.
+- **Scheduled reserved instance** allow you to commit to specific time windows (eg. 5pm every Friday)
+  - Not all instance types supported
+  - Minimum purchase of 1,200 hrs per year and 1 year minimum
+- **Capacity reservation**
+  - Don't need to reserve 1 or 3 years beforehand.
+  - Able to book instance reservation in AZ but at on-demand price
+  - Pay regardless of whether you use it
+
+#### 1.6.11.4. Dedicated instances
+
+* Similar to dedicated hosts where no other users instances run on it, but you don't pay for the host.
+* Extra charges for instances but dedicated hardware.
+  * One-off hourly fee for any regions where dedicated instances used.
 
 ### 1.6.12. Instance Status Checks and Autorecovery
 
@@ -2822,8 +2836,8 @@ Three types:
 * The host hardware has physical sockets and cores. 
   * This allows some software licenses to charge based on certain hardware specs even if you don't use them directly.
 * The host hardware specs dictate the number and types of instances that can run on it.
-
 * Hosts are designed for a specific size and family. If you purchase one host, you configure what type of instances you want to run on it. With the older VM system you cannot mix and match. New Nitro hypervisor allows for mixing and matching host size.
+* Host affinity links instances to host; stopping and starting instances remain on same host
 
 #### 1.8.7.1. Dedicated Hosts Limitations
 
@@ -2831,7 +2845,7 @@ Three types:
 - Amazon RDS instances are not supported
 - Placement groups are not supported for dedicated hosts.
 - Hosts can be shared with other organization accounts using **Resource Access Manager (RAM)**
-  - **Role separation:**
+- **Role separation:**
   - Accounts able to access shared dedicated hosts can only see and create their own instances, and can't see others. 
   - Host owner can see all instances running on them but can control only those they created.
 - This is mostly used for licensing problems related to ports.
