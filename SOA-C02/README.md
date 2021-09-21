@@ -10,7 +10,7 @@ These are notes for Cantrill's SOA-C02 course.
 
 ### 1.1.1. How it works
 
-1. Admins define products and portfolios using CF templates and Service Catalog config
+1. Admins define products and portfolios using CFN templates and Service Catalog config
 2. Deploy portfolio to any service enabled regions
 3. Service Catalog users review portfolios they have permissions on and launch product(s) into service enabled regions
 4. Service catalog launches infrastructure using defined templates. Service catalog users don't need infrastructure permissions, only launch permissions.
@@ -615,3 +615,319 @@ WPEIP:
 
 #### 6.7.1. CloudFormation Signal
 
+* Configure CloudFormation to hold, waits for 'X' number of success signals.
+* Waits for Timeout H:M:S for those signals (Max 12 hrs)
+* If success signals received sent by `cfn-signal`, CREATE_COMPLETE.
+* If failure signal received, creation fails.
+* Using `CreationPolicy` or `WaitCondition`
+
+#### 6.7.1.1. **CreationPolicy** example of provisioning 3 EC2 instances in an ASG:
+
+```yaml
+CreationPolicy:
+  ResourceSignal:
+    Count: '3'
+    Timeout: PT15M
+..
+LaunchConfig:
+  Type:
+  AWS::AutoScaling::LaunchConfiguration
+  Properties:
+  ... (stuff here)
+  User Data:
+    "Fn::Base64":
+      !Sub |
+        #!/bin/bash -xe
+        yum update -y aws-cfn-bootstrap
+        ...
+        /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource AutoScalingGroup --region ${AWS::Region}
+```
+
+* Here CreationPolicy applies signal requirement (3) and timeout (15m).
+* ASG provisions 3 EC2 instances each signalling once with `cfn-signal`
+
+#### 6.7.1.2. **WaitCondition** example:
+
+```yaml
+WaitCondition:
+  Type: AWS::CloudFormation::WaitCondition
+  DependsOn: "someresource"
+  Properties:
+    Handle: !Ref "WaitHandle"
+    Timeout: "300"
+    Count: '1'
+```
+
+JSON data passed back in signal response
+
+```yaml
+WaitHandle:
+  Type: AWS::CloudFormation::WaitConditionHandle
+```
+
+Assuming this is the JSON data passed back by an external system
+
+```json
+{
+    "Status": "SUCCESS",
+    "Reason": "Something Important",
+    "UniqueId": "ID1337",
+    "Data": "Something amazing has happened"
+}
+```
+
+* Can use `!GetAtt WaitCondition.Data` to get JSON data sent back eg. `{"Signal1":"Something amazing has happened"}`
+
+AWS recommends CreationPolicy for most cases due to simplicity. Might have need for WaitCondition if you need data from external systems.
+
+### 6.8 CloudFormation Nested Stacks
+
+#### 6.8.1. Why nested stacks?
+
+* Stacks have a limit of 500 resources
+* Can't easily reuse resources
+* Not easy to reference resources (eg. VPC) in other stacks which want to use it
+* `!Ref` only works to reference resource in same stack; stacks are isolated can be deleted all at once.
+
+#### 6.8.2. Definitions ([ref](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-nested-stacks.html))
+
+* **Root stack** - Top level stack to which all nested stacks belong
+* **Parent stack** - Stack which create the current stack
+
+Can define CF stack as a logical resource
+
+```yaml
+VPCSTACK:
+  Type: AWS::CloudFormation::Stack
+  Properties: 
+    TemplateURL: http://someurl.com/template.yaml
+    Parameters:
+      Param1: !Ref SomeParam1
+      Param2: !Ref SomeParam2
+      Param3: !Ref SomeParam3
+```
+
+* This stack in the URLs requires 3 parameters as inputs or it'll fail.
+* Stack in URL can be used by multiple other stacks.
+* When created the outputs of this stack can be referenced with VPCSTACK.Outputs.XXXX
+* Next the ADSTACK takes the output from VPCSTACK which it depends on.
+* Next stack created by root stack is APPSTACK which depends on ADSTACK.
+* After all 3 are created, then the root stack is marked as create complete.
+
+#### 6.8.3 **When to use:**
+
+* Overcome 500 resource limit of single stack
+* Allows you to reuse templates but not resources.
+* Simplifies installation process
+* Nested stack generally used when all infrastructure that you create form part of same solution; life-cycle linked.
+
+### 6.9. Cross-stack References
+
+#### 6.9.1. Why cross-stack references?
+
+* Stacks by designed are isolated and self-contained.
+* Outputs are normally not visible from other stacks
+* Can't use nested stacks because you might want some resources eg. VPCs to outlive others eg. applications
+
+#### 6.9.2. How it works:
+
+* Cross-stack references allow you to reuse actual resources. 
+* Stack outputs can be exported making them visible to other stacks
+
+* Exports must have a **unique name** in the region.
+* Use `Fn::ImportValue` instead of `!Ref`.
+
+#### 6.9.3. Example
+
+```yaml
+Outputs:
+  SHAREDVPC:
+    Description: Shared Services VPC
+    Value: !Ref VPC
+    Export:
+      Name: SHAREDVPCID
+```
+
+This gets exported as
+
+| Export Name | Export Value |   Stack Name    |
+| :---------: | :----------: | :-------------: |
+| SharedVPCID |  vpc-123456  | Stack-SharedVPC |
+
+* Can be imported in same region, same account only. Not cross-region or cross-account.
+* Import value in another stack with `!ImportValue SharedVPCID`
+
+### 6.10. CloudFormation StackSets
+
+* Allows you to deploy CF stacks across **many accounts** and **regions**
+* StackSets are containers in an admin account containing stack instances which themselves are references for individual stacks in a region in an account.
+* Templates are just normal CF templates.
+* Permissions granted via self-managed IAM roles or service-managed within an AWS organization. 
+
+![](Pics/CFN-StackSets.png)
+
+#### 6.10.1. Terms
+
+* **Concurrent accounts**: How many accounts StackSets can deploy resources into at any one time eg. Of 10 target accounts, we can have 5 sets of 2 each cycle. More concurrent accounts -> Faster deployments.
+* **Failure tolerance:** Amount of individual deployments which can fail before StackSet is counted as failed.
+* **Retain Stacks:**  Set this so you can remove stack instances from target accounts and regions without also removing stacks there.
+
+#### 6.10.2. Scenarios for use
+
+* Enable AWS Config across multiple accounts
+  * Enable MFA authentication, Elastic IPs, EBS encryption
+* Create IAM roles for cross-account access
+
+### 6.11. CloudFormation Deletion Policy
+
+#### 6.11.1. What its for
+
+* Deleting a logical resource from a template or a stack also removes the physical resources causing data loss.
+* Deletion policy allows you to define on each resource 
+  * **Delete** (default)
+  * **Retain**
+  * **Snapshot** (if supported, eg. EBS volumes, ElastiCache, Neptune, RDS, Redshift). Snapshot of resource is taken just before deletion.
+* Only applies to deletion, not replacement of logical resources
+
+### 6.10. CloudFormation Stack Roles
+
+* Be default uses CFN uses permissions of the **logged in** identity to create resources.
+* CFN can assume a role to gain permissions
+* Identity creating the stack doesn't need resource permissions only `PassRole`
+* Account role can only be used by CFN to create, update and delete stacks and nothing else.
+
+#### 6.10.1. Exam notes
+
+* Used to give accounts permissions for CFN only and nothing outside it.
+
+### 6.11. CloudFormation Init (cfn-init)
+
+#### 6.11.1. Features
+
+* Not **how** (user-data) but desired state what to accomplish (cfn-init)
+* Idempotent; running `cfn-init ` when changes already made, then nothing happens
+  * Eg. Apache won't be installed if it already is, services won't start if they are already running
+* Accessed via `/opt/aws/bin/cfn-init`
+
+![](Pics/cfn-init.png)
+
+#### 6.11.2 Example of cfn-init from demo
+
+Instead of 
+
+```yaml
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum -y update
+          yum -y upgrade
+          # simulate some other processes here
+          sleep 300
+          # Continue
+          yum install -y httpd
+          systemctl enable httpd
+          systemctl start httpd
+          echo "<html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>" > /var/www/html/index.html
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+```
+
+We have
+
+```yaml
+      'AWS::CloudFormation::Init':
+        config:
+          packages:
+            yum:
+              httpd: []
+          files:
+            /var/www/html/index.html:
+              content: !Sub |
+                <html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>
+          commands:
+            simulatebootstrap:
+              command: "sleep 300"
+          services:
+            sysvinit:
+              httpd:
+                enabled: "true"
+                ensureRunning: "true"
+                files:
+                  - "/var/www/html/index.html"
+...
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+```
+
+The CFN template has to be written in a way not to write shell commands but use the EC2 internal APIs to target the final state.
+
+### 6.12. CloudFormation cfn-hup
+
+* `cfn-init` is run once as part of bootstrapping (user-data)
+* If CloudFormation::Init is updated it **isn't rerun**
+* `cfn-hup` helper is a daemon that can be installed
+* Detects changes in resource metadata, runs configurable actions when change is detected.
+
+#### 6.12.1. Steps
+
+1. CFN template is updated
+2. `UpdateStack` is called.
+3. `cfn-hup` checks metadata periodically
+4. When it detects updates, calls `cfn-init`
+5. `cfn-init` applies new configuration
+
+#### 6.12.2. Notes from demo
+
+```yaml
+          files:
+            /etc/cfn/cfn-hup.conf:
+              content: !Sub |
+                [main]
+                stack=${AWS::StackName}
+                region=${AWS::Region}
+                interval=1
+                verbose=true
+              mode: '000400'
+              owner: 'root'
+              group: 'root'
+            /etc/cfn/hooks.d/cfn-auto-reloader.conf:
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.Instance.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource Instance --region ${AWS::Region}
+                runas=root
+              mode: '000400'
+              owner: 'root'
+              group: 'root'
+            /var/www/html/index.html:
+              content: !Sub |
+                <html><head><title>Amazing test page</title></head><body><h1><center>${Message}</center></h1></body></html>
+```
+
+* **cfn-hup.conf** specifies that the stack and region that is monitored as well as the monitoring frequency interval.
+* **cfn-auto-reloader.conf** determines when and where the update occurs. Here it triggers when update is done, path tells you what is being monitored and action tells you what is done when it detects changes.
+* The part below tells it to update **${Message}** with the updated parameter
+
+### 6.13. CloudFormation demo
+
+Notes:
+
+* Any changes made to stack and updated will cause resources to be stopped and re-created again - with disruption.
+
+* When you use `cfn-init` the log files of commands run are stored in **/var/log/cfn-init-cmd.log** instead of **/var/log/cloud-init-output.log**
+* **/var/log/cloud-init-output.log** - Good for diagnosing problems bootstrapping with user-data
+* **/var/log/cfn-init-cmd.log** and **/var/log/cfn-init.log** for diagnosing problems with `cfn-init`
+* **/var/log/cfn-hup.log** - For troubleshooting problems with cfn-hup
+
+### 6.14 CloudFormation Change sets
+
+* Allows you to preview the changes between two CFN templates when configured without applying changes.
+* Can integrate as part of an AWS Organisation change management process.
+
+### 6.15. CloudFormation Custom Resources
+
+* Allows CFN to integrate with anything it doesn't yet or doesn't natively support
+* Used, for example to integrate with a Lambda function to delete S3 bucket's contents before deleting S3 bucket itself.
