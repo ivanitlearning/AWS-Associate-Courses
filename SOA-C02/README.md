@@ -931,3 +931,63 @@ Notes:
 
 * Allows CFN to integrate with anything it doesn't yet or doesn't natively support
 * Used, for example to integrate with a Lambda function to delete S3 bucket's contents before deleting S3 bucket itself.
+
+## 7. Route53 and CloudFront
+
+### 7.1. CloudFront architecture
+
+* Cache behaviour sits in between origin and edge locations
+* Distribution are configured via behaviours not the distributions themselves.
+
+![](Pics/CloudFrontArchitecture2.png)
+
+### 7.2 CloudFront Behaviour
+
+#### 7.2.1 General tab
+
+* Can select lower priced class to deploy content to only specific edge locations but cause poor performance to visitors outside these edge locations.
+* Able to associate L7 WAF ACL to CloudFront edge distribution.
+* Can configure SSL SNI for edge distribution.
+* Select different TLS versions (note newer TLS versions may not be supported on older browsers)
+
+#### 7.2.2. Behaviour tab
+
+* A distribution can have multiple behaviours
+
+* HTTP or HTTPS
+* Redirect HTTP to HTTPS
+* HTTPS only
+* Allowed HTTP methods
+* Restrict Viewer Access - CF distribution accessible with signed URLs/cookies only.
+* Trusted Signers - Select accounts that can generate signed URLs/cookies
+* Associate Lambda function
+
+### 7.3 TTL and Invalidations
+
+* When object at edge location expires (exceeds TTL), it fetches again from origin.
+  * If object is current, origin returns **304 Not Modified** to edge location
+  * If not current, the new object is returned with **200 OK**
+* Default TTL = 24 hrs
+* Can set Minimum and Maximum TTLs - Values are used if the objects' TTLs are set below/above these figures.
+
+#### 7.3.2 Origin headers
+
+* Used to control how long objects stay in the edge cache
+  * `Cache-Control max-age` 
+  * `Cache-Control s-maxage` 
+  * `Expires` - Specifies a specific date/time when object will expire.
+
+* Can be set with Custom Origin or S3 (via object metadata)
+
+#### 7.3.3. Cache invalidation
+
+* Performed on a distribution
+* Applies to all edge locations but takes time to take effect
+* Eg. of paths to invalidate
+  * /images/whiskers1.jpg - Specific file invalidation
+  * /images/whiskers* - File wildcard invalidation
+  * /images/* - Everything under path
+  * /* - invalidate everything
+* Consider alternative of versioned file name eg. whiskers1_v2.jpg. Requires application to point to different filename
+  * Logging more effective since you know the exact object used.
+  * Exam note: If versioning is mentioned and cost efficacy is desired then versioned file names is likely the answer.
