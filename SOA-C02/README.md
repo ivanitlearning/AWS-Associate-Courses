@@ -991,3 +991,50 @@ Notes:
 * Consider alternative of versioned file name eg. whiskers1_v2.jpg. Requires application to point to different filename
   * Logging more effective since you know the exact object used.
   * Exam note: If versioning is mentioned and cost efficacy is desired then versioned file names is likely the answer.
+
+### 7.3. CloudFront and SSL
+
+* CloudFront default domain name (CNAME)
+  * https://d313132.cloudfront.net with 
+* SSL supported by default for *.cloudfront.net
+* If you want alternate domain names eg. cdn.catagram, generate or import in ACM per region
+* For global services, certificate needs to be created/added in **us-east-1**
+* Two SSL connections; both need valid public certificates
+  * Viewer to CloudFront
+  * Cloudfront to origin
+
+* Historically, SSL-enabled site needed its own IP address.
+* CF supports SNI, but for older browsers that don't CF charges extra for dedicated IP address.
+
+#### 7.3.1. CloudFront SNI architecture
+
+* Certificate hosted by the CF distribution needs to be issued by a trusted CA eg. DigiCert, Comodo or ACM.
+  * If you use ACM the cert needs to be created in **us-east-1**.
+  * The public cert needs to match the DNS name of the CF distribution its applied to.
+  * No self-signed certs allowed.
+* Certificate hosted by the origin also need to be issued by a trusted CA
+  * S3 origins handles certificates natively
+  * Origin-hosted certificate need to match DNS name of whatever distribution is used to contact origin.
+  * ALB can use ACM, others need to use an external generated cert.
+  * Also no self-signed cert.
+
+![](Pics/CloudFrontSSLSNI.png)
+
+### 7.4 Origin Types and Architecture
+
+* Origin groups - Used to group origins together, can be configured as CF targets for resilience.
+* S3 static website hosting - CF treats it as a website when configured as origin.
+
+#### 7.4.2. S3 origin options
+
+* Can configure origin access identity to prevent accessing origin directly
+* Origin path - Configure such that CloudFront accesses a bucket path instead of the default top level bucket paths
+* Protocols are matched on both sides (client to distribution matches distribution to origin) HTTP to HTTP
+
+#### 7.4.2. Custom origin options
+
+* Custom origin options
+  * Can set minimum origin SSL protocol TLS version 
+* Origin protocol policy - HTTP only, HTTPS only or match viewer
+* Custom headers - Respond to HTTP requests only if custom headers provided (which CF can provide)
+* Custom HTTP/HTTPS ports
