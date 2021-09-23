@@ -3499,7 +3499,17 @@ If a writer goes down in a multi-master cluster, the application will shift all 
 
 * **CDC only** migration is good if you have a vendor solution that migrates initial full data migration while DMS handles subsequent changes.
 
-Schema Conversion Tool or SCT can perform conversions between database types.
+#### 1.10.14.2 Schema Conversion Tool (SCT) [additional for SOA-C02]
+
+* Schema Conversion Tool or SCT can perform conversions between database types.
+* Including DB data to S3.
+* Not used if both DB engines are same (MySQL to RDS MySQL)
+* Works with OLTP DB (MySQL, MSSQL, Oracle), OLAP (Teradata, Oracle, Vertica, Greenplum)
+* Usage with Snowball
+  1. SCT extracts data locally and move to Snowball
+  2. Ship back to AWS, loads into S3 bucket
+  3. DMS migrates from S3 to target store.
+  4. CDC captures DB data changes and also go through S3 to target DB
 
 #### 1.10.14.2 Exam notes
 
@@ -4736,7 +4746,7 @@ Hybrid Storage Virtual Application (On-premise)
   - Can perform automatic and on-demand backups.
 - File systems can be access using VPC, Peering, VPN, Direct Connect. Native windows filesystem or Directory Services.
 
-#### 1.16.8.1. Words to look for
+#### 1.16.8.1. Exam keywords
 
 - VSS: User Driven restore (right-click and restore previous versions)
 - File system accessible over SMB
@@ -4750,19 +4760,28 @@ Hybrid Storage Virtual Application (On-premise)
 - Designed for HPC - Linux workloads Clients (POSIX)
 - Designed for Machine Learning, Big Data, Financial Modelling
 - 100 GB/s throughout & sub millisecond latencies
-- Deployment types **Persistent** or **Scratch**
-  - Scratch - Optimized for Short term no replication & fast ( Designed for pure performance) - No HA or replication
-  - Persistent - longer term, HA (in one AZ), self-healing
+- Deployment types: **Persistent** or **Scratch**
+  - **Scratch** - Optimized for short term without replication.  Fast (Designed for pure performance) - No HA
+  - **Persistent** - longer term, replication HA (in one AZ), self-healing.
 - Accessible over VPN or Direct Connect
-- Can be backed up to S3 ( Manual or Automatic 0-35 days retention)
-  - Lazy-loaded from S3 into file system.
-- Metadata stored on metadata targets
-- Objects stored on object storage targets (OSTs)
+- Can be backed up to S3 (Manual or Automatic 0-35 days retention)
+  - Lazy-loaded from S3 into file system when needed
+  - They may appear to be present but are only loaded from S3 when accessed.
+  - `hsm_archive` can be used to export back to S3 at any point
+- Lustre splits data up during storage
+  - Metadata stored on metadata targets (MST)
+  - Objects stored on object storage targets (OSTs)
+- Baseline performance depends on size:
+  - Min. 1.2 TB, increments of 2.4 TB
+  - **Scratch** - 200 MB/s per TB of storage
+  - **Persistent** - 50, 100, 200 MB/s per TB storage
+  - Burst up to 1,300 MB/s per TB (credits)
 
-**Exam keywords:**
+#### 1.16.9.1. Exam keywords:
 
 * Lustre, very high-end performance requirements, POSIX, HPC, big data requirements.
-* Machine learning, Sagemaker
+* Machine learning, Sagemaker, very high-performance file system.
+* Windows, SMB - Not Lustre
 
 ![](Pics/FSxLustre.png)
 
@@ -4806,7 +4825,7 @@ Provides against DDoS attacks with AWS resources. This is a denial of service at
 - Shield advanced
   - Cost: $3,000/month
   - Includes EC2, ELB, CloudFront, Global Acceleration and R53
-    - Provides access to DDoS advanced response team and financial insurance against increased costs.
+    - Provides access to 24/7/365 DDoS advanced response team and financial insurance against increased costs.
   
 - WAF (web application firewall)
   - Layer 7 firewall (HTTP/s) firewall
@@ -4818,6 +4837,10 @@ Provides against DDoS attacks with AWS resources. This is a denial of service at
   - WEBACL integrated with Load Balancers, API gateways, and CloudFront.
     - Rules are added to WEBACL and evaluated when traffic arrives.
     -  Web ACL consists of rules that you can configure to string match or regex match one or more request attributes, such as the URI, query-string, HTTP method, or header key. In addition, by using AWS WAF's rate-based rules, you can automatically block the IP addresses of bad actors when requests matching a rule exceed a threshold that you define. Requests from offending client IP addresses will receive 403 Forbidden error responses and will remain blocked until request rates drop below the threshold.
+    - **SOA-CO2 content:**
+    -  Charged by WEBACL Capacity Units (WCU), correlates with complexity of rules.
+    -  Rule action - Allow, Block, Count. Count allows you to set how many times a rule is violated before taking more disruptive action
+    -  Filter by IP addresses, country, length, SQL code, strings in request, scripts, headers
   
   **Exam notes:**
   

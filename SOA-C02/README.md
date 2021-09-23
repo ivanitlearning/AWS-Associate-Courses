@@ -1038,3 +1038,202 @@ Notes:
 * Origin protocol policy - HTTP only, HTTPS only or match viewer
 * Custom headers - Respond to HTTP requests only if custom headers provided (which CF can provide)
 * Custom HTTP/HTTPS ports
+
+### 7.5. CloudFront Security OAI
+
+#### 7.5.1 Securing S3 origins with OAI
+
+* OAI is a type of identity that can be associated with CF distributions.
+* OAI can be used in S3 bucket policies
+* Deny all (implicit) but the specific OAI's from accessing origins with a bucket policy.
+* Best practice to create 1x OAI per CF distribution
+
+#### 7.5.2. Securing custom origins
+
+1. **Custom headers** Origin requires custom headers if not request will not be served; injected at edge locations, not client browsers
+
+2. **Allowed IP ranges** Firewall around custom origins only allow IPs from edge locations to access
+
+* Can use either one or both to secure.
+
+### 7.6 CloudFront Private Distribution
+
+* Allow only signed cookies or signed URLs to access.
+* Multiple behaviours - Each either public or private.
+* Enable with **CloudFront Key** - created by Account Root user
+  * Tied to AWS account, not specific user in that account
+  * Account added as **trusted signer** - typical keyword for private distribution. Application can now generate signed cookies
+  * Once trusted signer is added to CF distribution, behaviour becomes private -> Require signed cookies/URLs
+* Need to generate signed cookies/URL. Either application in EC2, container or Lambda or anything with code.
+
+#### 7.6.1. Signed cookies vs URLs
+
+Prefer signed URLs if:
+
+* Legacy RTMP distributions can't use cookies
+* URLs when your client doesn't support cookies
+
+Prefer signed cookies if
+
+* URL provide access to just 1 object; cookies provide access to groups of objects or all of one type.
+* Need to maintain URLs
+
+#### 7.6.2. Example
+
+* After signing in, the Lambda signer generates signed cookies, sets it on the mobile client
+* The mobile client now sends those cookies to edge distribution, which allows it to load private images in S3 bucket.
+
+![CloudFrontSecuringContent4](Pics/CloudFrontSecuringContent4.png)
+
+### 7.7. CloudFront Geo-Restriction
+
+#### 7.7.1 Principles
+
+* Two choices Geo Restriction or 3rd party geolocation
+
+**Geo-Restriction**
+
+* Whitelist/blacklist by **country-level only**, nothing else
+* Works with specific country codes ~ 99.8% accuracy
+
+**3rd party geolocation**
+
+* Completely customisable, can filter based on many other attributes eg. username, purchases, attributes
+* Needs private CF distribution to work 
+
+#### 7.7.2 Geo-Restriction workflow
+
+1. Clients interact with app
+2. App requests object via Internet, directed to closest edge location
+3. CF edge checks with distribution if Geo Restriction is enabled
+4. If yes, the edge checks with GeoIP database if the IP location is whitelist/blacklisted
+5. Returns 403 Forbidden or object depending on blacklist/whitelist
+
+#### 7.7.3 3rd-party geolocation
+
+1. Clients interact with app
+2. App requests object via Internet, directed to app server or compute source
+3. App server responds based on discretionary criteria, may include geolocation DB, returns signed cookies/URL to app.
+4. App uses signed cookies/URL to access edge distribution
+5. CF edge checks authorization with private CF distribution using signed cookies/URL
+6. CF edge replies to client with either 403 Forbidden or object.
+
+![CloudFront3rdPartyGeoLocation](Pics/CloudFront3rdPartyGeoLocation.png)
+
+### 7.8 CloudFront Field-Level encryption
+
+* HTTPS secures the data only in transit till its termination point, origin Web server. Client <=> Origin
+* Field-level encryption happens at the edge, separate from HTTPS tunnel.
+* Private key needed to decrypt individual fields
+* Possible to store data in DB still encrypted and later retrieved by another application to decrypt for use.
+* Edge uses public key to encrypt data, and only private key can decrypt later
+
+![](Pics/FieldLevelEncryption2.png)
+
+## 8. SQL databases
+
+### 8.1 Database Migration Services (DMS)
+
+**Steps from demo**
+
+1. Create subnet group for RDS
+   1. Select VPC to migrate to
+   2. Add target subnets
+2. Create Replication Instance
+3. Create source endpoint (source DB)
+4. Create destination endpoint (destination DB)
+5. Create DB migration task
+   * **Schema name** = DB name to be migrated
+
+## 9. Scaling, Load balancing & High Availability
+
+### 9.1. Elastic Load Balancer introduction
+
+* 3 types of ELBs available within AWS
+* Split among v1 (old) vs v2 (prefer)
+* **Classic LB** - v1, introduced 2009
+  * Not L7, lacks features, 1 SSL per LB
+* **Application LB** - v2, HTTP(S)/Websocket
+* **Network LB** - v2, TCP, TLS & UDP
+  * Eg. load balancing mail or SSH servers
+
+### 9.2. Elastic LB architecture
+
+* Supports various compute services, not just EC2
+* Can operate in IPv4 or dual-stack (including IPv6)
+
+#### 9.2.1. Characteristics of ELB
+
+* Each ELB node is placed in one and one-AZ only.
+* ELBs are an 'A' record, will resolve to 1+ nodes in AZ.
+* Internet-facing or internal (assigned either public and private addresses or just private only)
+  * Internet-facing LB can work with both private or public EC2 instances
+* Needs 8 or more free IPs in the subnets they're deployed to  
+  * /28 subnet minus 5 reserved by AWS = 11 free/subnet
+  * AWS recommends at least /27 subnets so the instances can scale.
+* Listener config controls what LB does.
+
+![](Pics/ELBArchitecture1.png)
+
+### 9.3. ALB vs NLB
+
+#### 9.3.1. ALB features
+
+* 1 SSL cert per CLB. CLBs don't scale hence need for ALBs.
+* Can understand HTTP(S) but not other L7 protocols (SMTP, SSH, etc)
+  * L7 content: cookies, headers, user location, app behaviour
+* Doesn't support TCP/UDP/TLS listeners
+* HTTP(S) always terminated on ALB (no unbroken SSL) -> Use NLBs instead if forwarding connections required.
+* Slower than NLBs because they work on L7.
+* Can do application health checks
+
+#### 9.3.2. ALB rules
+
+* Rules direct connections which arrive at listener to different target groups
+* Processed in priority order
+* Default rule = catch-all
+* **Rule conditions**: Host header, HTTP headers, path patterns, query string and source IP
+* **Actions:** Forward, redirect, fixed-response, authenticate-oidc and authenticate-cognito
+
+![](Pics/ALBArchitecture2.png)
+
+#### 9.3.3. NLB features
+
+* Works at L4 - TCP, UDP, TLS
+* No concept of L7
+* Can handle millions of requests/sec, achieves 25% of ALB latency
+* Health checks limited to ICMP/TCP handshake.
+* Can be assigned Elastic IPs - Useful for whitelisting on corporate FW.
+* Forward TCP with unbroken encryption to target instances
+* PrivateLink -> NLB
+
+### 9.4 Auto-Scaling Groups
+
+#### 9.4.1. ASG with Load Balancers
+
+* ASGs can use LB health checks instead of EC2 status checks - Application awareness
+* ASGs are free, resources created are billed.
+* Cooldowns to avoid rapid-scaling and billing
+* Consider smaller instances so granularity can save on costs ie. launching additional small instance instead of larger one
+* ASGs define **when** and **where**, LTs define **what** is launched
+
+#### 9.4.2. Scaling Processes
+
+* `Launch` - If set to Suspend, ASG won't scale if alarms triggered
+* `Terminate` - If set to Suspend, ASG won't terminate instances
+* `AddToLoadBalancer` - Adds instances to LBs when they're launched, when disabled instances launched but not added to LBs.
+* `AlarmNotification` - Set whether ASGs responds to notifications from CW Alarms
+* `AZRebalance` - Balances instances evenly across AZs
+* `HealthCheck`- Controls whether instance health checks across entire group on/off
+* `ReplaceUnhealthy` - Terminate unhealthy instance and replace
+* `ScheduledActions` - Set whether ASG will perform any scheduled action
+* `Standby` - Set on instances so ASG doesn't control them anymore and you can perform maintenance
+
+
+
+
+
+
+
+* ASGs' don't need scaling policies
+* Manual scaling - Min, max and desired.
