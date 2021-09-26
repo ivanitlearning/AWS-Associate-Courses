@@ -3695,8 +3695,8 @@ Scaling policies are rules that you can use to define autoscaling of instances. 
 1. Manual Scaling - manually adjust the desired capacity
 2. Scheduled Scaling - useful for known periods of high or low usage. They are time based adjustments e.g.  Sales Periods.  Use [scheduled actions](https://docs.aws.amazon.com/autoscaling/ec2/userguide/schedule_time.html) to configure this.
 3. Dynamic Scaling:
-	- Simple: If CPU is above 50%, add one to capacity
-	- Stepped: If CPU usage is above 50%, add one, if above 80% add three
+	- Simple: If CPU is above 50%, add one to capacity. Potentially wasteful because a 20% jump and 1% above alarm level would both add 1 CPU.
+	- Stepped: If CPU usage is above 50%, add one, if above 80% add three.
 	- Target: Desired aggregate CPU = 40%, ASG will achieve this
 
 * **Cooldown Period** controls how long to wait at the end of a scaling action before scaling again. This handles the minimum billable duration for an EC2 instance. Default 300 seconds.

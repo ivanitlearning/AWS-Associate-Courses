@@ -1229,11 +1229,237 @@ Prefer signed cookies if
 * `ScheduledActions` - Set whether ASG will perform any scheduled action
 * `Standby` - Set on instances so ASG doesn't control them anymore and you can perform maintenance
 
+#### 9.4.3. ASG Lifecycle Hooks [[ref](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html)]
 
+* **Custom Actions** on instances during ASG actions (eg. instance launch/terminate transitions)
+* Instances paused within the flow, waiting until 
+  * timeout (default 3600s = 60 min) or
+  * Until `CompleteLifecycleAction` process is triggered
+* Use cases:
+  * Scaling out: Install needed software or register instance with some server before starting
+  * Scaling in: Retrieve log data from instance before termination
 
+#### 9.4.4. ASG Health Checks [[ref](https://docs.aws.amazon.com/autoscaling/ec2/userguide/healthcheck.html)]
 
+* Checks health of instances in ASG; replaces if unhealthy
+* Three types:
 
+  * **EC2** - Unhealthy status: Stopping, Stopped, Terminated, Shutting Down, or Impaired (not 2/2 status and Running)
+  * **ELB** - Running and passing ELB health checks, can use L7 checks
+  * **Custom** - External system can be used to customise checks on instances
+* **Grace period** (default 300s) - Delay before starting checks to allow instance to perform booting, bootstrapping, app startup procedures before health checks
+  * Otherwise ASG will start terminating and reprovisioning health checks prematurely
 
+### 9.5. Notes from Advanced Demo
 
-* ASGs' don't need scaling policies
-* Manual scaling - Min, max and desired.
+#### 9.5.1. Launch templates
+
+* Updating launch template creates and replace existing one. 
+* Actions -> Modify template (create new version)
+* Version -> 2 (after updating) -> Actions -> Set default versions
+
+#### 9.5.2. Creating ALBs
+
+1. Select Internet facing or Internal
+2. Select VPC
+   * For each AZ, select the subnets the ALBs will route traffic to.
+3. Select security group for ALB
+4. Select target group
+   1. Target Group: Select Instances, protocol (HTTP), VPC, register instances -> Create Target group
+5. Finalise ALB
+
+#### 9.5.3 Creating ASG
+
+1. Select VPC
+2. Select subnets so ASG can provision instances into them
+3. Attach LB (optional)
+   1. Configure health checks (optional). Select either EC2 or ELB.
+4. Select group size (capacity) - Set min, max and desired capacity
+5. Add SNS notifications (when instances lanched/terminated). Optional
+
+Setting automatic scaling
+
+1. Go to automatic scaling -> Dynamic scaling policy
+2. Select scaling type, specify CloudWatch alarm
+   1. Select CW metric
+   2. EC2 -> By auto-scaling group -> CPUUtilization 
+   3. Select threshold value and greater/less
+3. Take the action: Add 1 capacity units
+
+#### 9.5.4 Migrating MySQL to Aurora
+
+1. Take RDS snapshot
+2. Select VPC, RDS subnet group, security group, 
+3. Select migrate
+
+#### 9.5.5. Creating Aurora read replicas
+
+1. Select database cluster in RDS, Actions -> Add reader
+2. Can select AZ or let AWS automatically select to ensure HA
+
+#### 9.5.6. Notes
+
+* When updating parameter store, use instance refresh in ASG to have the instances pull down the updated parameters.
+
+## 10. Advanced Networking
+
+### 10.1 Advanced VPC Routing
+
+#### 10.1.1. Principles of routing
+
+* Subnets have 1 route table only.
+* If not associated with RT, it gets the VPC main route table.
+* Route tables can be associated with an IGW or VGW.
+* IPv4/IPv6 handled separately within a route table.
+* Route table has max 50 static routes and 100 dynamic routes
+
+#### 10.1.2. Routing priority (in order)
+
+1. Longest prefix wins. /32 beats /24
+2. Static routes prioritised above dynamic
+3. Propagated routes priority
+   1. DX
+   2. VPN Static
+   3. VPN BGP
+   4. `AS_PATH` used to break ties. Shorter prioritised
+
+#### 10.1.3. Dealing with overlapping CIDRs
+
+* Assign route tables to specific subnets instead of entire VPC
+* Specify a longer prefix route so it gets selected instead.
+
+#### 10.1.4. Advanced VPC Routing (Ingress)
+
+* Assign route table to IGW so incoming Internet traffic to App subnet gets routed to Sec subnet first.
+* Outgoing traffic from App to Internet directed to Sec by subnet route table
+
+![](Pics/Ingress-VPC-Routing.png)
+
+### 10.2. Accelerated Site-to-Site VPN
+
+#### 10.2.1. Why use accelerated site-to-site VPN
+
+* Site-to-site VPNs introduce jitter or variable latency due to riding on the Internet
+* Alternative of public VIF over DX too costly 
+
+#### 10.2.2. Architecture of accelerated site-to-site VPN
+
+* VPN connection between customer gateway (CGW) and global accelerator edge locations.
+  * This short hop still has jitter but is minimised.
+* Can enable acceleration using only TGW VPN attachment **not** a VGW.
+* Once inside AWS network via the edge locations it goes to TGW via efficient and direct paths
+* Charges:
+  * Fixed accelerator fees
+  * Transfer fee
+* Prefer transit gateway over VGW and enable accelerated site-to-site VPN.
+
+![](Pics/Accelerated-SiteVPN.png)
+
+### 10.3. Advanced VPC DNS & DNS Endpoints
+
+#### 10.3.1. Why VPC DNS endpoints
+
+* Route53 resolver in VPC at .2 in every subnet
+* Can't handle hybrid resolution pointing to on-prem infra
+* Old solution was to deploy an EC2-based DNS server to handle DNS forwarding
+
+#### 10.3.2. VPC DNS endpoint architecture
+
+* VPC interfaces accessible over VPN or DX.
+  * **Inbound** - Allow DNS forwarding from on-prem to R53 resolver
+  * **Outbound** - DNS forwarding from R53 resolver to on-prem DNS servers
+* Rules control what requests are forwarded
+  * corp.animals4life.org -> Forwarded to on-prem DNS servers
+
+* Inbound R53 endpoints (ENI) created within the VPC, accessible from on-prem over DX/VPN
+* Outbound R53 endpoints forward requests which match the rule to DX/VPN
+
+![](Pics/R53-Endpoints.png)
+
+#### 10.3.2. Notes from DNS Demo
+
+**Creating a VPC peering connection**
+
+1. VPC -> Peering connection
+2. Select Requester VPC and Acceptor VPC
+3. Accept VPC peering request
+4. Add routes in each RT to route to the other VPC
+
+**Creating inbound endpoints**
+
+1. Route 53 -> Configure endpoints -> Inbound only
+2. Select VPC where endpoints are to be placed
+3. Specify AZs, subnets in which to create the endpoints (min. two)
+4. When created, check the two IPs created for the inbound endpoints
+5. SSH into on-prem DNS servers, edit **/etc/named.conf** to add in the DNS forwarders from step 4
+6. Restart running DNS service
+7. SSH in to the non-DNS app servers
+8. Edit the DNS server config files **/etc/sysconfig/network-scripts/ifcfg-eth0** to add in the DNS servers for DNS resolution
+9. Reboot
+
+**Creating output endpoints**
+
+1. Route53 -> Outbound endpoints
+2. Select VPC where endpoints are to be placed
+3. Specify AZs, subnets in which to create the endpoints (min. two)
+4. When created, check the two IPs created for the outbound endpoints (note these aren't used, unlike inbound endpoints)
+5. Go to R53 -> Resolver -> Rules -> Create rule for outbound traffic
+6. Configure domain name and VPCs to which this rule applies
+7. Select outbound endpoint
+8. Add IP addresses of on-prem DNS servers to Target IP addresses
+9. Submit to create rule
+
+## 11. Systems Manager
+
+### 11.1 Introduction
+
+* View and control AWS and on-premises infrastructure
+* Agent-based - Installed on most Windows/Linux AMIs by default
+  * Can install agents manually on custom AMIs
+* Manages inventory and patch assets
+  * Installed programs
+  * Files on instance
+  * Network config
+  * OS patches
+  * Instance hardware
+  * Running services
+* Can run commands and manage desired state (ie. keep ports closed) on instances
+* Parameter store - Stores configuration and secrets
+* Session manager - Connect to EC2 instances in private VPCs
+* Systems manager endpoint runs in AWS Public Zone
+
+#### 11.1.1 Make instances managed
+
+* Need EC2 instance IAM role assigned and connectivity (IGW or interface endpoint) to Public Zone where SM endpoint located
+* To configure SM to manage on-prem infra:
+  * Need IAM role to receive permissions
+  * Each activation will receive activation code and activation ID
+  * Then SM endpoint can connect to on-prem servers
+
+### 11.2. SSM Run command
+
+* Allows you to run commands on Command document from SM Document Store for agents on managed instances to execute it.
+* No SSH/RDP protocol required on managed instances
+* Can group managed instances by Tags or Resource Groups 
+* Command documents used to run simple commands or complicated ones (eg. set up DC)
+  * SSM, EventBridge, Console, CLI use command documents & targets together with parameters
+* Rate control options
+  * **Concurrency** - Define simultaneous number of managed instances to run commands on
+  * **Error threshold** - How many individual commands running on instances can fail before whole command fails
+* Output - S3, can send notifications via SNS
+* EventBridge rule can be used to Run Command
+
+### 11.3. SSM Documents
+
+* JSON/YAML documents
+* Stored in SSM Document Store
+* Asks for Parameters and include Steps
+* **Command Document** - Run Command, State Manager & Maintenance Windows
+* **Automation Document** 
+  * Common maintenance and deployment tasks such as creating/updating AMI
+  * State Manager - Uses document to apply configuration to instances
+* **Package Document** 
+  * Distributor uses this to include compressed software to install on instances
+
+### 11.4. AWS SM Patch Manager
+
