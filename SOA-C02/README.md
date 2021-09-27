@@ -1428,13 +1428,17 @@ Setting automatic scaling
 * Session manager - Connect to EC2 instances in private VPCs
 * Systems manager endpoint runs in AWS Public Zone
 
-#### 11.1.1 Make instances managed
+#### 11.1.1 Make instances managed [[ref](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-managed-instance-activation.html)]
+
+* This allows SSM to manage on-prem servers
 
 * Need EC2 instance IAM role assigned and connectivity (IGW or interface endpoint) to Public Zone where SM endpoint located
 * To configure SM to manage on-prem infra:
   * Need IAM role to receive permissions
-  * Each activation will receive activation code and activation ID
+  * Each activation will receive **Activation Code** and **Activation ID**
   * Then SM endpoint can connect to on-prem servers
+
+![](Pics/SM-Arch.png)
 
 ### 11.2. SSM Run command
 
@@ -1463,3 +1467,26 @@ Setting automatic scaling
 
 ### 11.4. AWS SM Patch Manager
 
+* Patch **Baseline** - Determines what patches, hot fixes get installed (Various OS, can create your own)
+  * Linux - **AWS-[OS]DefaultPatchBaseline** : explicitly define patches
+    * AWS-AmazonLinux2DefaultPatchBaseline 
+    * AWS-UbuntuDefaultPatchBaseline - Includes critical security updates. Approved 7 days after released by this.
+  * Windows - **AWS-DefaultPatchBaseline** - Critical and security updates
+    * **AWS-WindowsPredefinedPatchBaseline-OS** : Same as above, different name
+    * **AWS-WindowsPredefinedPatchBaseline-OS-Applications** : Above + Microsoft app updates
+* Patch **Groups** - Which groups of resources you want to patch
+* Maintenance **Windows** - Defines time slots where patching can take place
+* **Run Command** - The command used to actually run the patching process
+* **Concurrency** - Number of instances patched at any time
+* **Error threshold** - Number of errors tolerated before patching halted
+* **Compliance** - Checked by SM inventory to ensure instances are patched
+
+#### 11.4.1. Patching Architecture
+
+1. Define patch baseline to determine what is installed
+2. Create patch groups which act as targets for patch tasks
+3. Maintenance windows define a schedule, duration, targets and tasks
+4. **AWS-RunPatchbaseline** runs with a baseline and specified targets
+5. Systems Manager Inventory keeps track of configuration, state of OS and hardware and patches
+
+![](Pics/PatchMgr-Arch.png)
