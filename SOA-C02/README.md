@@ -1490,3 +1490,105 @@ Setting automatic scaling
 5. Systems Manager Inventory keeps track of configuration, state of OS and hardware and patches
 
 ![](Pics/PatchMgr-Arch.png)
+
+## 12. Application Services, Event-Driven & Serverless
+
+### 12.1. AWS Lambda
+
+* Deployment packages are installed in a created runtime environment
+* Custom runtimes such as Rust can be created with **Lambda layers**
+* **Exam note:** Docker not supported
+* Usage:
+  * Serverless apps - S3, API Gateway, Lambda
+  * File processing - S3, S3 Events, Lambda
+  * Database triggers - DynamoDB, Streams + Lambda
+  * Serverless cronjobs - EventBridge/CWEvents + Lambda
+  * Realtime stream data processing - Kinesis + Lambda
+
+#### 12.1.1. Lambda Runtime Environment
+
+* You can define the memory used for runtime: 128 MB to 3 GB, in 64 MB steps.
+* CPU can't be specified but scales with memory in use
+  * 1792 MB -> 1 vCPU
+* 512 MB allocated to **/tmp**
+
+### 12.2. Public Lambda
+
+* By default has access to AWS public services eg. SQS, DynamoDB, S3  and Internet
+* Lambda has no access to resources in VPC unless they have public IPs and allowed access
+* Inside a VPC, Lambda has the same permissions of all other objects in the VPC; losing public access and needs VPC endpoint to access public services.
+
+### 12.3. Private Lambda
+
+* VPC Lambdas don't actually run from within a VPC
+* Lambda functions run from within **Lambda Service VPC**; ENIs created in your VPC
+  * AWS analyzes all of the functions running in a region in an account and build up a set of unique combinations of SGs and subnets.
+  * All share SG but not subnet -> Creates one ENI per subnet
+  * All share SG and subnet -> One ENI for all Lambda functions
+  * ENIs created in 90s when Lambda is being configured, done just once, if networking config is unchanged.
+
+### 12.4. Lambda Security
+
+* Lambda gets permissions from attached IAM roles
+* Also has resource policy to control what services and accounts can invoke the Lambda function
+  * External services eg. SNS, S3
+  * External accounts
+  * Can only be modified via CLI/API but not console.
+
+### 12.5. Lambda Logging
+
+* Lambda uses **Cloudwatch**, **Cloudwatch Logs** & **X-Ray**
+* Logs from Lambda executions - CloudWatch Logs
+  * Metrics - Invocation success/failure, retries, latency stored in CloudWatch
+  * Need IAM role for Lambda to log information into CW Logs (otherwise nothing logged)
+  * By default logs to log group in CW logs same name as Lambda function eg. /aws/lambda/EC2Protect
+* Lambda integrated with X-Ray for distributed tracing
+
+### 12.6. Lambda Invocation
+
+#### 12.6.1. Invocation - Synchronous 
+
+* Client invoke Lambda function, waits for results to be returned
+* Error/retries needs to be handled by the client
+
+#### 12.6.2. Invocation - Asynchronous
+
+* AWS services invoke Lambda function
+  * Eg. S3 Events invoking Lambda functions
+* Doesn't wait for Lambda processing to complete
+* Lambda function needs to be **idempotent** - be applied multiple times without changing the result beyond the initial application
+* Lambda can send failed events which it can't process to **Dead Letter Queue** for troubleshooting
+* Events processed by Lambda can be delivered to another destination regardless of success/failure
+  * Eg. SQS, SNS, another Lambda function or EventBridge
+* Lambda *doesn't* need permissions if the event which triggers it provides all the required data for execution.
+
+#### 12.6.3. Invocation - Event Source Mapping 
+
+* Used on streams/queue which don't support event generation to invoke Lambda
+  * Eg. Kinesis, DynamoDB streams, SQS
+
+* Polls a queue/stream in batches
+  * Batches are processed together. The job fails/pass as an entire source batch.
+  * Failed batches can be sent to SNS queue, SNS or DLQ for analysis
+* **Exam note:** Event source mapping needs read permissions from Lambda execution role to access source service
+
+#### 12.6.4. Invocation mechanics
+
+* **Cold start** - Lambda execution context takes time to provision, including code download ~ 100ms
+* **Warm start** - Lambda functions executed with execution context already created by previous invocations ~ 1-2ms
+  * Possible for repeated invocations to reuse contexts but may also not
+* If need Lambda to execute immediately without cold start, **provisioned concurrency** can be used to create and keep X contexts.
+  * Can be used for scheduled periods of forecasted heavy use
+* Can also use **/tmp** to predownload required files
+* Objects declared [outside of the function's handler method](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-context.html) remain initialized eg. database connection. Can be reused for future invocations.
+  * Best to assume that execution context is fresh and Lambda function needs to create/establish things
+  * However you can optimise by using this if needs to
+
+### 12.7. Lambda Versioning
+
+* Functions can be versioned
+* Version is code + configuration of Lambda function
+* Each version is immutable with its own ARN
+* `$Latest` always points at latest version
+* Aliases can point at a specific version, these can be changed to point to later ones.
+
