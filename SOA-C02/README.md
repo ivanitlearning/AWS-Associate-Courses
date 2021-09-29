@@ -1592,3 +1592,92 @@ Setting automatic scaling
 * `$Latest` always points at latest version
 * Aliases can point at a specific version, these can be changed to point to later ones.
 
+### 12.8 API Gateway
+
+#### 12.8.1. Refresher
+
+* Endpoint for applications
+* Sits between client apps and integrations with AWS services
+* Highly available, scalable, handles authorisation, throttling, caching, CORS, transformations, OpenAPI
+* Public service, can connect to AWS services or on-prem
+* Logs available on CW logs
+* API Gateway Cache can be used to reduce the number of calls made to backend integrations and improve client performance
+
+#### 12.8.2. Authentication
+
+* Can authenticate with Cognito and receive token
+
+![](Pics/APIGW-Cognito.png)
+
+#### 12.8.3. Endpoint Types
+
+* **Edge-optimized**
+* Routed from API-GW to CF point-of-presence (POP)
+* **Regional**, doesn't use CF network for users in same region
+* **Private** - Accessible only within a VPC via interface endpoint
+
+#### 12.8.4. Stages
+
+* APIs are deployed to a stage, can configure different stages for different user groups eg. customers, developers
+* Different app versions backed by different Lambda functions can be deployed for different API GW.
+* Stages can be enabled for canary deployments. If done, deployments are made to the canary not the stage.
+  * Can be configured such that a certain amount of traffic is sent to canary for testing. 
+  * Can promote canary so it becomes base stage.
+  * Also can remove the canary so it reverts to base stage
+
+![](Pics/APIGW-Stages.png)
+
+#### 12.8.5 Errors
+
+* **4XX Client error** - Invalid request on client side
+  * 400 Bad request - Generic client error, not specific
+  * 403 Access denied - Authorizer denied, WAF filtered
+  * 429 API-GW throttled - Client exceeded throttle limit
+* **5XX Server error** - Valid request, backend problem
+  * 502 Bad gateway exception - Invalid output returned by service
+  * 503 Service unavailable - Endpoint is offline, not responding
+  * 504 Integration failure/timeout - Lambda endpoint response time > 29s even though it can run up to 15 min.
+
+#### 12.8.6. Caching
+
+* Responses can be cached to reduce load to endpoints, improve latency
+  * Calls made to endpoints only  for cache misses
+* Cache TTL default 300s, min 0s max 3600s
+* Can be encrypted
+  * Size: 500 MB to 237 GB
+
+### 12.8. Kinesis Data Firehose
+
+#### 12.8.1. Refresher
+
+* Fully-managed service loads data for data lakes, stores and analytics
+* Delivery service for Kinesis streams
+* Auto-scaling, fully serverless, resilient
+* Near-realtime (not realtime) ~ 60s delay
+* Supports transformation of data on fly with Lambda - can add latency
+* Billing based on data volume 
+
+#### 12.8.2. Architecture
+
+* Possible destinations: HTTP endpoints, Splunk, Redshift, ElasticSearch, S3 bucket etc.
+* Integrated with Kinesis streams (which can't persist or send data streams to any other service)
+* Firehose can be used without Kinesis to draw data from sources
+* Receives data in realtime but doesn't deliver in realtime
+* Waits for 1 MB or 60s of data
+  * Low-volume data sources will make it wait for 60s
+  * High-volume sources will deliver to destination every MB received
+
+* **Exam note:** 
+  * ~200ms is realtime, 60s isn't.
+  * If realtime is required, skip Firehose and use Lambda to work directly with Kinesis streams
+* Can send data to Lambda functions created from Blueprints to transform. Transformed data is then delivered to endpoints
+  * Optionally can send unmodified (untransformed data) to S3 bucket for backup
+
+![](Pics/KinesisDataFirehose.png)
+
+### 12.9 Kinesis Data Analytics
+
+* Offers **realtime processing** of data using SQL
+* Ingests from Kinesis Data Streams or Firehose
+* Destinations: Firehose (and its destinations), Lambda, Kinesis Data Streams
+  * Only Lambda or Kinesis Data Streams offer real time
