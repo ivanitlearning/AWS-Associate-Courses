@@ -1681,3 +1681,25 @@ Setting automatic scaling
 * Ingests from Kinesis Data Streams or Firehose
 * Destinations: Firehose (and its destinations), Lambda, Kinesis Data Streams
   * Only Lambda or Kinesis Data Streams offer real time
+
+#### 12.9.1. Architecture
+
+* Sources: Kinesis streams, Firehose, S3 bucket
+* **In-application input streams** created based on inputs
+  * If sourced from S3 bucket, reference table created
+
+* Application code processes inputs to produce **in-application output streams**, sent to destination streams
+* Errors generated from processing sent to **in-application error stream**
+* Billing based on data processed (not cheap)
+
+![](Pics/KinesisDataAnalytics.png)
+
+
+
+#### 12.9.2. Use cases
+
+* Streaming data which requires **realtime SQL processing**
+* Time -series analytics eg. elections, e-sports
+* Realtime dashboards eg. leaderboards for games
+* Realtime metrics - Security, response teams
+
