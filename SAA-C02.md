@@ -396,7 +396,7 @@ For example, any time CPU Utilization is reported, the **datapoint** will report
 
 **Dimensions** could be used to get metrics for a specific instance or type of instance, among others. They separate data points for different **things** or **perspectives** within the same metric such as Instance IDs
 
-#### 1.2.9.3. Alarms
+#### 1.2.9.3. CloudWatch Alarms
 
 * Two valid states `ok` or `alarm`. A notification could be sent to an SNS topic or an action could be performed based on an alarm state.
 * Third state is insufficient data state. Not a problem, just wait.

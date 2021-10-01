@@ -381,7 +381,7 @@ Account A might allow something but account B also needs to allow it too or it g
 * Alarm - watches a metric over a time period
 * In two states: Alarm or OK.
 * Set value of metric vs threshold over time
-* One or more actions
+* Can configure one or more actions once alarm triggered such as reboot EC2 instance
 
 ### 5.4 CloudWatch Logs
 
@@ -520,7 +520,7 @@ Subnet1:
     VpcId: !Ref VPC
 ```
 
-* Here we are telling CF we want 16 subnets and the size (12) of each subnet. This outputs a list of subnets to use.
+* Here we are telling CFN we want 16 subnets and the size (12) of each subnet. This outputs a list of subnets to use.
 
 Conditions (Fn::**IF**, **And**, **Equals**, **Not** & **Or**) - Typical conditions, if X do Y else
 
@@ -543,7 +543,7 @@ Mappings:
 
 **!FindInMap [ "RegionMap", !Ref 'AWS::Region',"HVM64"]** 
 
-* Looks for RegionMap in CF template
+* Looks for RegionMap in CFN template
 * Finds the current region in the console
 * Returns value in "HVM64"
 
@@ -569,7 +569,8 @@ Outputs:
 * Evaluated to TRUE or FALSE.
 * Processed **before** resources are created, associated with logical resources to control if they're created or not.
   * Eg. Create different number of resources based on ONEAZ, TWOAZ
-* Example:
+
+Example:
 
 Here if EnvType is not "prod", then only "Wordpress" EC2 instance is created. If EnvType is "prod" then in addition, Wordpress2, MyEIP, MyEIP2 is also triggered. Another EC2 instance is created, and both are assigned Elastic IPs.
 
@@ -1694,12 +1695,160 @@ Setting automatic scaling
 
 ![](Pics/KinesisDataAnalytics.png)
 
-
-
 #### 12.9.2. Use cases
 
 * Streaming data which requires **realtime SQL processing**
 * Time -series analytics eg. elections, e-sports
 * Realtime dashboards eg. leaderboards for games
 * Realtime metrics - Security, response teams
+
+## 13. Elastic Beanstalk
+
+### 13.1. Introduction
+
+* PaaS
+* Developer-focused, not for end users
+* Managed Application Environments
+* User provides code and EB handles environment (just gets it up and running easily)
+* Allow dev to focus on code, EB takes code and tries to run it with minimal concern to infrastructure required for
+  * If end user needs to host application, then likely not solution.
+* Fully customisable - Invokes AWS services underneath it to work (creates AWS resources in your account)
+* There is no additional charge for AWS Elastic Beanstalk. You pay for AWS resources (e.g. EC2 instances or S3 buckets) you create to store and run your application. 
+* Need to tweak application to be supported by EB (technical expertise required)
+
+### 13.2. Supported platforms
+
+* Supports Go, Java SE, Tomcat
+* .NET Core (Linux) and .NET (Windows)
+* Node JS, PHP, Python, Ruby
+* Docker: Single and Multi-container, Preconfigured
+  * Preconfigured provides support to runtimes before natively supported (eg. Glassfish Java 8)
+* Allows custom platforms like Packer
+
+### 13.3. Architecture
+
+* **EB Application** - Code + infrastructure + versions of physical application
+* **Application Version** - Specific labelled version of deployable code for application. Stored in S3 as **source bundles**. 
+  * Formats: zip, war
+  * Can configure lifecycle policy to limit the number of application versions (by deleting older ones)
+* **Environments** - Contains infrastructure and config for specific application version
+  * Eg below has PROD, TEST and PROCESSING environments
+  * Environment has its own CNAME
+  * CNAME swap can be done to switch environments for different users -> blue/green deployment
+
+![](Pics/EB-Arch.png)
+
+### 13.4. Summary
+
+* Great for small devt teams - automated infrastructure, dev require minimal infra skills
+* Can use docker for anything EB doesn't currently supported
+* Databases should be created **outside** of EB if not will be lost if environment deleted eg. blue-green deployments
+  * RDS can be created within environments though
+
+### 13.5. EB Deployment Policies
+
+* **All at once** - Deploy application to all instances at same time, causes brief outages, no way to handle failures
+* **Rolling** - Deploy in rolling batches, pass health checks then returned to service.
+  * However it removes instances from service during deployment, then returned when done
+* **Rolling with additional batch** - Extra batch to maintain existing capacity during process, with 2 app versions running
+* **Immutable** - New ASG created with instances with app deployed. Once instances pass health check, moved to original ASG, original instances terminated, and temporary ASG deleted.
+  * Expensive since uses double number of instances at any time
+* **Traffic splitting** - New ASG with instances with app deployed, but allows traffic sharing between original and new applications
+
+#### 13.5.1. Blue-green deployment
+
+* Maintain two separate environments
+* One with app v1, another with app v2
+* Use R53 to direct some app testers to green environment
+* When ready, modify DNS to point to new environment
+* Doesn't rely on EB to orchestrate deployment
+* Also retains original environment to revert as needed
+
+### 13.6. Elastic Beanstalk and RDS
+
+* Can create RDS instance **within** EB environment, linked to it.
+* Environment deleted -> RDS deleted (data loss)
+* Different environments = Different RDS = different data
+* **Environment properties**: `RDS_HOSTNAME`, `RDS_PORT`, `RDS_DB_NAME`, `RDS_USERNAME`, `RDS_PASSWORD`
+* Can also create RDS instance outside of EB - data not affected by environment changes
+  * Add environment properties to point at RDS instance
+* Decoupling RDS within EB environment from it
+  1. Create an RDS snapshot
+  2. **Enable Delete Protection** on RDS instance
+  3. Create **new EB environment** with same app version
+  4. Ensure new environment can connect to the DB (point environment properties to RDS instance)
+  5. Swap environment (CNAME or DNS)
+  6. Terminate the old environment
+     1. Will fail because RDS snapshot has Delete Protection enabled
+     2. Choose to retain RDS instance and delete the stack
+     3. Will delete successfully
+
+### 13.7. Advanced Customisation vs .ebextensions
+
+* Underneath the hood EB uses CFN to create the stacks.
+* Modifications to EB environment will cause EB to do Update Stack to CFN template.
+
+* Ebextensions can be used to EB environment
+  * Inside source bundle (zip, war file) there is `.ebextensions` folder
+  * Add YAML/JSON file with **.config** file extension will be treated as .ebextensions
+  * Uses CFN format to create additional resources
+  * **options_settings** allows you to set options of resources
+  * Resources allows entirely new resources
+
+### 13.8 Elastic Beanstalk and HTTPS
+
+* Apply SSL cert to Load Balancer directly with EB console
+
+  * Environment -> LB Configuration
+
+* Or via `.ebextensions/securelistener-[alb|nlb].config` , also remember to configure SG to allow LB to connect to instances on those ports
+
+  * ```yaml
+    option_settings:
+    aws:elbv2:listener:443:
+      ListenerEnabled: 'true'
+      Protocol: HTTPS
+      SSLCertificateArns: arn:...
+    ```
+
+  * ```yaml
+    Resources:
+      sslSecurityGroupIngress:
+        Type: AWS::EC2::SecurityGroupIngress
+        Properties:
+          GroupId: {"Fn::GetAtt" : [ "AWSEBSecurityGroup", "GroupId"] }
+          IpProtocol: tcp
+          ToPort: ...
+          FromPort: ...
+          SourceSecurityGroupName: {"Fn::GetAtt" : ["AWSEBLoadBalancer", "SourceSecurityGroup.GroupName"]}
+    ```
+
+### 13.9. Elastic Beanstalk Cloning
+
+* Create new environment by cloning an existing one
+  * Eg. Copy Prod-Env to a new Test-Env
+  * New version of platform branch
+  * Copies options, env variables, resources and other settings
+* Includes RDS in environment but **no data** is copied
+* **Unmanaged changes** (made outside EB, CLI or API) not included
+* Done with console UI, API or `eb clone EXISTING_ENVNAME`
+
+### 13.10 Elastic Beanstalk and Docker
+
+#### 13.10.1. Single container Docker
+
+* One container only per environment
+
+* EC2 with docker, **not ECS**
+
+* 3 ways to run it
+  * Provide a `Dockerfile`
+  * `Dockerrun.aws.json` (v1) - Specifies Docker image, ports, volumes and other Docker attributes
+  * `docker-compose.yml`
+
+#### 13.10.2. Multi-container Docker
+
+* Creates ECS cluster with EC2 provisioned and ELB for HA
+  * Provide `Dockerrun.aws.json` (v2) in the app source bundle
+  * Container images to be stored in a registry such as ECR
 
