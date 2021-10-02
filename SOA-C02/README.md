@@ -109,7 +109,7 @@ Console access is similar
 
 * No associated costs with using it, so leave it there
 
-Remainder of [IAM from SAA-C02](../SAA-C02.md##13-iam-accounts-aws-organizations)
+Remainder of [IAM from SAA-C02](../SAA-C02.md#13-iam-accounts-aws-organizations)
 
 # 2. Simple Storage Service (S3)
 
