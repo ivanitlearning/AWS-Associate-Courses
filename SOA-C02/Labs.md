@@ -286,3 +286,100 @@ This alarms triggers when your EC2 monitoring metric for CPU utilization exceeds
 7. Next, enter name and Create alarm
 8. Check that alarm is created
 
+# VPC with private and public subnets
+
+Create a VPC with with one public and one private subnet in Singapore. The private subnet should be able to connect to the internet but not allow outside to come in.
+
+1. Create a non-default VPC located in `ap-southeast-1` that is configured to host resources with a CIDR block of `10.0.0.0/16` and name it `td-vpc-lab`.
+
+2. Create a public subnet called `td-public-subnet` in `us-west-1a` and assign the `10.0.0.0/24` CIDR block. Then, create a private subnet called `td-private-subnet` in `us-west-1b` and assign the `10.0.1.0/24` CIDR block.
+
+3. Create a NAT gateway and assign an Elastic IP address.
+
+4. Ensure that all EC2 instances launched in the `td-vpc-lab` will always be associated with a DNS hostname.
+
+### VPC steps
+
+1. Create a VPC with name and CIDR block
+2. Actions -> Edit DNS hostnames -> Enable
+
+### Subnets
+
+1. Create both subnets
+   1. Specify AZ
+   2. CIDR block for subnet
+2. Enable auto-assign public IPv4 address for public subnet
+
+### IGW
+
+1. Create IGW
+2. Associate IGW with VPC
+
+### Security Groups
+
+1. 1 SG for instances in public subnet
+   1. Allow ICMP from private subnet
+   2. Allow SSH from my IP
+2. 1 SG for instances in private subnet
+   1. Allow ICMP from public subnet
+   2. Allow SSH from public subnet
+
+### IAM
+
+1. Create role
+2. Select AWS service -> EC2 -> Next
+3. Search for policy `AmazonSSMManagedInstanceCore` -> Next
+4. Enter name tags if needed -> Next -> Enter name
+
+### NAT Gateway
+
+1. VPC -> NAT Gateway -> Create NAT gateway
+   1. Select public subnet
+   2. Connectivity type: Public
+   3. Click 'Allocate Elastic IP'
+   4. Create
+
+### Route tables
+
+#### Public subnet route table
+
+1. Enter name, VPC -> Create RT
+2. Edit routes
+   1. Point 0.0.0.0/0 to IGW
+3. Associate with public subnet
+
+#### Private subnet
+
+1. Enter name, VPC -> Create RT
+2. Edit routes
+   1. Point 0.0.0.0/0 to NAT gateway
+
+### EC2
+
+1. Launch instances
+2. For instance in private subnet, attach the IAM role for SSM
+
+# EFS
+
+### Creating EFS target mounts
+
+1. EFS -> Create file system -> Customize
+
+2. Select required options, then Next
+
+3. Create mount target
+
+   1. Choose subnets to create mount targets in
+   2. Choose SG to be applied
+
+4. File system policy (skip if already have policy to be applied)
+
+5. Click Create
+
+6. Go to Network tab, wait until Mount targets are Available
+
+7. EFS -> File systems -> Get file system ID
+
+8. Mount them within the Linux instances in `/etc/fstab`
+
+   

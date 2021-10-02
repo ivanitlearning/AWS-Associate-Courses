@@ -3542,8 +3542,10 @@ EFS moves the instances closer to being stateless.
 
 * EFS runs inside a VPC. Inside EFS you create file systems and these use POSIX permissions. EFS is made available inside a VPC via mount targets.
 * Mount targets have IP addresses taken from the IP address range of the subnet they're inside. For HA, you need to make sure that you put mount targets in each AZ the system runs in.
-
 * You can use hybrid networking to connect to the same mount targets.
+* **Encryption** [SOA-C02] [[ref](https://docs.aws.amazon.com/efs/latest/ug/encryption.html)]
+  * Encryption-at-rest can only be enabled when creating file system
+  * Encryption-in-transit can be enabled when mounting file system
 
 ![](Pics/EFS.png)
 
