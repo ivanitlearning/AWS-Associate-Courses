@@ -115,6 +115,59 @@
    2. Click Upload
 5. Properties tab, scroll down to static website hosting -> Copy bucket website endpoint
 
+## S3 Versioning
+
+1. S3 -> Create bucket
+2. Enable bucket versioning, Create bucket
+3. Click on bucket -> Enable S3 static site hosting if needed
+4. Permissions tab -> Edit bucket policy
+5. Add in policy or use policy generator
+6. Upload files
+7. Objects tab -> Check version ID
+8. Upload new files to overwrite old ones
+9. The website should now show new images
+   * Note that deleted objects are instead given deleted markers.
+
+## S3 object encryption
+
+1. Create bucket
+2. When uploading objects, expand Properties
+3. Specify encryption key
+   1. SSE-KMS or SSE-S3
+   2. Select either AWS managed key or CMK for KMS
+   3. Note you can click Properties tab and specify default encryption settings for new objects (doesn't prevent selecting otherwise)
+4. Upload object
+5. Verify that user without access to specific KMS CMK can't open objects encrypted with blocked key
+
+## Cross-region replication of S3 static website
+
+1. Create two buckets, one source, one destination, make both public and enable versioning
+2. Edit bucket policy on both buckets to allow * principal to access /*
+3. Go to source bucket -> Management tab -> Create replication rule
+4. Enable, specify destination bucket
+5. Choose IAM role which allows destination bucket to read from source bucket or "Create role" to let  AWS do it for you
+6. Create
+
+## S3 presigned URLs
+
+This demo creates S3 time-limited presigned URLs for outsiders to access with AWS permissions
+
+1. Create bucket, upload objects
+
+2. Open CloudShell and type
+
+   ```text
+   aws s3 presign s3://animals4lifemedia4324124/all5.jpg --expires-in 180
+   ```
+
+   Get the S3 URL from the S3 object properties
+
+ 3. You'll see this returned
+
+    ```text
+    https://animals4lifemedia4324124.s3.us-east-1.amazonaws.com/all5.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAT3SQ5UUXECTVJZ75%2F20211003%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20211003T100041Z&X-Amz-Expires=180&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELL%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJGMEQCIEA5JD8RIqMuZCz0fYgHd8XkJDihsNdXc02qB7I7D%2FcXAiAi1KyFphPkI4FjpWjnEHhk8BqBLEc7TKBnL1J6umxbSCqeAwgrEAAaDDI2NTM4Mzk0NTUxOCIMexQg%2Fw98z28pcd31KvsCiqhpQSX8YtC2yhR8n8bxxulOYJ5%2FmT4ZXWIAlRjMeszc2hRNYTQcxFjNnWm3mq%2BqWoSSVHlNse5sUbojiyRN6mA3Gjs7VenpmlTW6fjkN9lxIIwAA3kZhqhhHE2iP9vOYuwx2anTbD7muimoyB%2FmysLsVfjefK%2FPghRwrCDNY%2Ffk5E55FsPtmqVFHt8HXUv6uI2GSIzHfKh39Xcx2FfU6mZry9eOuLonFWyy3PGFvRN%2BD3vGIjzQppU8hFQOubBKoqtuoIs4QEKu%2FFahb8XbLZ302kdExORHfhIUF8W0v9VA0pJ1Z%2FbGqP0ZCcDZgH8QvepqX3XhgCRMxBTVrEo1Be8N78VE4Ok6bBUpEMD9SRLuU9VBM2V7Rv1fWwxhatpIn2BLKgtUyGuDrsH9UYZtHXiRHNWtu3kgz4FGeaEqVnUu1rS63lD4DnrsdkDwUWrXwK%2FAPWtHsuR45IfdoiToH3ALWygMam2n9wYKUzeHRa8jaPfsUZeEtIy00TDO5OWKBjq0Ap0HIIU0s5fXYr0CrGzDRoU7s3MxxDMdz0RsGhXG0p30z7yukG%2Bhvvos4AqGYDutVaum0bwrKY3Lb7NBc0z8mTVmUfB85AiDGFhyPEsReff%2BJqiWbDUwLIdP2E90E8iLRypfthR%2BG0M6kEs4Pfjmt%2BDokzy36WI7FTPYkqq1k10GFJpeXEqIXaNn5DfLeoxwqh%2ByhQdtCwTqi0jTIkYKltxNhVNq%2BpjRl%2FtFBqghWh6J8li3dgR6eNrOyxY8z7Jm6RPw7YmHR9UOUq6I2nXEaKiYOdKIYpURK2MMZoGOQvucTcBmAFAJQEaGG3SkG8oNtht%2BvDsli8fPC%2FC3dlx1TqzGXx3ys0tXYG6fTN29DY2hMFEOcWK8WiuJLzPxrP3CIkIogW%2FrKh6Jskf5HRyF0us%2F9cdC&X-Amz-Signature=db709700fdbcd92df41488b92ba83cc4ecb5d1994bca548de5d49bc72ef7bbac
+    ```
+
 # Elastic Beanstalk
 
 ## Creating new application
@@ -381,5 +434,282 @@ Create a VPC with with one public and one private subnet in Singapore. The priva
 7. EFS -> File systems -> Get file system ID
 
 8. Mount them within the Linux instances in `/etc/fstab`
+
+
+# KMS
+
+Using customer-managed keys to encrypt data
+
+### Create CMKs
+
+1. KMS -> Customer-managed keys -> Choose symmetric (demo) or asymmetric
+   1. Key material origin: KMS, External or CloudHSM
+   2. Regionality: Single or multi (same key in multi regions)
+   3. Next
+2. Key administrative permissions: Determine which users can administer the key
+3. Key usage permissions: Determine who can use the key (to decrypt/encrypt)
+4. Review key policy and create key
+5. Click on key and go to Key rotation tab, enable if needed
+
+# EBS
+
+This lab creates, mounts EBS volumes, unmounts them and mounts them on another target
+
+## Creating EBS volumes
+
+1. EC2 -> Volumes -> Create volume
+2. Select specs as required, AZ
+3. Create volume
+
+## Attach to instances
+
+Only can attach to instances in same AZ.
+
+1. Right click -> Attach Volume
+2. Enter `/dev/sdf` or path to attach within instance
+3. Volume will be present in device path `/dev/xvdf`
+4. To detach just right-click -> Detach volume
+
+To mount:
+
+```text
+# Create XFS filesystem at /dev/xvdf
+sudo mkfs -t xfs /dev/xvdf
+# Check that it exists
+sudo file -s /dev/xvdf
+# Mount it at mount point
+sudo mount /dev/xvdf /ebstest
+```
+
+## Attach to instance in different AZ
+
+1. Right click on EBS volume in origin AZ -> Create snapshot
+2. After creation 
+   1. Right-click snapshot -> Create volume
+   2. Select specs (can be different) and target AZ
+3. Attach volume to instance
+4. Also can copy snapshot to different region
+
+## Create EBS encrypted volume
+
+1. Same as creating EBS volume, just check EBS encryption
+2. Snapshots taken same way, also encrypted (can't be changed)
+3. Volumes created from snapshots also encrypted but can change CMK used
+
+# EC2 AMI
+
+## Creating AMI and launch instance from it
+
+1. Shut down instance (stop in EC2)
+2. Select instance -> Image and templates -> Create image
+3. Select options -> Create image
+   1. Snapshot of boot volume created first
+   2. AMI created next
+4. Right-click AMI -> Launch
+5. Follow same steps as launching instance
+
+## Copying and sharing AMI
+
+1. Right-click AMI -> Copy AMI
+2. Select destination region, specify encryption
+3. Select Copy AMI
+
+# AWS Fargate
+
+Create a container of cats using Fargate
+
+1. ECS -> Clusters -> Create cluster -> Networking only
+2. Specify VPC -> Create
+3. Click on created cluster
+4. Task definition -> New task definition -> Fargate
+   1. Specify name, task size (memory and vCPU)
+5. Container definitions -> Add container
+   1. Specify image URL (dockerhub), ports to expose -> Create
+6. Click on cluster again -> Tasks tab -> Run new task
+   1. Specify Fargate as launch type
+   2. Select VPC and subnets to deploy in (ENI to be deployed in subnets)
+   3. Edit SG to be applied to ENIs
+   4. Run task
+7. Wait till Last status becomes Running (same as Desired status)
+8. Click on task -> Access it via public IP
+
+## EC2 user-data
+
+Bootstrapping with EC2 user-data
+
+1. Launch EC2 instance
+2. When specifying Instance details (eg. VPC etc.), scroll down to Advanced Details
+3. Paste in user-data downloaded
+4. Create instance
+
+## EC2 instance roles
+
+1. Before configuring, EC2 instance has no role configured
+
+   ```text
+   [ec2-user@ip-10-16-49-196 ~]$ aws s3 ls
+   Unable to locate credentials. You can configure credentials by running "aws configure".
+   ```
+
+2. IAM -> Create role -> AWS service -> Next: Permissions
+
+3. Search for policy **AmazonS3ReadOnlyAccess** and assign it to role.
+
+4. Once created, right-click target EC2 instance -> Security -> Modify IAM role -> Select created role
+
+5. Verify in Security tab of instance that the role is present
+
+6. Go back to shell in EC2 instance, now `aws s3 ls` works
+
+7. To detach IAM role redo step 4 but don't specify a role
+
+# SM Parameter Store
+
+1. Go to Systems Manager -> Parameter Store -> Create parameter
+
+   ```text
+   /my-cat-app/dbstring        db.allthecats.com:3306
+   /my-cat-app/dbuser          bosscat
+   /my-cat-app/dbpassword      amazingsecretpassword1337 (encrypted)
+   /my-dog-app/dbstring        db.ifwereallymusthavedogs.com:3306
+   /rate-my-lizard/dbstring    db.thisisprettyrandom.com:3306
+   ```
+
+2. For passwords that need encryption specify SecureString and KMS key to use
+
+3. To interact at the command line do either top to specify exact name or an entire path (add decryption)
+
+   ```text
+   [cloudshell-user@ip-10-1-35-252 ~]$ aws ssm get-parameters --names /rate-my-lizard/dbstring
+   {
+       "Parameters": [
+           {
+               "Name": "/rate-my-lizard/dbstring",
+               "Type": "String",
+               "Value": "db.thisisprettyrandom.com:3306",
+               "Version": 1,
+               "LastModifiedDate": "2021-10-04T15:38:42.348000+00:00",
+               "ARN": "arn:aws:ssm:us-east-1:265383945518:parameter/rate-my-lizard/dbstring",
+               "DataType": "text"
+           }
+       ],
+       "InvalidParameters": []
+   }
+   [cloudshell-user@ip-10-1-35-252 ~]$ aws ssm get-parameters-by-path --path /my-cat-app/ --with-decryption
+   ```
+
+# CloudWatch Agent
+
+1. Install CW Agent on EC2 instance if not already present
+
+   ```text
+   wget https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+   sudo rpm -U ./amazon-cloudwatch-agent.rpm
+   ```
+
+2. Next we create an IAM instance role for the CW Agent to push to CW Logs
+
+   1. IAM -> Create role -> AWS Service role (EC2)
+   2. Select policies `CloudWatchAgentServerPolicy` and `AmazonSSMFullAccess`
+   3. Create role
+
+3. Attach IAM role to instance (right-click Security -> Modify IAM role
+
+4. Enter instance to configure CW agent (a lot of steps here)
+
+   ```text
+   sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+   ```
+
+5. Go to CloudWatch -> Log Groups, look for **/var/log/httpd/error_log** or other monitored logs configured above. Look for stream name as per instance ID
+
+6. Also note you can find metrics in CWAgent that are available because of the installed CW Agent
+
+# Route 53
+
+## Configure R53 health checks
+
+1. Route 53 -> Health check -> Create health check
+2. Enter protocol (HTTP), IP address, host name (not required) and path to check (index.html)
+3. When created, go to Health checkers tab to look at status of health checks
+
+## Create Route 53 failover records
+
+This creates a failover R53 record to a static S3 bucket website hosting
+
+1. Route 53 -> Hosted zones -> Select hosted zone
+2. Create record -> Failover record 
+3. Specify record name (subdomain), DNS TTL
+4. Click Define failover record
+   5. Specify **IP address or another value**
+   2. Elastic IP of primary resource
+   3. **Primary record** type, health check (created above) 
+5. Define another failover record,
+   1. Specify **Alias to S3 website endpoint**, enter DNS address of bucket
+   2. Select region, and S3 bucket
+   3. Choose **Secondary record**
+
+6. Check by failing the primary instance, check that health checks fail and it fails over
+
+## Create Route 53 private hosted zone
+
+1. Route -> Create hosted zone
+   1. Enter private domain eg. somesite.sg
+   2. Select private hosted zone
+   3. Associate with VPC
+2. Click created hosted zone to create 'A' record
+   1. Create record
+   2. Specify subdomain
+   3. IP address to direct to, TTL and R53 routing policy
+   4. Create record, now wait 5 min
+3. Check within instance in VPC you can resolve private DNS query
+
+# RDS
+
+Migrate MariaDB running on EC2 instance to RDS instance
+
+## Provision RDS instance
+
+1. RDS -> Create DB subnet group
+2. Choose VPC and its respective AZs
+3. Pick the subnets the instance will be in, reference VPC
+4. Databases -> Create database
+   1. Specify engine type, version, DBMS credentials to use
+   2. Specify storage (enable storage autoscaling if required)
+   3. Specify subnet group created above, SG, database name
+   4. Create DB
+   5. Wait till complete
+5. Edit assigned SG to allow EC2 instances on another SG inbound permissions to 3306
+   1. Inbound rules: Type: MySQL/Aurora
+   2. Select SG the EC2 instances belong to
+
+## Migrate data to RDS instance
+
+1. Click on RDS instance -> Connectivity & security tab. Note the DNS endpoint
+2. Run command to migrate data on EC2 instance to RDS endpoint
+3. Edit the app config so it points to the RDS endpoint
+
+## Migrate from RDS to Aurora
+
+1. Create snapshot of RDS instance
+2. Click snapshot -> Actions -> Migrate snapshot
+3. Specify
+   1. DB engine version
+   2. VPC, subnet group (create if non-existent), SG
+   3. Create
+
+Can also create from scratch like RDS
+
+## Migrate from Aurora to Aurora serverless
+
+1. Take snapshot of Aurora instance (not RDS instance!). Migrate from RDS to Aurora first, then take screenshot using writer endpoint
+
+2. Select Aurora snapshot -> Actions -> Restore snapshot
+
+3. Select Serverless
+
+   1. Also need specify VPC, subnet group
+   2. Specify Aurora capacity units min, max
+   3. And whether can pause if there's no load
 
    

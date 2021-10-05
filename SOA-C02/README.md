@@ -2,6 +2,8 @@ These are notes for Cantrill's SOA-C02 course.
 
 # 1. IAM-Accounts-AWS-Organizations
 
+[IAM from SAA-C02](../SAA-C02.md#13-iam-accounts-aws-organizations)
+
 ## 1.1. AWS Service Catalog
 
 * Regional service
@@ -108,8 +110,6 @@ Console access is similar
 **Notes from demo:**
 
 * No associated costs with using it, so leave it there
-
-Remainder of [IAM from SAA-C02](../SAA-C02.md#13-iam-accounts-aws-organizations)
 
 # 2. Simple Storage Service (S3)
 
@@ -808,7 +808,7 @@ This gets exported as
 #### 6.11.1. Features
 
 * Not **how** (user-data) but desired state what to accomplish (cfn-init)
-* Idempotent; running `cfn-init ` when changes already made, then nothing happens
+* Idempotent; running `cfn-init` when changes already made, then nothing happens
   * Eg. Apache won't be installed if it already is, services won't start if they are already running
 * Accessed via `/opt/aws/bin/cfn-init`
 
@@ -1854,3 +1854,29 @@ Setting automatic scaling
   * Provide `Dockerrun.aws.json` (v2) in the app source bundle
   * Container images to be stored in a registry such as ECR
 
+# Topics not in Cantrill's course
+
+## 1. AWS Backup
+
+Found in TD's exam labs. Notes based [on this](https://aws.amazon.com/backup/faqs/)
+
+### 1.1. Introduction
+
+* Centralised backup service for AWS services
+  * Centralised console
+  * Automatic backup scheduling
+  * Backup monitoring and alerting
+* Works with EBS, RDS snapshots, DynamoDB tables, EFS file systems, Storage Gateway volumes
+* Encryption
+  * Some like EFS, have encryption functionality built on AWS Backup independent of source service
+  * Others like EBS uses the same encryption method as the source service eg. EBS.
+
+### 1.2. Concepts
+
+* Backup plan - Define when and how to backup AWS resources. Comprise of backup rules
+
+  * Backup schedule - Backup frequency and window
+  * Lifecycle rule - Specify when transition from one storage tier to another and when to expire
+  * Backup vault - Where to place created recovery points in, for organization
+
+  

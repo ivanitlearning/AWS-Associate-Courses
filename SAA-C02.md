@@ -4,7 +4,6 @@ These are my own notes based on the fork from [alozano-77's repo](https://github
 
 **Table of Contents**
 
-- [1.1. Cloud Computing Fundamentals](#11-cloud-computing-fundamentals)
 - [1.2. AWS-Fundamentals](#12-aws-fundamentals)
 - [1.3. IAM-Accounts-AWS-Organizations](#13-iam-accounts-aws-organizations)
 - [1.4. Simple-Storage-Service-(S3)](#14-simple-storage-service-s3)
@@ -26,39 +25,9 @@ These are my own notes based on the fork from [alozano-77's repo](https://github
 
 ---
 
-## 1.1. Cloud Computing Fundamentals
-
-Cloud computing provides
-
-1. On-Demand Self-Service: Provision and terminate using a UI/CLI without human interaction.
-2. Broad Network Access: Access services over any networks on any devices using standard protocols and methods.
-3. Resource Pooling: Economies of scale, cheaper service.
-4. Rapid Elasticity: Scale up and down automatically in response to system load.
-5. Measured Service: Usage is measured. Pay only for what you consume.
-
-### 1.1.1. Public vs Private vs Multi Cloud
-
-- Public Cloud: using 1 public cloud such as AWS, Azure, Google Cloud.
-- Private Cloud: using on-premises real cloud. Must meet 5 requirements.
-- Multi-Cloud: using more than 1 public cloud in one deployment.
-- Hybrid Cloud: using public and private clouds in one environment
-  - This is **NOT** using Public Cloud and Legacy on-premises hardware.
-
-### 1.1.2. Cloud Service Models
-
-The *Infrastructure Stack* or *Application Stack* contains multiple components that make up the total service. There are parts that **you** manage as well as portions the **vendor** manages. The portions the vendor manages and you are charged for is the **unit of consumption**
-
-1. On-Premises: The individual manages all components from data to facilities. Provides the most flexibility, but also most IT intensive.
-2. Data Center Hosting: Place equipment in a building managed by a vendor. You pay for the facilities only.
-3. Infrastructure as a Service (IaaS): Vendor manages facilities and everything else related to servers up to the OS. You pay per second or minute for the OS used to the vendor. Lose some flexibility, but big risk reductions.
-4. Platform as a Service (PaaS): Good for running an application only. The unit of consumption is the runtime environment. You manage the application and the data, but the vendor manges all else.
-5. Software as a Service (SaaS): You consume the software as a service. This can be Outlook or Netflix. There are almost no risks or additional costs, but very little control.
-
-There are additional services such as *Function as a Service*, *Container as a Service*, and *DataBase as a Service* which be explained later.
-
----
-
 ## 1.2. AWS-Fundamentals
+
+Note: The numbering starts at 1.2 because I deleted 1.1 and am too lazy to renumber everything.
 
 ### AWS Support Plans
 
@@ -401,12 +370,6 @@ For example, any time CPU Utilization is reported, the **datapoint** will report
 * Two valid states `ok` or `alarm`. A notification could be sent to an SNS topic or an action could be performed based on an alarm state.
 * Third state is insufficient data state. Not a problem, just wait.
 
-### 1.2.10. Shared Responsibility Model
-
-AWS: Responsible for security **OF** the cloud
-
-Customer: Responsible for security **IN** the cloud
-
 ### 1.2.11. High Availability (HA), Fault-Tolerance (FT) and Disaster Recovery (DR)
 
 #### 1.2.11.1. High Availability (HA)
@@ -705,7 +668,7 @@ IAM Users can have inline or managed policies which control which permissions th
 
 Policies which grant, allow or deny, permissions based on their associations.
 
-IAM Roles have two types of roles can be attached.
+IAM Roles have two types of policies can be attached.
 
 - Trust Policy: Specifies which identities are allowed to assume the role.
 - Permissions Policy: Specifies what the role is allowed to do.
@@ -943,11 +906,11 @@ CloudTrail products can create an organizational trail. This allows a single man
 #### 1.3.9.2. CloudTrail Exam PowerUp
 
 - It is enabled by default for 90 days without S3
-- Trails are how you configure S3 and CWLogs
+- Trails are how you configure S3 and CloudWatch Logs
 - Management events are only saved by default
 - IAM, STS, CloudFront are Global Service events and log to `us-east-1`
   - Trail must be enabled to do this
-- NOT REALTIME - There is a delay. Approximately 15 minute delay
+- NOT REALTIME - There is a delay ~ 15 min
 
 #### 1.3.9.3. CloudTrail Pricing
 
@@ -1034,13 +997,13 @@ This may be an error page to display maintenance if the server goes offline. We 
 
 ### 1.4.3. Object Versioning and MFA Delete
 
-Without Versioning:
+**Without Versioning:**
 
 - Each object is identified solely by the object key, it's name.
 - If you modify an object, the original of that object is replaced.
 - The attribute, **ID of object**, is set to **null**.
 
-Versioning
+**With Versioning:**
 
 - This is off by default.
 - Once it is turned on, it cannot be turned off.
@@ -1056,8 +1019,7 @@ To delete an object, you must delete all the versions of that object using their
 
 #### 1.4.3.1. MFA Delete
 
-Enabled within version configuration in a bucket.
-This means MFA is required to change bucket versioning state.
+Enabled within version configuration in a bucket. This means MFA is required to change bucket versioning state.
 MFA is required to delete versions of an object.
 
 In order to change a version state or delete a particular version of an object, you need to provide the serial number of your MFA token as well as the code it generates. These are concatenated and passed with any API calls.
@@ -1136,14 +1098,6 @@ Encryption by itself does not prove who encrypted the data.
 2. Their public key is hosted in an accessible location.
 3. The receiving party can use the public key to confirm who sent the message.
 
-#### 1.4.5.7. Steganography
-
-Encryption is obvious when used. There is no denying that the data was encrypted. Someone could force you to decrypt the data packet.
-
-A file can be hidden in an image or other file. If it difficult to find the message unless you know what to look for.
-
-One party would take another party's public key and encrypt some data to create ciphertext. That ciphertext can be hidden in another file so long as both parties know how the data will be hidden.
-
 ### 1.4.6. Key Management Service (KMS)
 
 - Regional service
@@ -1205,7 +1159,7 @@ When the DEK is generated, KMS provides two version.
 - Customer Master Keys (CMK) are isolated to a region.
   - Never leave the region or KMS.
   - Cannot extract a CMK.
-- AWS managed CMKs
+- AWS managed MKs
   - Created automatically by AWS when using a service such as S3 which uses KMS for encryption.
 - Customer managed CMKS
   - Created explicitly by the customer.
@@ -1348,7 +1302,7 @@ Objects in S3 are stored in a specific region.
 - Default AWS storage class that's used in S3, should be user default as well.
 - S3 Standard is region resilient, and can tolerate the failure of an AZ.
 - Objects are replicated to at least 3+ AZs when they are uploaded.
-- 99.999999999% durability
+- 99.999999999% durability (11x 9's)
 - 99.99% availability
 - Offers low latency and high throughput.
 - No minimums, delays, or penalties.
@@ -1386,7 +1340,7 @@ Great choice for secondary copies of primary data or backup copies. If data is e
   - Retrieval time anywhere from 1 min - 12 hrs
 - Secure, durable, and low cost storage for archival data.
 - 17% of the base cost of S3 standard
-- 99.999999999% durability
+- 99.999999999% durability (11x 9's)
 - 99.99% availability
 - 3+ AZ replication
 - 40KB minimum object capacity charge
@@ -1417,7 +1371,7 @@ Retrieval methods:
   - 90 days move to Archive (Glacier)
   - 180 days move to Deep Archive (Glacier Deep Archive)
 
-This is good for objects that are unknown their access pattern.
+This is good for objects which have unknown access pattern.
 
 ### 1.4.10. Object Lifecycle Management
 
@@ -1494,11 +1448,11 @@ When different accounts are used, the role is not by default trusted by the dest
 
 #### 1.4.11.3. Why use replication
 
-SRR - Log Aggregation
-SRR - Sync production and test accounts
-SRR - Resilience with strict sovereignty requirements
-CRR - Global resilience improvements
-CRR - Latency reduction
+- SRR - Log Aggregation
+- SRR - Sync production and test accounts
+- SRR - Resilience with strict sovereignty requirements
+- CRR - Global resilience improvements
+- CRR - Latency reduction
 
 ### 1.4.12. S3 Presigned URL
 
@@ -1919,8 +1873,8 @@ Allows a network or any card to present itself as many mini cards. As far as the
 **Test notes:** 
 
 * Amazon EC2 provides enhanced networking capabilities through the Elastic Network Adapter (ENA). It supports network speeds of up to 100 Gbps for supported instance types. Elastic Network Adapters (ENAs) provide traditional IP networking features that are required to support VPC networking.
-
-* An Elastic Fabric Adapter (EFA) is simply an Elastic Network Adapter (ENA) with added capabilities. It provides all of the functionality of an ENA, with additional OS-bypass functionality. OS-bypass is an access model that allows HPC and machine learning applications to communicate directly with the network interface hardware to provide low-latency, reliable transport functionality. Not supported on Windows instances.
+* An Elastic Fabric Adapter (EFA) is simply an Elastic Network Adapter (ENA) with added capabilities. It provides all of the functionality of an ENA, with additional OS-bypass functionality. OS-bypass is an access model that allows HPC and machine learning applications to communicate directly with the network interface hardware to provide low-latency, reliable transport functionality. 
+  * Not supported on Windows instances.
 
 ### 1.6.2. EC2 Architecture and Resilience
 
@@ -2195,7 +2149,7 @@ If the read/write can be handled by EBS, that should be default.
 - Rigid lifecycle link between storage and the instance.
   - This ensures the data is erased when the instance goes down.
 
-**Exam notes:** 
+**Exam keywords:**
 
 - Cheap => st1 or sc1
 - Throughput/streaming => st1
@@ -2418,7 +2372,7 @@ Images of EC2 instances that can launch more EC2 instance.
 - Cheapest option with no tolerance for disruption.
 - If you provision an instance larger than what is reserved, you still get a discount on the larger instance than on-demand.
 - Reserve Instances can be listed for sale in the [Reserved Instance Marketplace](https://aws.amazon.com/ec2/purchasing-options/reserved-instances/marketplace/).
-- [Convertible Reserved Instance](https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-reservation-models/standard-vs.-convertible-offering-classes.html)s:
+- [Convertible Reserved Instances](https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-reservation-models/standard-vs.-convertible-offering-classes.html):
   - Not as discounted as Standard Reserved
   - Enables you to *exchange* one or more Convertible Reserved Instances for another Convertible Reserved Instance with a different configuration, including instance family, operating system, and tenancy.
   - Can't be sold on the Reserved Instance Marketplace.
@@ -2516,40 +2470,7 @@ Can use [this Bash script](http://s3.amazonaws.com/ec2metadata/ec2-metadata) to 
 
 ## 1.7. Containers-and-ECS
 
-### 1.7.1. Intro to Containers
-
-Virtualization Problems
-
-Using an EC2 virtual machine with Nitro Hypervisor, 4 GB ram, and 40 GB disk, the OS can consume 60-70% of the disk and much of the available memory. Containers leverage the similarities of multiple guest OS by removing duplicate resources. This allows applications to run in their own isolated environments.
-
-#### 1.7.1.1. Image Anatomy
-
-![Anatomy of a docker image](Learning-Aids/09-Containers-and-ECS/ImageAnatomy.png)
-
-##### 1.7.1.1.1. What are images used for
-
-1. A docker image is actually how we create a docker container. In fact a docker container is just a running copy of a docker image with one crucial difference: a docker container has an additional *read/write* file system layer. File system layers --  the layers that make up the docker image -- by default are _read_ only; they never change after they are created. And so, the special read/write layer is added which allows containers to run. If you have lots of containers with very similar base structures, they will share the parts that overlap. The other layers are reused between containers.
-
-2. The reuse architecture that is offered by the way containers do their disk images scales really well. Disk space when you have lots of containers is minimized because of this layered architecture. The base layer -- the OS -- they are generally made available by the OS vendors through something called a _container registry_ and a popular one is _docker hub_.
-
-#### 1.7.1.2. Container Registry
-
-A container registry or hub is a hub of container images. As a developer or solution architect, you use a dockerfile to create a container image. Then you upload that image to a private/public repository such as the docker hub. In the case of a public hub, other people will likely do the same including vendors of the base OS such as the CentOS example shown above. From there, these container images can then be deployed to docker hosts, which are just services running a container engine (e.g. docker).
-
-A docker host can run many containers based on or more images. A single image can be to generate containers on many docker hosts. Dockerfile can create a container image where it gets stored in the container registry.
-
-#### 1.7.1.3. Container Key Concepts
-
-- Docker files are used to build Docker images
-- Containers are portable and always run as expected.
-  - Anywhere there is a compatible host, it will run exactly as you intended.
-- Containers are lightweight, use the host OS for the heavy lifting.
-  - File system layers are shared when possible.
-- Containers only run the application and environment it needs to run.
-- Ports need to be **exposed** to allow outside access from the host and beyond.
-- Application stacks can be multi container
-
-### 1.7.2. Elastic Container Service (ECS) Concepts
+### 1.7.1. Elastic Container Service (ECS) Concepts
 
 - Accepts containers and instructions you provide. It orchestrates where and how to run the containers. It is a managed container-based compute service.
 
@@ -2572,7 +2493,7 @@ See the [AWS documentation on container definition](https://docs.aws.amazon.com/
 
 * ECS **Service** is configured via Service Definition and represents how many copies of a task you want to run for scaling and HA.
 
-### 1.7.3. ECS Cluster Types
+### 1.7.2. ECS Cluster Types
 
 ECS Cluster manages:
 
@@ -2580,7 +2501,7 @@ ECS Cluster manages:
 - Cluster manager
 - Placement engine
 
-#### 1.7.3.1. EC2 mode
+#### 1.7.2.1. EC2 mode
 
 - ECS cluster is created within a VPC. It benefits from the multiple AZs that are within that VPC. You specify an initial size which will drive an **auto scaling group** (ASG).
 - ECS using EC2 mode is not a serverless solution, the EC2 hosts provisioned can be connected to.
@@ -2591,7 +2512,7 @@ Read [this](https://stackoverflow.com/questions/40575584/what-is-the-difference-
 
 ![](Pics/ECS-EC2.png)
 
-#### 1.7.3.2. Fargate mode
+#### 1.7.2.2. Fargate mode
 
 - Removes more of the management overhead from ECS, no need to manage EC2. **Fargate shared infrastructure** allows all customers to access from the same pool of resources. Fargate deployment still uses a cluster with a VPC where AZs are specified.
 - For ECS tasks, they are injected into the VPC. Each task is given an elastic network interface which has an IP address within the VPC. They then run like a VPC resource.
@@ -2601,7 +2522,7 @@ Read [this](https://stackoverflow.com/questions/40575584/what-is-the-difference-
 
 * **Test notes:** You can place an ALB and NLB in front of your AWS Fargate cluster.
 
-#### 1.7.3.3. EC2 vs ECS(EC2) vs ECS Fargate
+#### 1.7.2.3. EC2 vs ECS(EC2) vs ECS Fargate
 
 If you already are using containers, use **ECS**.
 
@@ -3097,9 +3018,8 @@ Most RDBs use ACID. Banks use them but rigid rules limit scalability.
 * Soft state - DBMS doesn't enforce consistency; offloads it to devs to handle.
 * Eventually consistency - If you wait long enough, reads will eventually be consistent.
 
-BASE DBMS are highly scalable.
-
-Eg. of BASE DBMS - AWS DynamoDB.
+* BASE DBMS are highly scalable.
+* Eg. of BASE DBMS - AWS DynamoDB.
 
 #### 1.10.2.3 Exam Powerups
 
@@ -3207,7 +3127,7 @@ Exam note: Synchronous replication mean multi-AZ.
 - Standby replica cannot be accessed directly unless a fail occurs.
    - Can't be used for scaling. It's an availability improvement not performance one.
 - Failover is highly available (60-120s), not fault tolerant.
-- Offers only high availability and minimizes disruptions associated with software updates, backups, and instance type changes not performance improvement or scalability. (Don't for exam questions that try to trick you into choosing options that say Multi-AZ can improve performance.)
+- Offers only high availability and minimizes disruptions associated with software updates, backups, and instance type changes not performance improvement or scalability. (Beware of questions that try to trick you into choosing options that say Multi-AZ can improve performance.)
 - Same region only (other AZs in the same VPC).
 - Backups are taken from standby instance removes performance impacts.
 - Failover can happen for a number of reasons.
@@ -3499,7 +3419,7 @@ If a writer goes down in a multi-master cluster, the application will shift all 
 
 * **CDC only** migration is good if you have a vendor solution that migrates initial full data migration while DMS handles subsequent changes.
 
-#### 1.10.14.2 Schema Conversion Tool (SCT) [additional for SOA-C02]
+#### 1.10.14.2 Schema Conversion Tool (SCT) [SOA-C02]
 
 * Schema Conversion Tool or SCT can perform conversions between database types.
 * Including DB data to S3.
@@ -3556,6 +3476,7 @@ EFS moves the instances closer to being stateless.
   - **General purpose** is good for _latency sensitive_ use cases.
     - General purpose should be default for 99.9% of uses.
   - **Max I/O performance** mode can scale to higher levels of aggregate throughput and IOPS but has increased latencies.
+  - **Test notes:** Note this can't be changed after creation; create a new EFS with this and migrate the data there
 - Two throughput modes:
   - **Bursting** works like GP2 volumes inside EBS with a burst pool. The more data you store in the FS, the better performance you get.
   - **Provisioned** throughput mode allow you to specify throughput requirements separately from size.
@@ -3697,6 +3618,7 @@ Scaling policies are rules that you can use to define autoscaling of instances. 
 1. Manual Scaling - manually adjust the desired capacity
 2. Scheduled Scaling - useful for known periods of high or low usage. They are time based adjustments e.g.  Sales Periods.  Use [scheduled actions](https://docs.aws.amazon.com/autoscaling/ec2/userguide/schedule_time.html) to configure this.
 3. Dynamic Scaling:
+
 	- Simple: If CPU is above 50%, add one to capacity. Potentially wasteful because a 20% jump and 1% above alarm level would both add 1 CPU.
 	- Stepped: If CPU usage is above 50%, add one, if above 80% add three.
 	- Target: Desired aggregate CPU = 40%, ASG will achieve this
@@ -4155,6 +4077,7 @@ Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://a
 - Scalable streaming service designed to inject data from lots of devices or lots of applications.
 - Multiple producers send data into a Kinesis Stream. Streams are the basic unit of Kinesis. 
 - The stream can scale from low to near infinite data rates.
+- Can process data in **realtime**.
 - Highly available public service by design.
 - Streams store a 24-hour moving window of data.
   - Can be increased to 7 days.
@@ -4168,9 +4091,7 @@ Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://a
 
 **Kinesis data records (1MB)** are stored across shards and are the blocks of data for a stream.
 
-**Kinesis Data Firehose** connects to a Kinesis stream. It can move the data from a stream onto S3 or another service. Kinesis Firehose allows for the long term persistence of storage of kinesis data into services like S3.
-
-**Test notes:** Kinesis can process data in **real-time**. Take note of question's requirements.
+**Kinesis Data Firehose** connects to a Kinesis stream. It can move the data from a stream onto S3 or another service. Kinesis Firehose allows for the long term persistence of storage of kinesis data into services like S3. Unlike Streams, it's near-realtime (~60s delay)
 
 ### 1.13.10. Differences between SQS queues and Kinesis streams
 
