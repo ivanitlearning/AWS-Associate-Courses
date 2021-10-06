@@ -712,4 +712,37 @@ Can also create from scratch like RDS
    2. Specify Aurora capacity units min, max
    3. And whether can pause if there's no load
 
-   
+
+## Database Migration Service from on-prem to RDS instance
+
+Create the AWS RDS instance (target of DMS)
+
+1. Create RDS subnet group
+2. Provision RDS instance with subnet group and SG (see above)
+
+Migrate the on-prem DB to RDS
+
+1. Create the DMS subnet group (DMS -> Subnet groups -> Create subnet groups)
+2. Select target VPC and subnets
+3. Create Replication instance
+   1. Select target VPC, replication subnet group
+   2. Select single or multi AZ
+   3. Create RI
+4. Create source endpoint
+   1. Endpoints -> Source endpoint
+   2. Select source engine (source DBMS engine)
+   3. Check 'Provide access information manually'
+   4. Server name: IP address of the source on-prem DB
+5. Create destination endpoint
+   1. Specify target endpoint
+   2. Select RDS instance -> Specify RDS instance created above
+   3. Select DBMS engine of RDS instance
+   4. Server name should automatically populate
+   5. Enter username and password 
+   6. Create endpoint
+6. DMS -> Database migration tasks -> Create database migration task
+   1. Specify Replication instance, source and destination endpoint
+   2. Select migration type (demo 'Migrate existing data')
+   3. Table mappings ->  Specify 'a4lwordpress' as DB to migrate
+   4. Create task (will start immediately if enabled)
+
