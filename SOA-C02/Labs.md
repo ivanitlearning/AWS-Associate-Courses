@@ -664,7 +664,7 @@ This creates a failover R53 record to a static S3 bucket website hosting
    4. Create record, now wait 5 min
 3. Check within instance in VPC you can resolve private DNS query
 
-# RDS
+# Databases
 
 Migrate MariaDB running on EC2 instance to RDS instance
 
@@ -699,6 +699,11 @@ Migrate MariaDB running on EC2 instance to RDS instance
    3. Create
 
 Can also create from scratch like RDS
+
+## Add read replicas for Aurora
+
+1. RDS -> Select Aurora cluster (not endpoints) -> Actions -> Add reader
+2. Create reader
 
 ## Migrate from Aurora to Aurora serverless
 
@@ -746,3 +751,148 @@ Migrate the on-prem DB to RDS
    3. Table mappings ->  Specify 'a4lwordpress' as DB to migrate
    4. Create task (will start immediately if enabled)
 
+# Launch Templates
+
+Create launch template
+
+1. EC2 -> Create launch template
+   1. Specify AMI to use, instance type, VPC, SG, IAM instance profile
+   2. Enter user-data for bootstrapping if required 
+   3. Create launch template
+   4. When created, test with 'Launch instance from template'
+   5. Network settings: Specify target subnet
+   6. Launch instance from template
+
+# Load Balancer
+
+Create an ALB for load balancing. 
+
+1. EC2 -> Create load balancer -> Application load balancer
+   1. Specify Internet-facing or Internal
+   2. Mappings: Specify AZs and public subnets to situate them in
+   3. Specify SG to allow TCP 80 in
+   4. Listeners and routing: HTTP 80. Click 'Create target group'
+      1. Target type: Instances, Protocol HTTP 80, Health checks: / path
+      2. Register targets
+      3. Create
+   5. Refresh and select target group for LB
+   6. Create LB
+2. Once created, note the DNS name of the ALB
+
+# Auto Scaling Group
+
+1. EC2 -> Auto scaling groups -> Create auto scaling group
+   1. Specify Launch template and version to use
+   2. Next
+   3. Select VPCs and subnets to launch instances in
+   4. Next
+   5. Select attach to existing load balancer
+   6. Specify desired, max and min capacity
+   7. Next, until Create ASG
+
+2. Click on created ASG -> Automatic scaling tab -> Create dynamic scaling policy
+
+3. Select scaling type
+4. Create CloudWatch alarm or use existing one
+   1. Select metric -> EC2 -> By auto scaling group -> ASG name (CPU Utilization)
+   2. Specify threshold greater than
+   3. Specify notification if necessary, Next all the way
+   4. Create alarm
+5. Select created alarm, Take the action: Add 1 capacity units
+6. Create it
+
+# VPC endpoints
+
+## Gateway endpoints
+
+Create gateway endpoint for S3 bucket
+
+1. VPC -> Endpoints -> Create endpoint
+2. Look for `com.amazonaws.us-east-1.s3` in list
+3. Select VPC and route tables which the instance is using
+4. Specify policy (if you need to limit endpoint access to certain buckets)
+5. Create endpoint
+6. Click route table specified above, verify there's an entry similar to **pl-63a5400a**, leading to VPC EP
+7. Enter the instance with Session Mgr, check you can list buckets with `aws s3 ls`
+
+## Interface endpoints
+
+Create interface endpoint for SNS
+
+1. VPC -> Endpoints -> Create endpoint
+2. Look for `com.amazonaws.us-east-1.sns` in list
+3. Select VPC and subnets (not RTs unlike gateway EPs), just 1 subnet per AZ
+4. Enable private DNS for endpoint, select SG, then create endpoint
+5. Wait till available
+
+# Egress-only IGW (IPv6)
+
+1. VPC -> Egress-only IGW -> Create
+2. Select VPC, then Create
+3. Edit route table instance is using for subnet
+4. Add `::/0` destination egress-only IGW
+5. Test that  `ping -6 ipv6.google.com` works within instance
+
+# Transit Gateway
+
+Create transit gateway (just one will do)
+
+1. VPC -> Transit gateway -> Create transit gateway
+2. Leave default options -> Create
+3. Wait till TGW is created
+
+Create transit gateway attachments in each VPC you want to join to TGW
+
+1. VPC -> Transit gateway attachment -> Create transit gateway attachment
+   1. Specify created TGW above
+   2. Attachment type: VPC
+   3. Select VPC, and subnet to host attachment in
+2. Create, repeat one for every VPC to be connected
+3. Wait till all attachments created
+4. Check in TGW Route tables that both attachments are associated, and both routes are propagated.
+
+Lastly edit the route tables for each of the subnets the instances in VPCs A and B
+
+1. Route table -> Add route for CIDR range of other VPC specify TGW attachment
+2. Do the same for other VPC's route table
+
+Now test you can ping the other VPC's instances
+
+# Single Sign-On
+
+Create a user Sally that has only billing access to AWS accounts in the org. Pre-req: Need to already have an organization created.
+
+1. SSO -> Enable AWS SSO
+2. Settings -> Ensure identity source is SSO
+   1. Customize User Portal URL to what you want the user to type
+   2. Configure MFA as required
+
+Create the permission set or roles the user will be allowed to assume
+
+1. AWS accounts -> Permission sets -> Create permission set
+   1. Select existing job function policy (or create custom as required)
+   2. Select **Billing** or as needed
+   3. Next until Create
+2. Once created, click each permission set to configure duration as needed
+
+Create the user which will assume the permission set
+
+1. SSO -> Users -> Add user
+   1. Populate the user profile -> Next Groups
+   2. Create group 'Billing'
+   3. Add Sally to group
+   4. Save sign-in instructions by copying
+2. Click created group and check that Sally is a member
+
+Assign the Billing group the permission sets for Billing
+
+1. AWS accounts -> Select all the OUs in Organization -> Assign Users -> Groups tab
+2. Select the Billing group -> Next Permission sets
+3. Select Billing permission set -> Finish
+4. When done, go to Dashboard and copy the User portal URL
+
+5. Test by logging in with sally credentials copied
+6. Test that you can view each AWS's account  -> Go to management console
+7. Dropdown -> My billing dashboard (check you can view without errors)
+
+Note that when adding user already signed in to groups with new permissions, need to logout and back in the see the changes.

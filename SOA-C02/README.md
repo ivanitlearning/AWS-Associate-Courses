@@ -99,6 +99,7 @@ Console access is similar
 * Preferred by AWS for traditional "workforce" identity federation (**default choice** unless otherwise)
 * Handles identity federation, all accounts in your organisation and also external applications.
 * Can import identities and groups from the ID provider and use them within SSO to manage permissions across AWS resources.
+* A **permission set** is a collection of administrator-defined policies that AWS SSO uses to determine a user’s effective permissions to access a given AWS account. Permission sets can contain either AWS managed policies or custom policies that are stored in AWS SSO. Policies are essentially documents that act as containers for one or more permission statements. These statements represent individual access controls (allow or deny) for various tasks that determine what tasks users can or cannot perform within the AWS account.
 
 ![](Pics/AWS-SSO.png)
 
@@ -184,7 +185,7 @@ Can use both of these, 1 or none.
 ### 2.4.2. Retention period
 
 * Specify duration in days, years.
-* Two modes: Compliance and 
+* Two modes: Compliance and Governance
 
 #### 2.4.2.1 Compliance mode
 
@@ -1465,6 +1466,7 @@ Setting automatic scaling
 * **Automation Document** 
   * Common maintenance and deployment tasks such as creating/updating AMI
   * State Manager - Uses document to apply configuration to instances
+  * **Test note:** Can create custom runbooks or use pre-defined runbooks maintained by AWS. Action types [supported for runbooks](https://docs.aws.amazon.com/systems-manager/latest/userguide/automation-documents.html) let you automate a wide variety of operations in your AWS environment. For example, using the `executeScript` action type, you can embed a python or PowerShell script directly in your runbook.
 * **Package Document** 
   * Distributor uses this to include compressed software to install on instances
 
