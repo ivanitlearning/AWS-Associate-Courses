@@ -349,9 +349,9 @@ Account A might allow something but account B also needs to allow it too or it g
 * Can also change shutdown behaviour to either stop/terminate when shutdown from inside OS.
   * Right-click -> Instance settings -> Change shutdown behaviour
 
-## 5. Monitoring, Logging & Auditing
+# 5. Monitoring, Logging & Auditing
 
-### 5.1 CloudWatch - Architecture Concepts
+## 5.1 CloudWatch - Architecture Concepts
 
 * Public service - public space endpoints
 * AWS service integration - management plane
@@ -362,15 +362,16 @@ Account A might allow something but account B also needs to allow it too or it g
 * Alarms - react to metrics, can be used to notify or perform actions
 * On-premises VMs and Internet apps, VPC applications
 
-### 5.2 CloudWatch - Data
+## 5.2 CloudWatch - Data
 
-* Namespace = container for metrics eg. AWS/EC2 & AWS/Lambda
-* Datapoint = Timestamp, Value, unit of measure
-* Metric .. time ordered set of data points
-* .. CPUUtilisation, Networking, DiskWriteBytes - EC2
-* Every metric has a MetricName (CPUUtilisation) and a Namespace (AWS/EC2)
-* Dimension .. 
-* Key/value
+* **Namespace** = container for metrics eg. AWS/EC2 & AWS/Lambda
+* **Datapoint** Fields: Timestamp, Value, unit of measure
+* **Metric**: Time series of data points
+  * Eg. For EC2: **CPUUtilisation**, **Networking**, **DiskWriteBytes**
+* Every metric has a Metric Name (eg. CPUUtilisation) and a Namespace (eg. AWS/EC2)
+* **Dimension**: Name/Value pair (Because metric itself not granular enough to differentiate between eg. EC2 sources)
+  * Eg. Name = InstanceId, Value = i-11111111 (cat)
+  * Eg. ASGName, InstanceId, InstanceType
 * **Resolution** - Minimum time period you can get one particular data point for. Eg. Standard (60s), High (1s)
   * 60s - Data retained for 15 days
   * 5 min - Data retained for 63 days
@@ -379,14 +380,14 @@ Account A might allow something but account B also needs to allow it too or it g
 * **Statistics** - Aggregation over a period (eg. Min, Max, Sum, Average...)
   * Percentile - Eg. 95th, 75th percentile
 
-### 5.3 CloudWatch Alarm
+## 5.3 CloudWatch Alarm
 
 * Alarm - watches a metric over a time period
 * In two states: Alarm or OK.
 * Set value of metric vs threshold over time
 * Can configure one or more actions once alarm triggered such as reboot EC2 instance
 
-### 5.4 CloudWatch Logs
+## 5.4 CloudWatch Logs
 
 * **Public service** - Store, monitor, access logging data
 * Install CW Agent for system or custom application logging
@@ -398,7 +399,7 @@ Account A might allow something but account B also needs to allow it too or it g
   * Route53 - Log DNS requests
 * **Exam note:** Default logging endpoint for AWS.
 
-#### 5.4.1. CloudWatch Logs - Subscription filters
+### 5.4.1. CloudWatch Logs - Subscription filters
 
 * Log stream is a sequence of log events that share the same source. Each separate source of logs in CloudWatch Logs makes up a separate log stream.
 * Log group is a group of log streams that share the same retention, monitoring, and access control settings
@@ -413,7 +414,7 @@ Account A might allow something but account B also needs to allow it too or it g
 
 ![](Pics/Cloudwatch-Logs-Aggregation.png)
 
-#### 5.4.2 CloudWatch Logs - Exam notes
+### 5.4.2 CloudWatch Logs - Exam notes
 
 * Default for any log management scenarios
   * On-premises and AWS
@@ -423,7 +424,7 @@ Account A might allow something but account B also needs to allow it too or it g
 * Realtime - Lambda (delivers to almost anything) or Kinesis Data stream (KCL consumers)
 * Metric filter - scan log data, generate CloudWatch metric which you can set alarms on
 
-### 5.5 AWS X-Ray
+## 5.5 AWS X-Ray
 
 * Takes data from many AWS services and gives you single overview of session flow - Distributed tracing
 * **Components:**
@@ -446,11 +447,11 @@ How it collects:
 
 * All of these require IAM permissions
 
-## 6. Infrastructure as Code (CloudFormation)
+# 6. Infrastructure as Code (CloudFormation)
 
-### 6.1 Template and Pseudo Parameters
+## 6.1 Template and Pseudo Parameters
 
-#### 6.1.1. Template parameters
+### 6.1.1. Template parameters
 
 * Template parameters accept input via console/CLI/API when a stack is created/updated
 * Can be referenced from within Logical Resources 
@@ -458,16 +459,16 @@ How it collects:
 
 ![](Pics/Template-Parameters.png)
 
-#### 6.1.2. Pseudo parameters
+### 6.1.2. Pseudo parameters
 
 * Pseudo parameters are similar to template parameters only are provided by AWS based on environment when creating the stack.
   * **AWS::Region** will always reflect the region the stack is being created in.
   * **AWS::StackName** and **AWS::StackId** will match the specific Stack being created
   * **AWS::AccountId** will be set by AWS to the actual account ID the stack is being created within.
 
-### 6.2. Intrinsic Functions
+## 6.2. Intrinsic Functions
 
-#### 6.2.1. **Ref** & Fn::**GetAtt**
+### 6.2.1. **Ref** & Fn::**GetAtt**
 
 Reference a resource you created, such as a VPC so that a subnet can be created inside.
 
@@ -476,14 +477,14 @@ Reference a resource you created, such as a VPC so that a subnet can be created 
 * !GetAtt LogicalResource.Attribute can be used to retrieve any attribute associated with the resource.
   * Eg. PublicIP 54.91.129.183, PublicDNSName ec2-54-91-129-183.compute-1.amazonaws.com
 
-#### 6.2.2. Fn::**GetAZs** & Fn::**Select**
+### 6.2.2. Fn::**GetAZs** & Fn::**Select**
 
 * GetAZs "us-east-1" or "" (current region) - Returns a list of AZs from a Region
   * ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
 * Assuming default VPC or its subnets are not modified
 * AvailabilityZone: !Select [ 0, !GetAZs, '' ] - Returns an object from a list of object. Lists start at index 0.
 
-#### 6.2.3. Fn::**Join** & Fn::**Split**
+### 6.2.3. Fn::**Join** & Fn::**Split**
 
 * !Split [ "|", "roffle|truffles|penny|winkie"] returns a list ["roffle","truffles","penny", "winkie"] 
 
@@ -491,7 +492,7 @@ Reference a resource you created, such as a VPC so that a subnet can be created 
 * !Join [delimiter, ["value1", "value2" ... "valueN"]]
   * Value: !Join [ '', [ 'http://', !GetAtt Instance.DNSName ] ] - Adds http:// to the DNS name of the EC2 instance
 
-#### 6.2.4. Fn::Base64 & Fn::Sub
+### 6.2.4. Fn::Base64 & Fn::Sub
 
 * Fn::**Base64** - Base64 used for providing user-data to EC2 instances for automated builds. 
 
@@ -507,7 +508,7 @@ Reference a resource you created, such as a VPC so that a subnet can be created 
   ```
 * ${Instance.InstanceId} can't do self-reference, only other instance IDs. Note the above is invalid.
 
-#### 6.2.5. Fn::Cidr
+### 6.2.5. Fn::Cidr
 
 * Used to generate a number of smaller CIDR ranges from a larger PC range
 
@@ -527,7 +528,7 @@ Subnet1:
 
 Conditions (Fn::**IF**, **And**, **Equals**, **Not** & **Or**) - Typical conditions, if X do Y else
 
-### 6.3. CloudFormation Mappings
+## 6.3. CloudFormation Mappings
 
 Structure: **!FindInMap [ MapName, TopLevelKey, SecondLevelKey ]** 
 
@@ -548,9 +549,9 @@ Mappings:
 
 * Looks for RegionMap in CFN template
 * Finds the current region in the console
-* Returns value in "HVM64"
+* Returns value for key "HVM64"
 
-### 6.4. CloudFormation Output
+## 6.4. CloudFormation Output
 
 * Optional, may not be present
 * Values declared in this section are visible using CLI or console UI
@@ -566,7 +567,7 @@ Outputs:
 
 * Description visible from CLI and console UI and passed back to parent stack when nested stacks are used
 
-### 6.5. CloudFormation Conditions
+## 6.5. CloudFormation Conditions
 
 * Created in optional Conditions section of template
 * Evaluated to TRUE or FALSE.
@@ -579,11 +580,11 @@ Here if EnvType is not "prod", then only "Wordpress" EC2 instance is created. If
 
 ![](Pics/CF-conditions.png)
 
-### 6.6. CloudFormation DependsOn
+## 6.6. CloudFormation DependsOn
 
 * CF tries to efficient, tries to do things in parallel (create, update and delete resources)
 * Determines a dependency order (VPC -> Subnet -> EC2)
-* DependsOn lets you explicitly define dependencies so CF will not build that resource until dependencies are met.
+* **DependsOn** lets you explicitly define dependencies so CF will not build that resource until dependencies are met.
 
 ```yaml
 InternetGatewayAttachment:
@@ -605,7 +606,7 @@ WPEIP:
   * CF tries to create EIP before attaching IGW
   * CF tries to delete attached IGW before EIP
 
-* Adding DependsOn fixes the issue
+* Adding **DependsOn** fixes the issue
 
 ```yaml
 WPEIP:
@@ -615,9 +616,9 @@ WPEIP:
     InstanceId: !Ref WordpressEC2
 ```
 
-### 6.7 CloudFormation WaitCondition, CreationPolicy & `cfn-signal`
+## 6.7 CloudFormation WaitCondition, CreationPolicy & `cfn-signal`
 
-#### 6.7.1. CloudFormation Signal
+### 6.7.1. CloudFormation Signal
 
 * Configure CloudFormation to hold, waits for 'X' number of success signals.
 * Waits for Timeout H:M:S for those signals (Max 12 hrs)
@@ -684,16 +685,16 @@ Assuming this is the JSON data passed back by an external system
 
 AWS recommends CreationPolicy for most cases due to simplicity. Might have need for WaitCondition if you need data from external systems.
 
-### 6.8 CloudFormation Nested Stacks
+## 6.8 CloudFormation Nested Stacks
 
-#### 6.8.1. Why nested stacks?
+### 6.8.1. Why nested stacks?
 
 * Stacks have a limit of 500 resources
 * Can't easily reuse resources
 * Not easy to reference resources (eg. VPC) in other stacks which want to use it
 * `!Ref` only works to reference resource in same stack; stacks are isolated can be deleted all at once.
 
-#### 6.8.2. Definitions ([ref](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-nested-stacks.html))
+### 6.8.2. Definitions ([ref](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-nested-stacks.html))
 
 * **Root stack** - Top level stack to which all nested stacks belong
 * **Parent stack** - Stack which create the current stack
@@ -718,22 +719,22 @@ VPCSTACK:
 * Next stack created by root stack is APPSTACK which depends on ADSTACK.
 * After all 3 are created, then the root stack is marked as create complete.
 
-#### 6.8.3 **When to use:**
+### 6.8.3 **When to use:**
 
 * Overcome 500 resource limit of single stack
 * Allows you to reuse templates but not resources.
 * Simplifies installation process
 * Nested stack generally used when all infrastructure that you create form part of same solution; life-cycle linked.
 
-### 6.9. Cross-stack References
+## 6.9. Cross-stack References
 
-#### 6.9.1. Why cross-stack references?
+### 6.9.1. Why cross-stack references?
 
 * Stacks by designed are isolated and self-contained.
 * Outputs are normally not visible from other stacks
 * Can't use nested stacks because you might want some resources eg. VPCs to outlive others eg. applications
 
-#### 6.9.2. How it works:
+### 6.9.2. How it works:
 
 * Cross-stack references allow you to reuse actual resources. 
 * Stack outputs can be exported making them visible to other stacks
@@ -741,7 +742,7 @@ VPCSTACK:
 * Exports must have a **unique name** in the region.
 * Use `Fn::ImportValue` instead of `!Ref`.
 
-#### 6.9.3. Example
+### 6.9.3. Example
 
 ```yaml
 Outputs:
@@ -761,7 +762,7 @@ This gets exported as
 * Can be imported in same region, same account only. Not cross-region or cross-account.
 * Import value in another stack with `!ImportValue SharedVPCID`
 
-### 6.10. CloudFormation StackSets
+## 6.10. CloudFormation StackSets
 
 * Allows you to deploy CF stacks across **many accounts** and **regions**
 * StackSets are containers in an admin account containing stack instances which themselves are references for individual stacks in a region in an account.
@@ -770,21 +771,21 @@ This gets exported as
 
 ![](Pics/CFN-StackSets.png)
 
-#### 6.10.1. Terms
+### 6.10.1. Terms
 
 * **Concurrent accounts**: How many accounts StackSets can deploy resources into at any one time eg. Of 10 target accounts, we can have 5 sets of 2 each cycle. More concurrent accounts -> Faster deployments.
 * **Failure tolerance:** Amount of individual deployments which can fail before StackSet is counted as failed.
 * **Retain Stacks:**  Set this so you can remove stack instances from target accounts and regions without also removing stacks there.
 
-#### 6.10.2. Scenarios for use
+### 6.10.2. Scenarios for use
 
 * Enable AWS Config across multiple accounts
   * Enable MFA authentication, Elastic IPs, EBS encryption
 * Create IAM roles for cross-account access
 
-### 6.11. CloudFormation Deletion Policy
+## 6.11. CloudFormation Deletion Policy
 
-#### 6.11.1. What its for
+### 6.11.1. What its for
 
 * Deleting a logical resource from a template or a stack also removes the physical resources causing data loss.
 * Deletion policy allows you to define on each resource 
@@ -793,20 +794,20 @@ This gets exported as
   * **Snapshot** (if supported, eg. EBS volumes, ElastiCache, Neptune, RDS, Redshift). Snapshot of resource is taken just before deletion.
 * Only applies to deletion, not replacement of logical resources
 
-### 6.10. CloudFormation Stack Roles
+## 6.10. CloudFormation Stack Roles
 
 * Be default uses CFN uses permissions of the **logged in** identity to create resources.
 * CFN can assume a role to gain permissions
 * Identity creating the stack doesn't need resource permissions only `PassRole`
 * Account role can only be used by CFN to create, update and delete stacks and nothing else.
 
-#### 6.10.1. Exam notes
+### 6.10.1. Exam notes
 
 * Used to give accounts permissions for CFN only and nothing outside it.
 
-### 6.11. CloudFormation Init (cfn-init)
+## 6.11. CloudFormation Init (cfn-init)
 
-#### 6.11.1. Features
+### 6.11.1. Features
 
 * Not **how** (user-data) but desired state what to accomplish (cfn-init)
 * Idempotent; running `cfn-init` when changes already made, then nothing happens
@@ -815,7 +816,7 @@ This gets exported as
 
 ![](Pics/cfn-init.png)
 
-#### 6.11.2 Example of cfn-init from demo
+### 6.11.2 Example of cfn-init from demo
 
 Instead of 
 
@@ -867,14 +868,14 @@ We have
 
 The CFN template has to be written in a way not to write shell commands but use the EC2 internal APIs to target the final state.
 
-### 6.12. CloudFormation cfn-hup
+## 6.12. CloudFormation cfn-hup
 
 * `cfn-init` is run once as part of bootstrapping (user-data)
 * If CloudFormation::Init is updated it **isn't rerun**
 * `cfn-hup` helper is a daemon that can be installed
 * Detects changes in resource metadata, runs configurable actions when change is detected.
 
-#### 6.12.1. Steps
+### 6.12.1. Steps
 
 1. CFN template is updated
 2. `UpdateStack` is called.
@@ -882,7 +883,7 @@ The CFN template has to be written in a way not to write shell commands but use 
 4. When it detects updates, calls `cfn-init`
 5. `cfn-init` applies new configuration
 
-#### 6.12.2. Notes from demo
+### 6.12.2. Notes from demo
 
 ```yaml
           files:
@@ -915,7 +916,7 @@ The CFN template has to be written in a way not to write shell commands but use 
 * **cfn-auto-reloader.conf** determines when and where the update occurs. Here it triggers when update is done, path tells you what is being monitored and action tells you what is done when it detects changes.
 * The part below tells it to update **${Message}** with the updated parameter
 
-### 6.13. CloudFormation demo
+## 6.13. CloudFormation demo
 
 Notes:
 
@@ -926,19 +927,19 @@ Notes:
 * **/var/log/cfn-init-cmd.log** and **/var/log/cfn-init.log** for diagnosing problems with `cfn-init`
 * **/var/log/cfn-hup.log** - For troubleshooting problems with cfn-hup
 
-### 6.14 CloudFormation Change sets
+## 6.14 CloudFormation Change sets
 
 * Allows you to preview the changes between two CFN templates when configured without applying changes.
 * Can integrate as part of an AWS Organisation change management process.
 
-### 6.15. CloudFormation Custom Resources
+## 6.15. CloudFormation Custom Resources
 
 * Allows CFN to integrate with anything it doesn't yet or doesn't natively support
 * Used, for example to integrate with a Lambda function to delete S3 bucket's contents before deleting S3 bucket itself.
 
-## 7. Route53 and CloudFront
+# 7. Route53 and CloudFront
 
-### 7.1. CloudFront architecture
+## 7.1. CloudFront architecture
 
 * Cache behaviour sits in between origin and edge locations
 * Distribution are configured via behaviours not the distributions themselves.
