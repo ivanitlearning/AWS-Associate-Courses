@@ -1858,11 +1858,11 @@ Setting automatic scaling
 
 # Topics not in Cantrill's course
 
-## 1. AWS Backup
+# 1. AWS Backup
 
 Found in TD's exam labs. Notes based [on this](https://aws.amazon.com/backup/faqs/)
 
-### 1.1. Introduction
+## 1.1. Introduction
 
 * Centralised backup service for AWS services
   * Centralised console
@@ -1873,7 +1873,7 @@ Found in TD's exam labs. Notes based [on this](https://aws.amazon.com/backup/faq
   * Some like EFS, have encryption functionality built on AWS Backup independent of source service
   * Others like EBS uses the same encryption method as the source service eg. EBS.
 
-### 1.2. Concepts
+## 1.2. Concepts
 
 * Backup plan - Define when and how to backup AWS resources. Comprise of backup rules
 
@@ -1881,4 +1881,12 @@ Found in TD's exam labs. Notes based [on this](https://aws.amazon.com/backup/faq
   * Lifecycle rule - Specify when transition from one storage tier to another and when to expire
   * Backup vault - Where to place created recovery points in, for organization
 
-  
+
+# 2. Service and Personal Health Dashboard
+
+Encountered in TD exams
+
+* [Service Health dashboard](https://status.aws.amazon.com/) displays the health of AWS services by Region.
+* Personal Health Dashboard offers an account-specific view of AWS services health status
+  * Can be integrated with CloudWatch Events which in turn can trigger Lambda events for remediation.
+
