@@ -156,10 +156,10 @@ Console access is similar
 
 * Generates storage inventory report of objects and various fields
 * Fields include Encryption, Size, Last Modified, Storage Class, Version ID, Replication Status, Object lock etc.
-* Can't use to generate reports on-demand; can only be scheduled either daily or weekly only.
+* Can't generate reports on-demand; can only be scheduled either daily or weekly only.
   * Takes up to 48 hrs to generate first report.
 * Available formats: CSV, ORC, Parquet
-* Multiple inventories can be setup, and they go to a target bucket
+* Multiple inventories can be setup, and they go to a target bucket - Needs bucket policy for permissions.
 
 ### 2.3.1. Notes from demo
 
@@ -171,7 +171,7 @@ Console access is similar
 
 ### 2.4.1. Features
 
-* Can be enabled only for new buckets (existing ones need support ticket)
+* Can be enabled only for new buckets (enabling on existing ones need support ticket)
 * Versioning automatically enabled. This is irreversible.
 * Store objects using a *write-once-read-many* (WORM) model. Object Lock can help prevent objects from being deleted or overwritten for a fixed amount of time or indefinitely. You can use Object Lock to help meet regulatory requirements that require WORM storage, or to simply add another layer of protection against object changes and deletion.
 
@@ -184,7 +184,7 @@ Can use both of these, 1 or none.
 
 ### 2.4.2. Retention period
 
-* Specify duration in days, years.
+* Specify duration in days & years.
 * Two modes: Compliance and Governance
 
 #### 2.4.2.1 Compliance mode
@@ -204,8 +204,7 @@ Can use both of these, 1 or none.
 * No retention period; active until removed.
 * Can't delete or modify object
 * To add/remove legal hold, need `s3:PutObjectLegalHold` permission.
-* Use cases:
-  * Prevent accidental deletion of critical object versions.
+* Use cases: Prevent accidental deletion of critical object versions.
 
 # 3. Security
 
@@ -386,6 +385,7 @@ Account A might allow something but account B also needs to allow it too or it g
 * In two states: Alarm or OK.
 * Set value of metric vs threshold over time
 * Can configure one or more actions once alarm triggered such as reboot EC2 instance
+* **Test note:** Can create a CW Alarm which monitors the EC2 instance metric `StatusCheckFailed_System`[[ref](https://systemcenter.wiki/?GetElement=Amazon.AmazonWebServices.Rule.AmazonEC2InstanceMetric.StatusCheckFailed_System&Type=Rule&ManagementPack=Amazon.AmazonWebServices&Version=2.5.0.0)] and [automatically recovers once impaired](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/UsingAlarmActions.html#AddingRecoverActions) (due to HW failure or one which requires AWS to repair). Excluding terminated instances which can't be recovered, a recovered instance is identical to the original instance, including the instance ID, private IP addresses, Elastic IP addresses, and all instance metadata.
 
 ## 5.4 CloudWatch Logs
 
@@ -472,9 +472,9 @@ How it collects:
 
 Reference a resource you created, such as a VPC so that a subnet can be created inside.
 
-* !Ref Instance points to the ID of the instance created. When used with logical resources, the physical ID is usually returned.
+* `!Ref` Instance points to the ID of the instance created. When used with logical resources, the physical ID is usually returned.
   * Eg. i-12345679acfgsd0
-* !GetAtt LogicalResource.Attribute can be used to retrieve any attribute associated with the resource.
+* `!GetAtt LogicalResource.Attribute` can be used to retrieve any attribute associated with the resource.
   * Eg. PublicIP 54.91.129.183, PublicDNSName ec2-54-91-129-183.compute-1.amazonaws.com
 
 ### 6.2.2. Fn::**GetAZs** & Fn::**Select**
@@ -482,15 +482,15 @@ Reference a resource you created, such as a VPC so that a subnet can be created 
 * GetAZs "us-east-1" or "" (current region) - Returns a list of AZs from a Region
   * ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
 * Assuming default VPC or its subnets are not modified
-* AvailabilityZone: !Select [ 0, !GetAZs, '' ] - Returns an object from a list of object. Lists start at index 0.
+* `AvailabilityZone: !Select [ 0, !GetAZs, '' ]` - Returns an object from a list of object. Lists start at index 0.
 
 ### 6.2.3. Fn::**Join** & Fn::**Split**
 
-* !Split [ "|", "roffle|truffles|penny|winkie"] returns a list ["roffle","truffles","penny", "winkie"] 
+* `!Split [ "|", "roffle|truffles|penny|winkie"]` returns a list ["roffle","truffles","penny", "winkie"] 
 
 * Join can be used to concatenate a Web path to the DNS name of a public EC2 instance for people to use.
 * !Join [delimiter, ["value1", "value2" ... "valueN"]]
-  * Value: !Join [ '', [ 'http://', !GetAtt Instance.DNSName ] ] - Adds http:// to the DNS name of the EC2 instance
+  * `Value: !Join [ '', [ 'http://', !GetAtt Instance.DNSName ] ]` - Adds http:// to the DNS name of the EC2 instance
 
 ### 6.2.4. Fn::Base64 & Fn::Sub
 
@@ -506,7 +506,7 @@ Reference a resource you created, such as a VPC so that a subnet can be created 
     yum -y update
     echo "something ${Instance.InstanceId}" >> /var/www/html/index.html
   ```
-* ${Instance.InstanceId} can't do self-reference, only other instance IDs. Note the above is invalid.
+* `${Instance.InstanceId}` can't do self-reference, only other instance IDs. Note the above is invalid.
 
 ### 6.2.5. Fn::Cidr
 
@@ -530,7 +530,7 @@ Conditions (Fn::**IF**, **And**, **Equals**, **Not** & **Or**) - Typical conditi
 
 ## 6.3. CloudFormation Mappings
 
-Structure: **!FindInMap [ MapName, TopLevelKey, SecondLevelKey ]** 
+Structure: `!FindInMap [ MapName, TopLevelKey, SecondLevelKey ]`
 
 Given this
 
@@ -545,7 +545,7 @@ Mappings:
       HVMG2: "ami-066ee5fd4a9ef77f1"
 ```
 
-**!FindInMap [ "RegionMap", !Ref 'AWS::Region',"HVM64"]** 
+`!FindInMap [ "RegionMap", !Ref 'AWS::Region',"HVM64"] `
 
 * Looks for RegionMap in CFN template
 * Finds the current region in the console
@@ -921,7 +921,7 @@ The CFN template has to be written in a way not to write shell commands but use 
 Notes:
 
 * Any changes made to stack and updated will cause resources to be stopped and re-created again - with disruption.
-
+* User-data runs just once, even updating the stack and resources get stopped doesn't cause it to re-run
 * When you use `cfn-init` the log files of commands run are stored in **/var/log/cfn-init-cmd.log** instead of **/var/log/cloud-init-output.log**
 * **/var/log/cloud-init-output.log** - Good for diagnosing problems bootstrapping with user-data
 * **/var/log/cfn-init-cmd.log** and **/var/log/cfn-init.log** for diagnosing problems with `cfn-init`
@@ -946,16 +946,16 @@ Notes:
 
 ![](Pics/CloudFrontArchitecture2.png)
 
-### 7.2 CloudFront Behaviour
+## 7.2 CloudFront Behaviour
 
-#### 7.2.1 General tab
+### 7.2.1 General tab
 
 * Can select lower priced class to deploy content to only specific edge locations but cause poor performance to visitors outside these edge locations.
 * Able to associate L7 WAF ACL to CloudFront edge distribution.
 * Can configure SSL SNI for edge distribution.
 * Select different TLS versions (note newer TLS versions may not be supported on older browsers)
 
-#### 7.2.2. Behaviour tab
+### 7.2.2. Behaviour tab
 
 * A distribution can have multiple behaviours
 
@@ -967,7 +967,7 @@ Notes:
 * Trusted Signers - Select accounts that can generate signed URLs/cookies
 * Associate Lambda function
 
-### 7.3 TTL and Invalidations
+## 7.3 TTL and Invalidations
 
 * When object at edge location expires (exceeds TTL), it fetches again from origin.
   * If object is current, origin returns **304 Not Modified** to edge location
@@ -975,7 +975,7 @@ Notes:
 * Default TTL = 24 hrs
 * Can set Minimum and Maximum TTLs - Values are used if the objects' TTLs are set below/above these figures.
 
-#### 7.3.2 Origin headers
+### 7.3.2 Origin headers
 
 * Used to control how long objects stay in the edge cache
   * `Cache-Control max-age` 
@@ -984,7 +984,7 @@ Notes:
 
 * Can be set with Custom Origin or S3 (via object metadata)
 
-#### 7.3.3. Cache invalidation
+### 7.3.3. Cache invalidation
 
 * Performed on a distribution
 * Applies to all edge locations but takes time to take effect
@@ -997,7 +997,7 @@ Notes:
   * Logging more effective since you know the exact object used.
   * Exam note: If versioning is mentioned and cost efficacy is desired then versioned file names is likely the answer.
 
-### 7.3. CloudFront and SSL
+## 7.3. CloudFront and SSL
 
 * CloudFront default domain name (CNAME)
   * https://d313132.cloudfront.net with 
@@ -1011,7 +1011,7 @@ Notes:
 * Historically, SSL-enabled site needed its own IP address.
 * CF supports SNI, but for older browsers that don't CF charges extra for dedicated IP address.
 
-#### 7.3.1. CloudFront SNI architecture
+### 7.3.1. CloudFront SNI architecture
 
 * Certificate hosted by the CF distribution needs to be issued by a trusted CA eg. DigiCert, Comodo or ACM.
   * If you use ACM the cert needs to be created in **us-east-1**.
@@ -1025,35 +1025,36 @@ Notes:
 
 ![](Pics/CloudFrontSSLSNI.png)
 
-### 7.4 Origin Types and Architecture
+## 7.4 Origin Types and Architecture
 
 * Origin groups - Used to group origins together, can be configured as CF targets for resilience.
 * S3 static website hosting - CF treats it as a website when configured as origin.
 
-#### 7.4.2. S3 origin options
+### 7.4.2. S3 origin options
 
 * Can configure origin access identity to prevent accessing origin directly
 * Origin path - Configure such that CloudFront accesses a bucket path instead of the default top level bucket paths
 * Protocols are matched on both sides (client to distribution matches distribution to origin) HTTP to HTTP
 
-#### 7.4.2. Custom origin options
+### 7.4.2. Custom origin options
 
 * Custom origin options
   * Can set minimum origin SSL protocol TLS version 
 * Origin protocol policy - HTTP only, HTTPS only or match viewer
 * Custom headers - Respond to HTTP requests only if custom headers provided (which CF can provide)
+  * Can be used to get CF to serve different content due to different User-Agent eg. mobile browser.
 * Custom HTTP/HTTPS ports
 
-### 7.5. CloudFront Security OAI
+## 7.5. CloudFront Security OAI
 
-#### 7.5.1 Securing S3 origins with OAI
+### 7.5.1 Securing S3 origins with OAI
 
 * OAI is a type of identity that can be associated with CF distributions.
 * OAI can be used in S3 bucket policies
 * Deny all (implicit) but the specific OAI's from accessing origins with a bucket policy.
 * Best practice to create 1x OAI per CF distribution
 
-#### 7.5.2. Securing custom origins
+### 7.5.2. Securing custom origins
 
 1. **Custom headers** Origin requires custom headers if not request will not be served; injected at edge locations, not client browsers
 
@@ -1061,7 +1062,7 @@ Notes:
 
 * Can use either one or both to secure.
 
-### 7.6 CloudFront Private Distribution
+## 7.6 CloudFront Private Distribution
 
 * Allow only signed cookies or signed URLs to access.
 * Multiple behaviours - Each either public or private.
@@ -1071,7 +1072,7 @@ Notes:
   * Once trusted signer is added to CF distribution, behaviour becomes private -> Require signed cookies/URLs
 * Need to generate signed cookies/URL. Either application in EC2, container or Lambda or anything with code.
 
-#### 7.6.1. Signed cookies vs URLs
+### 7.6.1. Signed cookies vs URLs
 
 Prefer signed URLs if:
 
@@ -1083,16 +1084,16 @@ Prefer signed cookies if
 * URL provide access to just 1 object; cookies provide access to groups of objects or all of one type.
 * Need to maintain URLs
 
-#### 7.6.2. Example
+### 7.6.2. Example
 
 * After signing in, the Lambda signer generates signed cookies, sets it on the mobile client
 * The mobile client now sends those cookies to edge distribution, which allows it to load private images in S3 bucket.
 
 ![CloudFrontSecuringContent4](Pics/CloudFrontSecuringContent4.png)
 
-### 7.7. CloudFront Geo-Restriction
+## 7.7. CloudFront Geo-Restriction
 
-#### 7.7.1 Principles
+### 7.7.1 Principles
 
 * Two choices Geo Restriction or 3rd party geolocation
 
@@ -1106,7 +1107,7 @@ Prefer signed cookies if
 * Completely customisable, can filter based on many other attributes eg. username, purchases, attributes
 * Needs private CF distribution to work 
 
-#### 7.7.2 Geo-Restriction workflow
+### 7.7.2 Geo-Restriction workflow
 
 1. Clients interact with app
 2. App requests object via Internet, directed to closest edge location
@@ -1114,7 +1115,7 @@ Prefer signed cookies if
 4. If yes, the edge checks with GeoIP database if the IP location is whitelist/blacklisted
 5. Returns 403 Forbidden or object depending on blacklist/whitelist
 
-#### 7.7.3 3rd-party geolocation
+### 7.7.3 3rd-party geolocation
 
 1. Clients interact with app
 2. App requests object via Internet, directed to app server or compute source
@@ -1125,7 +1126,7 @@ Prefer signed cookies if
 
 ![CloudFront3rdPartyGeoLocation](Pics/CloudFront3rdPartyGeoLocation.png)
 
-### 7.8 CloudFront Field-Level encryption
+## 7.8 CloudFront Field-Level encryption
 
 * HTTPS secures the data only in transit till its termination point, origin Web server. Client <=> Origin
 * Field-level encryption happens at the edge, separate from HTTPS tunnel.
@@ -1150,9 +1151,9 @@ Prefer signed cookies if
 5. Create DB migration task
    * **Schema name** = DB name to be migrated
 
-## 9. Scaling, Load balancing & High Availability
+# 9. Scaling, Load balancing & High Availability
 
-### 9.1. Elastic Load Balancer introduction
+## 9.1. Elastic Load Balancer introduction
 
 * 3 types of ELBs available within AWS
 * Split among v1 (old) vs v2 (prefer)
@@ -1162,12 +1163,12 @@ Prefer signed cookies if
 * **Network LB** - v2, TCP, TLS & UDP
   * Eg. load balancing mail or SSH servers
 
-### 9.2. Elastic LB architecture
+## 9.2. Elastic LB architecture
 
 * Supports various compute services, not just EC2
 * Can operate in IPv4 or dual-stack (including IPv6)
 
-#### 9.2.1. Characteristics of ELB
+### 9.2.1. Characteristics of ELB
 
 * Each ELB node is placed in one and one-AZ only.
 * ELBs are an 'A' record, will resolve to 1+ nodes in AZ.
@@ -1180,9 +1181,9 @@ Prefer signed cookies if
 
 ![](Pics/ELBArchitecture1.png)
 
-### 9.3. ALB vs NLB
+## 9.3. ALB vs NLB
 
-#### 9.3.1. ALB features
+### 9.3.1. ALB features
 
 * 1 SSL cert per CLB. CLBs don't scale hence need for ALBs.
 * Can understand HTTP(S) but not other L7 protocols (SMTP, SSH, etc)
@@ -1192,7 +1193,7 @@ Prefer signed cookies if
 * Slower than NLBs because they work on L7.
 * Can do application health checks
 
-#### 9.3.2. ALB rules
+### 9.3.2. ALB rules
 
 * Rules direct connections which arrive at listener to different target groups
 * Processed in priority order
@@ -1202,7 +1203,7 @@ Prefer signed cookies if
 
 ![](Pics/ALBArchitecture2.png)
 
-#### 9.3.3. NLB features
+### 9.3.3. NLB features
 
 * Works at L4 - TCP, UDP, TLS
 * No concept of L7
@@ -1212,9 +1213,9 @@ Prefer signed cookies if
 * Forward TCP with unbroken encryption to target instances
 * PrivateLink -> NLB
 
-### 9.4 Auto-Scaling Groups
+## 9.4 Auto-Scaling Groups
 
-#### 9.4.1. ASG with Load Balancers
+### 9.4.1. ASG with Load Balancers
 
 * ASGs can use LB health checks instead of EC2 status checks - Application awareness
 * ASGs are free, resources created are billed.
@@ -1222,7 +1223,7 @@ Prefer signed cookies if
 * Consider smaller instances so granularity can save on costs ie. launching additional small instance instead of larger one
 * ASGs define **when** and **where**, LTs define **what** is launched
 
-#### 9.4.2. Scaling Processes
+### 9.4.2. Scaling Processes
 
 * `Launch` - If set to Suspend, ASG won't scale if alarms triggered
 * `Terminate` - If set to Suspend, ASG won't terminate instances
@@ -1234,7 +1235,7 @@ Prefer signed cookies if
 * `ScheduledActions` - Set whether ASG will perform any scheduled action
 * `Standby` - Set on instances so ASG doesn't control them anymore and you can perform maintenance
 
-#### 9.4.3. ASG Lifecycle Hooks [[ref](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html)]
+### 9.4.3. ASG Lifecycle Hooks [[ref](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html)]
 
 * **Custom Actions** on instances during ASG actions (eg. instance launch/terminate transitions)
 * Instances paused within the flow, waiting until 
@@ -1244,7 +1245,7 @@ Prefer signed cookies if
   * Scaling out: Install needed software or register instance with some server before starting
   * Scaling in: Retrieve log data from instance before termination
 
-#### 9.4.4. ASG Health Checks [[ref](https://docs.aws.amazon.com/autoscaling/ec2/userguide/healthcheck.html)]
+### 9.4.4. ASG Health Checks [[ref](https://docs.aws.amazon.com/autoscaling/ec2/userguide/healthcheck.html)]
 
 * Checks health of instances in ASG; replaces if unhealthy
 * Three types:
@@ -1255,9 +1256,9 @@ Prefer signed cookies if
 * **Grace period** (default 300s) - Delay before starting checks to allow instance to perform booting, bootstrapping, app startup procedures before health checks
   * Otherwise ASG will start terminating and reprovisioning health checks prematurely
 
-### 9.5. Notes from Advanced Demo
+## 9.5. Notes from Advanced Demo
 
-#### 9.5.1. Launch templates
+### 9.5.1. Launch templates
 
 * Updating launch template creates and replace existing one. 
 * Actions -> Modify template (create new version)
@@ -1306,11 +1307,11 @@ Setting automatic scaling
 
 * When updating parameter store, use instance refresh in ASG to have the instances pull down the updated parameters.
 
-## 10. Advanced Networking
+# 10. Advanced Networking
 
-### 10.1 Advanced VPC Routing
+## 10.1 Advanced VPC Routing
 
-#### 10.1.1. Principles of routing
+### 10.1.1. Principles of routing
 
 * Subnets have 1 route table only.
 * If not associated with RT, it gets the VPC main route table.
@@ -1318,7 +1319,7 @@ Setting automatic scaling
 * IPv4/IPv6 handled separately within a route table.
 * Route table has max 50 static routes and 100 dynamic routes
 
-#### 10.1.2. Routing priority (in order)
+### 10.1.2. Routing priority (in order)
 
 1. Longest prefix wins. /32 beats /24
 2. Static routes prioritised above dynamic
@@ -1328,26 +1329,27 @@ Setting automatic scaling
    3. VPN BGP
    4. `AS_PATH` used to break ties. Shorter prioritised
 
-#### 10.1.3. Dealing with overlapping CIDRs
+### 10.1.3. Dealing with overlapping CIDRs
 
 * Assign route tables to specific subnets instead of entire VPC
 * Specify a longer prefix route so it gets selected instead.
 
-#### 10.1.4. Advanced VPC Routing (Ingress)
+### 10.1.4. Advanced VPC Routing (Ingress)
 
 * Assign route table to IGW so incoming Internet traffic to App subnet gets routed to Sec subnet first.
 * Outgoing traffic from App to Internet directed to Sec by subnet route table
 
 ![](Pics/Ingress-VPC-Routing.png)
 
-### 10.2. Accelerated Site-to-Site VPN
+## 10.2. Accelerated Site-to-Site VPN
 
-#### 10.2.1. Why use accelerated site-to-site VPN
+### 10.2.1. Why use accelerated site-to-site VPN
 
 * Site-to-site VPNs introduce jitter or variable latency due to riding on the Internet
-* Alternative of public VIF over DX too costly 
+* Alternative of public VIF over DX too costly
+* 
 
-#### 10.2.2. Architecture of accelerated site-to-site VPN
+### 10.2.2. Architecture of accelerated site-to-site VPN
 
 * VPN connection between customer gateway (CGW) and global accelerator edge locations.
   * This short hop still has jitter but is minimised.
@@ -1360,15 +1362,15 @@ Setting automatic scaling
 
 ![](Pics/Accelerated-SiteVPN.png)
 
-### 10.3. Advanced VPC DNS & DNS Endpoints
+## 10.3. Advanced VPC DNS & DNS Endpoints
 
-#### 10.3.1. Why VPC DNS endpoints
+### 10.3.1. Why VPC DNS endpoints
 
 * Route53 resolver in VPC at .2 in every subnet
 * Can't handle hybrid resolution pointing to on-prem infra
 * Old solution was to deploy an EC2-based DNS server to handle DNS forwarding
 
-#### 10.3.2. VPC DNS endpoint architecture
+### 10.3.2. VPC DNS endpoint architecture
 
 * VPC interfaces accessible over VPN or DX.
   * **Inbound** - Allow DNS forwarding from on-prem to R53 resolver
@@ -1381,7 +1383,7 @@ Setting automatic scaling
 
 ![](Pics/R53-Endpoints.png)
 
-#### 10.3.2. Notes from DNS Demo
+### 10.3.2. Notes from DNS Demo
 
 **Creating a VPC peering connection**
 
@@ -1414,9 +1416,9 @@ Setting automatic scaling
 8. Add IP addresses of on-prem DNS servers to Target IP addresses
 9. Submit to create rule
 
-## 11. Systems Manager
+# 11. Systems Manager
 
-### 11.1 Introduction
+## 11.1 Introduction
 
 * View and control AWS and on-premises infrastructure
 * Agent-based - Installed on most Windows/Linux AMIs by default
@@ -1433,7 +1435,7 @@ Setting automatic scaling
 * Session manager - Connect to EC2 instances in private VPCs
 * Systems manager endpoint runs in AWS Public Zone
 
-#### 11.1.1 Make instances managed [[ref](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-managed-instance-activation.html)]
+### 11.1.1 Make instances managed [[ref](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-managed-instance-activation.html)]
 
 * This allows SSM to manage on-prem servers
 
@@ -1445,7 +1447,7 @@ Setting automatic scaling
 
 ![](Pics/SM-Arch.png)
 
-### 11.2. SSM Run command
+## 11.2. SSM Run command
 
 * Allows you to run commands on Command document from SM Document Store for agents on managed instances to execute it.
 * No SSH/RDP protocol required on managed instances
@@ -1458,7 +1460,7 @@ Setting automatic scaling
 * Output - S3, can send notifications via SNS
 * EventBridge rule can be used to Run Command
 
-### 11.3. SSM Documents
+## 11.3. SSM Documents
 
 * JSON/YAML documents
 * Stored in SSM Document Store
@@ -1471,7 +1473,7 @@ Setting automatic scaling
 * **Package Document** 
   * Distributor uses this to include compressed software to install on instances
 
-### 11.4. AWS SM Patch Manager
+## 11.4. AWS SM Patch Manager
 
 * Patch **Baseline** - Determines what patches, hot fixes get installed (Various OS, can create your own)
   * Linux - **AWS-[OS]DefaultPatchBaseline** : explicitly define patches
@@ -1487,7 +1489,7 @@ Setting automatic scaling
 * **Error threshold** - Number of errors tolerated before patching halted
 * **Compliance** - Checked by SM inventory to ensure instances are patched
 
-#### 11.4.1. Patching Architecture
+### 11.4.1. Patching Architecture
 
 1. Define patch baseline to determine what is installed
 2. Create patch groups which act as targets for patch tasks
@@ -1497,9 +1499,9 @@ Setting automatic scaling
 
 ![](Pics/PatchMgr-Arch.png)
 
-## 12. Application Services, Event-Driven & Serverless
+# 12. Application Services, Event-Driven & Serverless
 
-### 12.1. AWS Lambda
+## 12.1. AWS Lambda
 
 * Deployment packages are installed in a created runtime environment
 * Custom runtimes such as Rust can be created with **Lambda layers**
@@ -1511,20 +1513,20 @@ Setting automatic scaling
   * Serverless cronjobs - EventBridge/CWEvents + Lambda
   * Realtime stream data processing - Kinesis + Lambda
 
-#### 12.1.1. Lambda Runtime Environment
+### 12.1.1. Lambda Runtime Environment
 
 * You can define the memory used for runtime: 128 MB to 3 GB, in 64 MB steps.
 * CPU can't be specified but scales with memory in use
   * 1792 MB -> 1 vCPU
 * 512 MB allocated to **/tmp**
 
-### 12.2. Public Lambda
+## 12.2. Public Lambda
 
 * By default has access to AWS public services eg. SQS, DynamoDB, S3  and Internet
 * Lambda has no access to resources in VPC unless they have public IPs and allowed access
 * Inside a VPC, Lambda has the same permissions of all other objects in the VPC; losing public access and needs VPC endpoint to access public services.
 
-### 12.3. Private Lambda
+## 12.3. Private Lambda
 
 * VPC Lambdas don't actually run from within a VPC
 * Lambda functions run from within **Lambda Service VPC**; ENIs created in your VPC
@@ -1533,7 +1535,7 @@ Setting automatic scaling
   * All share SG and subnet -> One ENI for all Lambda functions
   * ENIs created in 90s when Lambda is being configured, done just once, if networking config is unchanged.
 
-### 12.4. Lambda Security
+## 12.4. Lambda Security
 
 * Lambda gets permissions from attached IAM roles
 * Also has resource policy to control what services and accounts can invoke the Lambda function
@@ -1541,7 +1543,7 @@ Setting automatic scaling
   * External accounts
   * Can only be modified via CLI/API but not console.
 
-### 12.5. Lambda Logging
+## 12.5. Lambda Logging
 
 * Lambda uses **Cloudwatch**, **Cloudwatch Logs** & **X-Ray**
 * Logs from Lambda executions - CloudWatch Logs
@@ -1550,14 +1552,14 @@ Setting automatic scaling
   * By default logs to log group in CW logs same name as Lambda function eg. /aws/lambda/EC2Protect
 * Lambda integrated with X-Ray for distributed tracing
 
-### 12.6. Lambda Invocation
+## 12.6. Lambda Invocation
 
-#### 12.6.1. Invocation - Synchronous 
+### 12.6.1. Invocation - Synchronous 
 
 * Client invoke Lambda function, waits for results to be returned
 * Error/retries needs to be handled by the client
 
-#### 12.6.2. Invocation - Asynchronous
+### 12.6.2. Invocation - Asynchronous
 
 * AWS services invoke Lambda function
   * Eg. S3 Events invoking Lambda functions
@@ -1568,7 +1570,7 @@ Setting automatic scaling
   * Eg. SQS, SNS, another Lambda function or EventBridge
 * Lambda *doesn't* need permissions if the event which triggers it provides all the required data for execution.
 
-#### 12.6.3. Invocation - Event Source Mapping 
+### 12.6.3. Invocation - Event Source Mapping 
 
 * Used on streams/queue which don't support event generation to invoke Lambda
   * Eg. Kinesis, DynamoDB streams, SQS
@@ -1578,7 +1580,7 @@ Setting automatic scaling
   * Failed batches can be sent to SNS queue, SNS or DLQ for analysis
 * **Exam note:** Event source mapping needs read permissions from Lambda execution role to access source service
 
-#### 12.6.4. Invocation mechanics
+### 12.6.4. Invocation mechanics
 
 * **Cold start** - Lambda execution context takes time to provision, including code download ~ 100ms
 * **Warm start** - Lambda functions executed with execution context already created by previous invocations ~ 1-2ms
@@ -1590,7 +1592,7 @@ Setting automatic scaling
   * Best to assume that execution context is fresh and Lambda function needs to create/establish things
   * However you can optimise by using this if needs to
 
-### 12.7. Lambda Versioning
+## 12.7. Lambda Versioning
 
 * Functions can be versioned
 * Version is code + configuration of Lambda function
@@ -1598,9 +1600,9 @@ Setting automatic scaling
 * `$Latest` always points at latest version
 * Aliases can point at a specific version, these can be changed to point to later ones.
 
-### 12.8 API Gateway
+## 12.8 API Gateway
 
-#### 12.8.1. Refresher
+### 12.8.1. Refresher
 
 * Endpoint for applications
 * Sits between client apps and integrations with AWS services
@@ -1609,20 +1611,20 @@ Setting automatic scaling
 * Logs available on CW logs
 * API Gateway Cache can be used to reduce the number of calls made to backend integrations and improve client performance
 
-#### 12.8.2. Authentication
+### 12.8.2. Authentication
 
 * Can authenticate with Cognito and receive token
 
 ![](Pics/APIGW-Cognito.png)
 
-#### 12.8.3. Endpoint Types
+### 12.8.3. Endpoint Types
 
 * **Edge-optimized**
 * Routed from API-GW to CF point-of-presence (POP)
 * **Regional**, doesn't use CF network for users in same region
 * **Private** - Accessible only within a VPC via interface endpoint
 
-#### 12.8.4. Stages
+### 12.8.4. Stages
 
 * APIs are deployed to a stage, can configure different stages for different user groups eg. customers, developers
 * Different app versions backed by different Lambda functions can be deployed for different API GW.
@@ -1633,7 +1635,7 @@ Setting automatic scaling
 
 ![](Pics/APIGW-Stages.png)
 
-#### 12.8.5 Errors
+### 12.8.5 Errors
 
 * **4XX Client error** - Invalid request on client side
   * 400 Bad request - Generic client error, not specific
@@ -1644,7 +1646,7 @@ Setting automatic scaling
   * 503 Service unavailable - Endpoint is offline, not responding
   * 504 Integration failure/timeout - Lambda endpoint response time > 29s even though it can run up to 15 min.
 
-#### 12.8.6. Caching
+### 12.8.6. Caching
 
 * Responses can be cached to reduce load to endpoints, improve latency
   * Calls made to endpoints only  for cache misses
@@ -1652,9 +1654,9 @@ Setting automatic scaling
 * Can be encrypted
   * Size: 500 MB to 237 GB
 
-### 12.8. Kinesis Data Firehose
+## 12.8. Kinesis Data Firehose
 
-#### 12.8.1. Refresher
+### 12.8.1. Refresher
 
 * Fully-managed service loads data for data lakes, stores and analytics
 * Delivery service for Kinesis streams
@@ -1663,7 +1665,7 @@ Setting automatic scaling
 * Supports transformation of data on fly with Lambda - can add latency
 * Billing based on data volume 
 
-#### 12.8.2. Architecture
+### 12.8.2. Architecture
 
 * Possible destinations: HTTP endpoints, Splunk, Redshift, ElasticSearch, S3 bucket etc.
 * Integrated with Kinesis streams (which can't persist or send data streams to any other service)
@@ -1681,14 +1683,14 @@ Setting automatic scaling
 
 ![](Pics/KinesisDataFirehose.png)
 
-### 12.9 Kinesis Data Analytics
+## 12.9 Kinesis Data Analytics
 
 * Offers **realtime processing** of data using SQL
 * Ingests from Kinesis Data Streams or Firehose
 * Destinations: Firehose (and its destinations), Lambda, Kinesis Data Streams
   * Only Lambda or Kinesis Data Streams offer real time
 
-#### 12.9.1. Architecture
+### 12.9.1. Architecture
 
 * Sources: Kinesis streams, Firehose, S3 bucket
 * **In-application input streams** created based on inputs
@@ -1700,16 +1702,16 @@ Setting automatic scaling
 
 ![](Pics/KinesisDataAnalytics.png)
 
-#### 12.9.2. Use cases
+### 12.9.2. Use cases
 
 * Streaming data which requires **realtime SQL processing**
 * Time -series analytics eg. elections, e-sports
 * Realtime dashboards eg. leaderboards for games
 * Realtime metrics - Security, response teams
 
-## 13. Elastic Beanstalk
+# 13. Elastic Beanstalk
 
-### 13.1. Introduction
+## 13.1. Introduction
 
 * PaaS
 * Developer-focused, not for end users
@@ -1721,7 +1723,7 @@ Setting automatic scaling
 * There is no additional charge for AWS Elastic Beanstalk. You pay for AWS resources (e.g. EC2 instances or S3 buckets) you create to store and run your application. 
 * Need to tweak application to be supported by EB (technical expertise required)
 
-### 13.2. Supported platforms
+## 13.2. Supported platforms
 
 * Supports Go, Java SE, Tomcat
 * .NET Core (Linux) and .NET (Windows)
@@ -1730,7 +1732,7 @@ Setting automatic scaling
   * Preconfigured provides support to runtimes before natively supported (eg. Glassfish Java 8)
 * Allows custom platforms like Packer
 
-### 13.3. Architecture
+## 13.3. Architecture
 
 * **EB Application** - Code + infrastructure + versions of physical application
 * **Application Version** - Specific labelled version of deployable code for application. Stored in S3 as **source bundles**. 
@@ -1743,14 +1745,14 @@ Setting automatic scaling
 
 ![](Pics/EB-Arch.png)
 
-### 13.4. Summary
+## 13.4. Summary
 
 * Great for small devt teams - automated infrastructure, dev require minimal infra skills
 * Can use docker for anything EB doesn't currently supported
 * Databases should be created **outside** of EB if not will be lost if environment deleted eg. blue-green deployments
   * RDS can be created within environments though
 
-### 13.5. EB Deployment Policies
+## 13.5. EB Deployment Policies
 
 * **All at once** - Deploy application to all instances at same time, causes brief outages, no way to handle failures
 * **Rolling** - Deploy in rolling batches, pass health checks then returned to service.
@@ -1760,7 +1762,7 @@ Setting automatic scaling
   * Expensive since uses double number of instances at any time
 * **Traffic splitting** - New ASG with instances with app deployed, but allows traffic sharing between original and new applications
 
-#### 13.5.1. Blue-green deployment
+## 13.5.1. Blue-green deployment
 
 * Maintain two separate environments
 * One with app v1, another with app v2
@@ -1769,7 +1771,7 @@ Setting automatic scaling
 * Doesn't rely on EB to orchestrate deployment
 * Also retains original environment to revert as needed
 
-### 13.6. Elastic Beanstalk and RDS
+## 13.6. Elastic Beanstalk and RDS
 
 * Can create RDS instance **within** EB environment, linked to it.
 * Environment deleted -> RDS deleted (data loss)
@@ -1788,7 +1790,7 @@ Setting automatic scaling
      2. Choose to retain RDS instance and delete the stack
      3. Will delete successfully
 
-### 13.7. Advanced Customisation vs .ebextensions
+## 13.7. Advanced Customisation vs .ebextensions
 
 * Underneath the hood EB uses CFN to create the stacks.
 * Modifications to EB environment will cause EB to do Update Stack to CFN template.
@@ -1800,7 +1802,7 @@ Setting automatic scaling
   * **options_settings** allows you to set options of resources
   * Resources allows entirely new resources
 
-### 13.8 Elastic Beanstalk and HTTPS
+## 13.8 Elastic Beanstalk and HTTPS
 
 * Apply SSL cert to Load Balancer directly with EB console
 
@@ -1828,7 +1830,7 @@ Setting automatic scaling
           SourceSecurityGroupName: {"Fn::GetAtt" : ["AWSEBLoadBalancer", "SourceSecurityGroup.GroupName"]}
     ```
 
-### 13.9. Elastic Beanstalk Cloning
+## 13.9. Elastic Beanstalk Cloning
 
 * Create new environment by cloning an existing one
   * Eg. Copy Prod-Env to a new Test-Env
@@ -1838,9 +1840,9 @@ Setting automatic scaling
 * **Unmanaged changes** (made outside EB, CLI or API) not included
 * Done with console UI, API or `eb clone EXISTING_ENVNAME`
 
-### 13.10 Elastic Beanstalk and Docker
+## 13.10 Elastic Beanstalk and Docker
 
-#### 13.10.1. Single container Docker
+### 13.10.1. Single container Docker
 
 * One container only per environment
 
@@ -1851,7 +1853,7 @@ Setting automatic scaling
   * `Dockerrun.aws.json` (v1) - Specifies Docker image, ports, volumes and other Docker attributes
   * `docker-compose.yml`
 
-#### 13.10.2. Multi-container Docker
+### 13.10.2. Multi-container Docker
 
 * Creates ECS cluster with EC2 provisioned and ELB for HA
   * Provide `Dockerrun.aws.json` (v2) in the app source bundle
@@ -1891,3 +1893,7 @@ Encountered in TD exams
 * Personal Health Dashboard offers an account-specific view of AWS services health status
   * Can be integrated with CloudWatch Events which in turn can trigger Lambda events for remediation.
 
+# 3. AWS Budgets
+
+* Using AWS Budgets, you can set a budget that alerts you when you exceed (or are forecasted to exceed) your budgeted cost or usage amount. You can also set alerts based on your RI or Savings Plans Utilization and Coverage using AWS Budgets.
+* Filtering dimensions (i.e., AWS Service, Availability Zone, and Member Account), and allows you to create budgets that are tracked on a monthly, quarterly, or yearly cadence

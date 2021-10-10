@@ -989,14 +989,10 @@ To delete an object, you must delete all the versions of that object using their
 
 ### 3.4.1. MFA Delete
 
-Enabled within version configuration in a bucket. This means MFA is required to change bucket versioning state.
-MFA is required to delete versions of an object.
+* Enabled within version configuration in a bucket. This means MFA is required to change bucket versioning state. MFA is required to delete versions of an object.
 
-In order to change a version state or delete a particular version of an object, you need to provide the serial number of your MFA token as well as the code it generates. These are concatenated and passed with any API calls.
-
-### 3.4.2 S3 Object Lock
-
-With [S3 Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html), you can store objects using a *write-once-read-many* (WORM) model. Object Lock can help prevent objects from being deleted or overwritten for a fixed amount of time or indefinitely. You can use Object Lock to help meet regulatory requirements that require WORM storage, or to simply add another layer of protection against object changes and deletion.
+* In order to change a version state or delete a particular version of an object, you need to provide the serial number of your MFA token as well as the code it generates. These are concatenated and passed with any API calls.
+* **Test note:** You can add lifecycle configuration rules to expire all or a subset of objects with a specific key name prefix. For example, to remove all objects in a bucket, you can set lifecycle rule to expire objects one day after creation. If your bucket has versioning enabled, you can also configure the rule to expire non-current objects.
 
 ## 3.5. S3 Performance Optimization
 
@@ -1470,22 +1466,25 @@ Provisioned capacity helps ensure that your retrieval capacity for expedited ret
 
 - Notifications generated when events occur in a bucket like
   - Object creation (Put, Post, Copy, CompleteMultiPartUpload)
-  - Object deletion
-  - Object restore (from Glacier or Deep Archive)
-  - S3 replication (missing 15min threshold, failed replication etc)
-- Delivered to SNS, SQS, Lambda
+  - Object delete (*, Delete, DeleteMarkerCreated)
+  - Object restore from Glacier or Deep Archive (Post (Initiated), Completed)
+  - S3 replication missing 15min threshold, failed replication (OperationMissedThreshold, OperationFailedReplication)
+- Can be sent to SNS, SQS, Lambda with Resource policy tagged allowing S3 principal access
+- Prefer EventBridge over S3 Events since it supports more types of events and services
 - **Test note:** You can only add 1 SQS or SNS at a time for Amazon S3 events notification. If you need to send the events to multiple subscribers, you should implement a message fanout pattern with Amazon SNS and Amazon SQS.
 
-### 3.13.1. S3 Access Logs
+## 3.14. S3 Access Logs
 
-Consists of source bucket (which is logged) and target bucket (where logs are stored). To enable need
+Consists of source bucket (which is logged) and target bucket (where logs are stored).
 
+- Source bucket and object access are logged
 - Target bucket needs ACL to allow "S3 Log delivery group"
-- Best-effort log delivery
+- Best-effort log delivery (a few hrs to take effect)
 - Logs delivered as log files
   - Records newline-delimited
   - Attributes space-delimited
 - Can use single target bucket for many source targets
+- Similar in format to Apache log files
 
 ---
 
@@ -2645,8 +2644,8 @@ Parameter Store:
 ## 7.5. System and Application Logging on EC2
 
 * CloudWatch and CloudWatch Logs cannot natively capture data inside an instance.
-
 * CloudWatch Agent (similar to Nagios agent) is required for OS visible data. It sends this data into CW For CW to function, it needs configuration and permissions in addition to having the CW agent installed. The CW agent needs to know what information to inject into CW and CW Logs. 
+  * CW Agent can also be installed on on-prem servers to allow data to be pushed to the CW dashboard.
 
 Log examples:
 
@@ -3040,6 +3039,7 @@ It is always a bad idea to do this.
   - Managed Database Instance for one or more databases.
 - No need to manage the HW or server itself.
 - Handles engines such as MySQL, MariaDB, PostgreSQL, Oracle, Microsoft SQL.
+  - **Test note:** Oracle RAC is currently [not supported](https://aws.amazon.com/rds/oracle/faqs/) on RDS.
 
 Also Amazon Aurora. This is so different from normal RDS, it is a separate product.
 
@@ -3462,7 +3462,7 @@ EFS moves the instances closer to being stateless.
     - General purpose should be default for 99.9% of uses.
   - **Max I/O performance** mode can scale to higher levels of aggregate throughput and IOPS but has increased latencies.
   - **Test notes:** Note this can't be changed after creation; create a new EFS with this and migrate the data there
-- Two throughput modes:
+- Two throughput modes (unlike performance this *can* be changed after creation):
   - **Bursting** works like GP2 volumes inside EBS with a burst pool. The more data you store in the FS, the better performance you get.
   - **Provisioned** throughput mode allow you to specify throughput requirements separately from size.
 - AWS recommends bursting throughput [by default](https://docs.aws.amazon.com/efs/latest/ug/performance.html), unless you're migrating large amounts of data and only for that duration.
@@ -3623,6 +3623,7 @@ Scaling policies are rules that you can use to define autoscaling of instances. 
 - Generally, for anything client-facing you should always use Auto Scaling Groups (ASG) with Application Load Balancers (ALB) with autoscaling because they allow you to provide elasticity by abstracting the user away from individual servers. Since, the customers will be connecting through an ALB, they don't have any visibility of individual servers.
 - ASG defines WHEN (under what circumstances) and WHERE (VPCs, SG); Launch Templates defines WHAT.
 - **Exam note**: ASG cannot span multiple Regions.
+- **Test note:** You can create ASG from running instance with right-click -> Instance settings -> Attach to ASG. A launch configuration is automatically created with the AMI ID specified.
 
 ### 11.6.3. Auto-scaling metrics
 
@@ -4135,16 +4136,14 @@ Best practice is to create one OAI per CloudFront distribution to manage permiss
 
 ## 13.2. AWS Certificate Manager (ACM)
 
-- HTTP lacks encryption and is insecure
-- HTTPS (HyperText Transfer Protocol Secure) uses SSL/TLS to create a secure tunnel over which normal http can be transferred.  
-- Data is encrypted in-transit from the perspective of an outside observer.
 - HTTPS Certificates also allows for servers to prove their identity
-- Signed by a trusted authority (a Certificate Authority [CAs]), which are trusted by your browser.
+- Signed by a trusted authority (a Certificate Authority [CA]), which are trusted by your browser.
 - To be secure, a website generates a certificate, and has a CA sign it. The website then uses that certificate to prove its authenticity.
-- ACM allows you to create, renew, and deploy certificates.
+- ACM allows you to create, renew, and deploy certificates, both private and public
 - Supported AWS services ONLY (CloudFront, ALB and API Gateway, Elastic Beanstalk, CloudFormation, not self-managed service like EC2)
-- If it's not a managed service, ACM doesn't support it.
-- CloudFront must have a trusted and signed certificate. Can't be self signed.
+  - If it's not a managed service, ACM doesn't support it.
+- If CloudFront edges communicates with the origins with HTTPS, it needs to have a trusted, signed public certificate not self-signed.
+- ACM can automatically renew and deploy public and public certificates with ACM-integrated services.
 
 ## 13.3. Lambda@Edge
 
@@ -5105,12 +5104,12 @@ When writing data to DAX, it can use write-through. Data is written to the datab
 
 Two services offered
 
-|               memcached              |                                          Redis                                         |
-|:------------------------------------:|:--------------------------------------------------------------------------------------:|
-| Simple data structures (eg. strings) | Advanced data structures                                                               |
-| No replication                       | Replicate across AZs.                                                                  |
-| Multi nodes (sharding)               | Read replicas                                                                          |
-| No backups                           | Backup & restore (cache recovery)                                                      |
+| memcached                            | Redis                                                        |
+| :----------------------------------- | :----------------------------------------------------------- |
+| Simple data structures (eg. strings) | Advanced data structures                                     |
+| No replication                       | Replicate across AZs (supports RDS Multi-AZ deployments)     |
+| Multi nodes (sharding)               | Read replicas                                                |
+| No backups                           | Backup & restore (cache recovery)                            |
 | Multi-threaded                       | Transactions  (treat multi operations as one, either all work or none ie. consistency) |
 
 **Exam notes:**
@@ -5118,11 +5117,13 @@ Two services offered
 * Used for
   * Read-heavy workloads
   * Reduce cost of accessing DBs
-  * Need <ms access to data
+  * Need < 1 ms access to data
   * Store user session state data outside of EC2
-* **Test notes**: 
-  * Calls to return identical or static datasets -> prefer ElastiCache over read replicas.
-  * If you see "dynamic reads", ElastiCache which caches static reads is unlikely to help.
+
+**Test notes**: 
+
+* Calls to return identical or static datasets -> prefer ElastiCache over read replicas.
+* If you see "dynamic reads", ElastiCache which caches static reads is unlikely to help.
 
 # 20. Amazon Redshift [not in SOA-C02?]
 

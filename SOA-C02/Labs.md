@@ -168,6 +168,16 @@ This demo creates S3 time-limited presigned URLs for outsiders to access with AW
     https://animals4lifemedia4324124.s3.us-east-1.amazonaws.com/all5.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAT3SQ5UUXECTVJZ75%2F20211003%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20211003T100041Z&X-Amz-Expires=180&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjELL%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJGMEQCIEA5JD8RIqMuZCz0fYgHd8XkJDihsNdXc02qB7I7D%2FcXAiAi1KyFphPkI4FjpWjnEHhk8BqBLEc7TKBnL1J6umxbSCqeAwgrEAAaDDI2NTM4Mzk0NTUxOCIMexQg%2Fw98z28pcd31KvsCiqhpQSX8YtC2yhR8n8bxxulOYJ5%2FmT4ZXWIAlRjMeszc2hRNYTQcxFjNnWm3mq%2BqWoSSVHlNse5sUbojiyRN6mA3Gjs7VenpmlTW6fjkN9lxIIwAA3kZhqhhHE2iP9vOYuwx2anTbD7muimoyB%2FmysLsVfjefK%2FPghRwrCDNY%2Ffk5E55FsPtmqVFHt8HXUv6uI2GSIzHfKh39Xcx2FfU6mZry9eOuLonFWyy3PGFvRN%2BD3vGIjzQppU8hFQOubBKoqtuoIs4QEKu%2FFahb8XbLZ302kdExORHfhIUF8W0v9VA0pJ1Z%2FbGqP0ZCcDZgH8QvepqX3XhgCRMxBTVrEo1Be8N78VE4Ok6bBUpEMD9SRLuU9VBM2V7Rv1fWwxhatpIn2BLKgtUyGuDrsH9UYZtHXiRHNWtu3kgz4FGeaEqVnUu1rS63lD4DnrsdkDwUWrXwK%2FAPWtHsuR45IfdoiToH3ALWygMam2n9wYKUzeHRa8jaPfsUZeEtIy00TDO5OWKBjq0Ap0HIIU0s5fXYr0CrGzDRoU7s3MxxDMdz0RsGhXG0p30z7yukG%2Bhvvos4AqGYDutVaum0bwrKY3Lb7NBc0z8mTVmUfB85AiDGFhyPEsReff%2BJqiWbDUwLIdP2E90E8iLRypfthR%2BG0M6kEs4Pfjmt%2BDokzy36WI7FTPYkqq1k10GFJpeXEqIXaNn5DfLeoxwqh%2ByhQdtCwTqi0jTIkYKltxNhVNq%2BpjRl%2FtFBqghWh6J8li3dgR6eNrOyxY8z7Jm6RPw7YmHR9UOUq6I2nXEaKiYOdKIYpURK2MMZoGOQvucTcBmAFAJQEaGG3SkG8oNtht%2BvDsli8fPC%2FC3dlx1TqzGXx3ys0tXYG6fTN29DY2hMFEOcWK8WiuJLzPxrP3CIkIogW%2FrKh6Jskf5HRyF0us%2F9cdC&X-Amz-Signature=db709700fdbcd92df41488b92ba83cc4ecb5d1994bca548de5d49bc72ef7bbac
     ```
 
+## S3 Inventory
+
+Needs two buckets, one destination bucket for reports to be stored and the source to have inventory list created.
+
+1. Go to source bucket -> Management tab -> Create inventory configuration
+   1. Specify prefix "/" if needed, object versions
+   2. Also frequency and report format
+   3. Create
+2. Check that target bucket has policy applied and 48 hrs, then check for reports.
+
 # Elastic Beanstalk
 
 ## Creating new application
@@ -896,3 +906,50 @@ Assign the Billing group the permission sets for Billing
 7. Dropdown -> My billing dashboard (check you can view without errors)
 
 Note that when adding user already signed in to groups with new permissions, need to logout and back in the see the changes.
+
+# Advanced Site-to-Site VPN
+
+## Create CGW for on-prem routers
+
+1. VPC -> Customer Gateways -> Create customer gateway
+   1. Enter public IP of on-prem router and BGP ASN
+   2. Create CGW
+
+## Create TGW attachment for on-prem routers to connect
+
+For this step, you need to have a TGW already created
+
+1. VPC -> TGW Attachments -> Create TGW attachment
+   1. Transit GW ID: Select ID of TGW
+   2. Attachment type: VPN
+   3. Customer gateway: Select CGW created above
+   4. Enable Acceleration
+   5. Create TGW attachment
+2. When done, go to Site-to-Site VPN Connections and check they're in pending state
+3. Download configuration for each VPN connection
+
+# Enable Session Manager
+
+This works without having to enable NAT Gateway or make a subnet public
+
+## Create VPC endpoints for SSM, EC2
+
+1. VPC -> Endpoints -> Create endpoints
+   1. Need these 3
+      - com.amazonaws.[region].ec2messages
+      - com.amazonaws.[region].ssmmessages
+      - com.amazonaws.[region].ssm
+   2. Add the private instance SG to the endpoints
+   3. For the SG, include an inbound rule which allows TCP connections from all ports to itself
+2. Create an IAM role for permissions `AmazonSSMManagedInstanceCore`, attach to instance.
+3. Make sure AMI supports it
+
+## Egress-Only IGW for IPv6
+
+1. VPC -> Egress-only IGW -> Create Egress-only IGW
+2. Attach to gateway
+3. In route table of subnet of private instance add destination route for `::/0` to be egress-only IGW
+4. Also make sure outbound rules allow ICMPv6
+5. Test with `ping6 ipv6.google.com`
+6. Note that you don't need to attach a regular IGW to the VPC
+
