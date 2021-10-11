@@ -958,10 +958,10 @@ Notes:
 ### 7.2.2. Behaviour tab
 
 * A distribution can have multiple behaviours
-
-* HTTP or HTTPS
-* Redirect HTTP to HTTPS
-* HTTPS only
+* Viewer protocol policy:
+  * HTTP or HTTPS
+  * Redirect HTTP to HTTPS
+  * HTTPS only
 * Allowed HTTP methods
 * Restrict Viewer Access - CF distribution accessible with signed URLs/cookies only.
 * Trusted Signers - Select accounts that can generate signed URLs/cookies
@@ -1030,7 +1030,7 @@ Notes:
 * Origin groups - Used to group origins together, can be configured as CF targets for resilience.
 * S3 static website hosting - CF treats it as a website when configured as origin.
 
-### 7.4.2. S3 origin options
+### 7.4.1. S3 origin options
 
 * Can configure origin access identity to prevent accessing origin directly
 * Origin path - Configure such that CloudFront accesses a bucket path instead of the default top level bucket paths
@@ -1347,7 +1347,6 @@ Setting automatic scaling
 
 * Site-to-site VPNs introduce jitter or variable latency due to riding on the Internet
 * Alternative of public VIF over DX too costly
-* 
 
 ### 10.2.2. Architecture of accelerated site-to-site VPN
 
