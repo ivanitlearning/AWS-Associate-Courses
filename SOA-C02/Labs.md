@@ -17,20 +17,23 @@
 
 ### Allow Lambda function to access EFS
 
-1. Create roles allowing Lambda function to access EFS
+1. Create roles allowing Lambda function to access EFS with these permissions policies
+   1. `AWSLambdaVPCAccessExecutionRole` - Allows ENI injection into VPC
+   2. `AmazonElasticFileSystemClientFullAccess` - Mount, write access to EFS mount points
 2. Create access point for Lambda to access EFS
    1. EFS -> Click on file systems -> Access points tab -> Create access point
       * Fill in user ID and group ID
       * Set POSIX permissions for root directory
    2. Create access point
 3. Create Lambda function
-   1. Edit general config
+   1. Select IAM role
    2. Edit timeout (max 15 min)
-4. Go to Configuration -> VPC tab
+4. Go to Configuration tab -> VPC tab
    1. Select VPC, subnets, SG
-   2. Lambda will create 2 ENI inside selected subnets
-   3. Save
-5. Go to Configuration -> File systems -> Add file system
+   2. Ensure that the SG the Lambda function is in has access to the SG the EFS has.
+   3. Lambda will create 2 ENI inside selected subnets
+   4. Save
+5. Go to Configuration tab -> File systems -> Add file system
    1. Select target EFS, access point
    2. Specify mount path **/mnt/efs**
 6. Update code and test
@@ -443,7 +446,7 @@ Create a VPC with with one public and one private subnet in Singapore. The priva
 
 7. EFS -> File systems -> Get file system ID
 
-8. Mount them within the Linux instances in `/etc/fstab`
+8. Mount them within the Linux instances in `/etc/fstab` or click on Attach button in EFS to get Linux command to attach within EC2. Make sure the final argument, which is the mount point exists.
 
 
 # KMS
@@ -761,6 +764,24 @@ Migrate the on-prem DB to RDS
    3. Table mappings ->  Specify 'a4lwordpress' as DB to migrate
    4. Create task (will start immediately if enabled)
 
+## RDS multi-AZ and recovering snapshots
+
+1. Take snapshot of RDS instance
+2. When complete go to Databases -> Click DB -> **Modify**
+3. Check **Create a standby instance (recommended for production usage)** -> Continue -> Modify DB instance
+4. When done, verify by Actions -> Reboot DB instance (with failover)
+5. After several mins, check that the instance now shows a different AZ
+
+## Restore DB from snapshot
+
+1. RDS -> Snapshots -> Select snapshot -> Actions -> Restore snapshot
+2. Specify DB instance name, VPC and SGs
+   1. Try to pick the same instance class (**Include previous generation classes**)
+   2. Restore and wait till complete
+3. Edit the config file in the application to point to restored RDS instance
+
+
+
 # Launch Templates
 
 Create launch template
@@ -781,7 +802,7 @@ Create an ALB for load balancing.
    1. Specify Internet-facing or Internal
    2. Mappings: Specify AZs and public subnets to situate them in
    3. Specify SG to allow TCP 80 in
-   4. Listeners and routing: HTTP 80. Click 'Create target group'
+   4. Listeners and routing: HTTP 80. Click **Create target group**
       1. Target type: Instances, Protocol HTTP 80, Health checks: / path
       2. Register targets
       3. Create
@@ -796,7 +817,7 @@ Create an ALB for load balancing.
    2. Next
    3. Select VPCs and subnets to launch instances in
    4. Next
-   5. Select attach to existing load balancer
+   5. Select attach to existing load balancer (must do this)
    6. Specify desired, max and min capacity
    7. Next, until Create ASG
 
@@ -935,14 +956,15 @@ This works without having to enable NAT Gateway or make a subnet public
 ## Create VPC endpoints for SSM, EC2
 
 1. VPC -> Endpoints -> Create endpoints
-   1. Need these 3
+   1. Need these 3 interface endpoints in the subnets where the instances will be
       - com.amazonaws.[region].ec2messages
       - com.amazonaws.[region].ssmmessages
       - com.amazonaws.[region].ssm
    2. Add the private instance SG to the endpoints
-   3. For the SG, include an inbound rule which allows TCP connections from all ports to itself
+   3. In the SG for the endpoints, include an inbound rule which allows TCP connections from all ports to itself and put the instances in the same SG.
 2. Create an IAM role for permissions `AmazonSSMManagedInstanceCore`, attach to instance.
 3. Make sure AMI supports it
+4. Note you don't need IGW for Session Mgr, nor edit any route tables.
 
 ## Egress-Only IGW for IPv6
 
@@ -953,3 +975,63 @@ This works without having to enable NAT Gateway or make a subnet public
 5. Test with `ping6 ipv6.google.com`
 6. Note that you don't need to attach a regular IGW to the VPC
 
+# CloudFront
+
+## Add CDN to static website using S3
+
+1. CloudFront -> Create CF distribution
+   1. Select from **Origin domain** list the S3 bucket hosting the static website
+   2. Choose origin path, OAI
+   3. Select viewer protocol (HTTP, HTTPS)
+   4. Specify other settings (such as alt CNAME)
+   5. Default root object = **index.html**
+   6. Create distribution
+2. Click on distribution after creation, check General tab for distribution domain name and visit site
+
+## Invalidate cached objects at edge
+
+1. CloudFront -> Select distribution ID -> Invalidations tab
+2. Specify object path`/*`  to invalidate everything or something more targeted.
+3. Create invalidation, wait till complete and verify with CF link
+
+## Add alt CNAME and SSL to CloudFront
+
+1. Request cert from ACM (this requires CNAME record verification on your hosted domain)
+2. If on R53, when done, create simple record, select **Alias to CloudFront distribution**, A record type
+
+## Add OAI to CF distribution
+
+Do this if you created the CF distribution without restricting origin access
+
+1. CF distribution -> Origins tab -> Edit origin
+2. Choose **Yes use OAI** -> **Create new OAI**
+3. Let CF update bucket policy
+4. Save changes
+
+Now need to edit S3 bucket policy to remove this
+
+```json
+{
+            "Sid": "PublicAccess",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::cfands3-top10cats-151h000x5aa43/*"
+},
+```
+
+which allows anyone to access it. Check that the CF distribution added this rule below
+
+```json
+        {
+            "Sid": "2",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity E107S91V1H02J2"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::cfands3-top10cats-151h000x5aa43/*"
+        }
+```
+
+5. Check that you get HTTP 403 when you try to access S3 bucket URL directly

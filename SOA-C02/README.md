@@ -423,6 +423,7 @@ Account A might allow something but account B also needs to allow it too or it g
 * Firehose for any "firehose destinations"
 * Realtime - Lambda (delivers to almost anything) or Kinesis Data stream (KCL consumers)
 * Metric filter - scan log data, generate CloudWatch metric which you can set alarms on
+* **Test note [SOA-C02]:** **CloudWatch metric math** can be used to aggregate and transform metrics from multiple accounts and Regions. Metric math enables you to query multiple CloudWatch metrics and use math expressions to create new time series based on these metrics. You can visualize the resulting time series on the CloudWatch console and add them to dashboards. Using AWS Lambda metrics as an example, you could divide the `Errors` metric by the `Invocations` metric to get an error rate. Then add the resulting time series to a graph on your CloudWatch dashboard.
 
 ## 5.5 AWS X-Ray
 
@@ -685,6 +686,13 @@ Assuming this is the JSON data passed back by an external system
 
 AWS recommends CreationPolicy for most cases due to simplicity. Might have need for WaitCondition if you need data from external systems.
 
+### 6.7.2 CFN UpdatePolicy
+
+* `UpdatePolicy` triggers [rolling update to an ASG](https://cloudonaut.io/6-unknown-cloudformation-features-you-should-know-about/), to execute changes in small batches. See eg. [here](https://cloudonaut.io/rolling-update-with-aws-cloudformation/)
+* Used together with `WaitOnResourceSignals` to wait for `cfn-signal` to signal when update is completel
+
+
+
 ## 6.8 CloudFormation Nested Stacks
 
 ### 6.8.1. Why nested stacks?
@@ -937,6 +945,13 @@ Notes:
 * Allows CFN to integrate with anything it doesn't yet or doesn't natively support
 * Used, for example to integrate with a Lambda function to delete S3 bucket's contents before deleting S3 bucket itself.
 
+## 6.16. CloudFormation Stack Policy
+
+* To protect selected stack resources from update actions, define a stack policy and then set it on your stack. 
+* A stack policy is a JSON document that defines thestack update actions that AWS CloudFormation users can perform and the resources that the actions apply to. 
+* You set the stack policy when you create a stack, by specifying a text file that contains your stack policy or typing it out. 
+* When you set a stack policy on your stack, any update not explicitly allowed is denied by default.
+
 # 7. Route53 and CloudFront
 
 ## 7.1. CloudFront architecture
@@ -1136,9 +1151,14 @@ Prefer signed cookies if
 
 ![](Pics/FieldLevelEncryption2.png)
 
-## 8. SQL databases
+## 7.9 CloudFront monitoring user access and data
 
-### 8.1 Database Migration Services (DMS)
+* Possible to view statistics, charts on website viewer access and data with [CloudFront monitoring](https://aws.amazon.com/cloudfront/reporting/).
+  * Can see popular objects, viewers report and top referers.
+
+# 8. SQL databases
+
+## 8.1 Database Migration Services (DMS)
 
 **Steps from demo**
 
@@ -1433,11 +1453,12 @@ Setting automatic scaling
 * Parameter store - Stores configuration and secrets
 * Session manager - Connect to EC2 instances in private VPCs
 * Systems manager endpoint runs in AWS Public Zone
+* **Test note:** SM supports the Raspbian OS, which runs on Raspberry Pi devices.
 
 ### 11.1.1 Make instances managed [[ref](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-managed-instance-activation.html)]
 
 * This allows SSM to manage on-prem servers
-
+* Known as [managed-instance activation](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-managed-instance-activation.html)
 * Need EC2 instance IAM role assigned and connectivity (IGW or interface endpoint) to Public Zone where SM endpoint located
 * To configure SM to manage on-prem infra:
   * Need IAM role to receive permissions

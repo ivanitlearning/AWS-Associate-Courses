@@ -911,6 +911,8 @@ Different from an **identity policy**
 
 Each bucket can only have one policy, but it can have multiple statements.
 
+**Test note [SOA-C02]:** `s3:GetObject` is applied to objects in the bucket, while `s3ListObject` is applied to the bucket. If GetObject is applied to the bucket instead, error **Action does not apply to any resource(s) in statement** will be thrown.
+
 ### 3.1.2. ACLs (Legacy)
 
 A way to apply a subresource to objects and buckets. These are legacy and AWS does not recommend their use. They are inflexible and allow simple permissions.
@@ -3153,13 +3155,13 @@ If any error occurs with the primary database, AWS detects this and will failove
 * Automatic cleanups can be anywhere from *0 to 35* days. This means you can restore to any point in that time frame.
   This will use both the snapshots and the translation logs.
 
-* After RDS deleted, they can be retained but they will expire based on their retention period.
+* After RDS instance is deleted, they will also get deleted
 
 * The only way to maintain backups is to create a final snapshot which will not expire automatically.
 
 #### 9.5.4.4. RDS Backup Exam PowerUp
 
-- When performing a restore, RDS creates a new RDS with a new endpoint address (need to repoint app to new RDS instance). It doesn't replace the old DB instance.
+- When performing a restore, RDS creates a new RDS with a new endpoint address (need to rep-oint app to new RDS instance). It doesn't replace the old DB instance.
 - When restoring a manual snapshot, you are setting it to a single point in time. This influences the RPO value.
 - Automated backups are different, they allow restoration to any 5 min period ago.
 - Backups are restored and transaction logs are replayed to bring DB to desired point in time.
