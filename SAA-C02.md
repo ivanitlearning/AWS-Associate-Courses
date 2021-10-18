@@ -885,6 +885,7 @@ CloudTrail products can create an organizational trail. This allows a single man
 - IAM, STS, CloudFront are Global Service events and log to `us-east-1`
   - Trail must be enabled to do this
 - NOT REALTIME - There is a delay ~ 15 min
+- **Test note:** Can enable log file validation to ensure integrity of log files after CloudTrail delivered it.
 
 ---
 
@@ -2765,9 +2766,9 @@ Log examples:
 
 ---
 
-## 8. Route-53
+# 8. Route-53
 
-### 8.1. Public Hosted Zones
+## 8.1. Public Hosted Zones
 
 A hosted zone is a DNS database for a given section of global DNS data.
 A public hosted zone is a type of R53 hosted zone which is hosted on R53 provided public DNS name servers. When creating a hosted zone, AWS provides at least 4 DNS name servers which host the zone.
@@ -3072,10 +3073,6 @@ The storage can be allocated with SSD or magnetic.
 
 Billing is per instance and hourly rate for that compute. You are billed for storage allocated (GB/mth, including IOPS if you use io1)
 
-#### Demo
-
-* To use RDS need to first create a subnet group, associate it with AZs and select the subnets of the VPC. This tells RDS which subnets to place things into.
-
 **Test note:** RDS events only provide operational events such as DB instance events, DB parameter group events, DB security group events, and DB snapshot events. Monitoring data-modifying events (`INSERT`, `DELETE`, `UPDATE`) can be achieved thru native functions or stored procedures
 
 ### 9.5.2. RDS Multi AZ (High-Availability)
@@ -3161,7 +3158,7 @@ If any error occurs with the primary database, AWS detects this and will failove
 
 #### 9.5.4.4. RDS Backup Exam PowerUp
 
-- When performing a restore, RDS creates a new RDS with a new endpoint address (need to rep-oint app to new RDS instance). It doesn't replace the old DB instance.
+- When performing a restore, RDS creates a new RDS with a new endpoint address (need to re-point app to new RDS instance). It doesn't replace the old DB instance.
 - When restoring a manual snapshot, you are setting it to a single point in time. This influences the RPO value.
 - Automated backups are different, they allow restoration to any 5 min period ago.
 - Backups are restored and transaction logs are replayed to bring DB to desired point in time.

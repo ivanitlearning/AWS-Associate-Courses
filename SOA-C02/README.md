@@ -325,13 +325,13 @@ Account A might allow something but account B also needs to allow it too or it g
 
 * CloudWatch integration: Define event-driven actions if one TA checks surface issues
 
-## 4. EC2
+# 4. EC2
 
-### 4.1. EC2 instance connect
+## 4.1. EC2 instance connect
 
 * [List](https://ip-ranges.amazonaws.com/ip-ranges.json) of AWS address IP ranges for for EC2 instance connect.
 
-### 4.2. EC2 savings plan
+## 4.2. EC2 savings plan
 
 * Hourly commitment for 1 or 3 year term ($20 per hour for 3 years)
 * General compute dollar amts
@@ -339,7 +339,7 @@ Account A might allow something but account B also needs to allow it too or it g
   * Service is billed at discounted savings plan rate until finished, then revert to normal on-demand rate.
   * Used to transition away from EC2 to Fargate, then to Lambda
 
-### 4.3. EC2 termination shutdown protection and shutdown
+## 4.3. EC2 termination shutdown protection and shutdown
 
 * Protects EC2 instances from termination by sloppy admin.
 * Right-click -> Instance settings -> Change termination protection -> Enable
@@ -1869,9 +1869,9 @@ Setting automatic scaling
 * EC2 with docker, **not ECS**
 
 * 3 ways to run it
-  * Provide a `Dockerfile`
-  * `Dockerrun.aws.json` (v1) - Specifies Docker image, ports, volumes and other Docker attributes
-  * `docker-compose.yml`
+  1. Provide a `Dockerfile`
+  2. `Dockerrun.aws.json` (v1) - Specifies Docker image, ports, volumes and other Docker attributes
+  3. `docker-compose.yml`
 
 ### 13.10.2. Multi-container Docker
 
