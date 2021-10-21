@@ -704,7 +704,7 @@ Without an organization, each AWS account needs it's own set of IAM users as wel
 If you have more than 5 to 10 accounts, you would want to use an org.
 
 Take a single AWS account **standard AWS account** and create an org.
-The standard AWS account then becomes the **master account**.
+The standard AWS account then becomes the **master account**. This account can be anywhere in the Organization, not necessarily at the root container.
 The master account can invite other existing standard AWS accounts. They will need to approve their joining to the org.
 
 When standard AWS accounts become part of the org, they become **member accounts**. Organizations can only have one **master accounts** and zero or more **member accounts**
@@ -742,12 +742,14 @@ JSON policy document that can be attached:
 
 The master/management account cannot be restricted by SCPs which means this should not be used because it is a security risk.
 
-SCPs limit what the account, **including root** can do inside that account eg.
+SCPs limit what the account, **including root user** can do inside that account eg.
 
 * Allow only certain sized EC2 instances deployed
 * Prevent any usage of that account in certain regions
 
 They don't grant permissions themselves, can only limit them. You still need to grant permissions using IAM policies on specific identities.
+
+* Every Organization has a management account, and that management account is **never affected** by SCPs
 
 #### 2.8.5.1 Allow List vs Deny List
 
@@ -885,7 +887,9 @@ CloudTrail products can create an organizational trail. This allows a single man
 - IAM, STS, CloudFront are Global Service events and log to `us-east-1`
   - Trail must be enabled to do this
 - NOT REALTIME - There is a delay ~ 15 min
-- **Test note:** Can enable log file validation to ensure integrity of log files after CloudTrail delivered it.
+- **Test note:**
+  - Can enable log file validation to ensure integrity of log files after CloudTrail delivered it.
+  - CloudTrail also logs unauthenticated requests to the AWS STS actions, `AssumeRoleWithSAML` and `AssumeRoleWithWebIdentity`, and logs information provided by the identity provider. You can use this information to map calls made by a federated user with an assumed role back to the originating external federated caller.
 
 ---
 
@@ -1845,7 +1849,7 @@ What matters for a VM is the input and output operations such as network transfe
 
 ### 5.1.4. SR-IOV (Singe Route IO virtualization)
 
-Allows a network or any card to present itself as many mini cards. As far as the HV is concerned, they are real dedicated cards for their use. No translation needs to be done by the HV. The physical card handles it all. In EC2 this feature is called **enhanced networking**.
+Allows a network or any card to present itself as many mini cards. As far as the HV is concerned, they are real dedicated cards for their use. No translation needs to be done by the HV. The physical card handles it all. In EC2 this feature is called **Enhanced Networking**.
 
 **Test notes:** 
 
@@ -2242,6 +2246,7 @@ Has these properties
   - Can have 1 public elastic interface per private IP address on this interface. This is allocated to your AWS account.
   - Can associate with a private IP on the primary interface or secondary interface. If you are using a public IPv4 and assign an elastic IP, the original IPv4 address will be lost. There is no way to recover the original address.
   - If you remove the elastic IP address it'll gain a completely new public IPv4 address.
+  - Elastic IPs are not billable if attached to running instances; only charged when not in use.
 - 0 or more IPv6 address on the interface
   - These are by default public addresses.
 - Security groups
@@ -2440,6 +2445,7 @@ Meta-data contains information on the:
 - environment the instance is in.
 - You can find out about the networking or user-data among other things.
 - This is not authenticated or encrypted. Anyone who can gain access to the instance can see the meta-data. This can be restricted by local firewall
+- whether the Spot EC2 instance will be terminated
 
 Can use [this Bash script](http://s3.amazonaws.com/ec2metadata/ec2-metadata) to work with the metadata API
 
@@ -2799,7 +2805,8 @@ It's possible to use a technique called **Split-view** for public and internal u
 * AWS services such as ELBs use only a DNS name, and can't use CNAME to point to these resources.
 * ALIAS maps names to AWS resources, and can be used for both naked or normal records, with no charges. Pick as default since no costs.
 * ALIAS are a DNS resource subtype ie. A ALIAS, CNAME ALIAS. If the resource which is pointed to has a record of that type, use the same subtype eg. ELB has A record so choose A record ALIAS.
-* Note: ALIAS is unique to AWS Route 53, not necessarily available outside AWS.
+* ALIAS is unique to AWS Route 53, not necessarily available outside AWS.
+* ALIAS is cheaper to use than CNAME
 
 ## 8.4. Route 53 Health Checks
 
@@ -3151,8 +3158,6 @@ If any error occurs with the primary database, AWS detects this and will failove
   * After restore, 5 min interval transactions are replayed over the snapshot to bring it up to 5 min.
 * Automatic cleanups can be anywhere from *0 to 35* days. This means you can restore to any point in that time frame.
   This will use both the snapshots and the translation logs.
-
-* After RDS instance is deleted, they will also get deleted
 
 * The only way to maintain backups is to create a final snapshot which will not expire automatically.
 
@@ -4036,7 +4041,7 @@ Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://a
 ### 12.9.1. User Pools
 
 * After signing in, users get a JSON Web token (JWT) (User Pool tokens)
-  * Works with MFA, directory management, profiles, social sign-ins with FB, Google etc. and other security providers (eg. SAMLs).
+  * Works with MFA, directory management, profiles, social sign-ins with FB, Google etc. and other security providers (eg. SAMLs). SAMLs include AD as the external ID provider.
 * Note most AWS services don't accept JWTs, some like API Gateways accept them.
 
 ![](Pics/UserPools.png)

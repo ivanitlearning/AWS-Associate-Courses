@@ -313,7 +313,7 @@ Similarly you can remove policy from IAM user
 3. Enter
 
    1. Name
-   2. Select 'Enable for all accounts in organization'
+   2. Select **Enable for all accounts in organization**
    3. Specify S3 bucket target for logging
    4. Enable/disable SSE-KMS encryption
    5. Enable/disable CW Logs to monitor CloudTrail logs to notify if specific activity occurs

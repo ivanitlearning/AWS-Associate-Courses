@@ -348,6 +348,24 @@ Account A might allow something but account B also needs to allow it too or it g
 * Can also change shutdown behaviour to either stop/terminate when shutdown from inside OS.
   * Right-click -> Instance settings -> Change shutdown behaviour
 
+## 4.4. EC2 test notes
+
+### 4.4.1. Instance goes from pending to terminated after starting
+
+If your EC2 instance goes from the `pending` state to the `terminated` state immediately after restarting then it could be caused by one of the following reasons:
+
+- You've reached your EBS volume limit.
+- An EBS snapshot is corrupt.
+- The root EBS volume is encrypted and you do not have permissions to access the KMS key for decryption.
+- The instance store-backed AMI that you used to launch the instance is missing a required part (an image.part.xx file).
+
+### 4.4.2 EC2 monitoring
+
+Enabling detailed monitoring on EC2 instances allows for
+
+* Aggregating statistics across instances
+* Provides data in 1-min interval (basic is just every 5 min)
+
 # 5. Monitoring, Logging & Auditing
 
 ## 5.1 CloudWatch - Architecture Concepts
@@ -423,7 +441,8 @@ Account A might allow something but account B also needs to allow it too or it g
 * Firehose for any "firehose destinations"
 * Realtime - Lambda (delivers to almost anything) or Kinesis Data stream (KCL consumers)
 * Metric filter - scan log data, generate CloudWatch metric which you can set alarms on
-* **Test note [SOA-C02]:** **CloudWatch metric math** can be used to aggregate and transform metrics from multiple accounts and Regions. Metric math enables you to query multiple CloudWatch metrics and use math expressions to create new time series based on these metrics. You can visualize the resulting time series on the CloudWatch console and add them to dashboards. Using AWS Lambda metrics as an example, you could divide the `Errors` metric by the `Invocations` metric to get an error rate. Then add the resulting time series to a graph on your CloudWatch dashboard.
+* **Test note [SOA-C02]:** **CloudWatch metric math** can be used to aggregate and transform metrics from multiple accounts and Regions. Metric math enables you to query multiple CloudWatch metrics and use **math expressions** to create new time series based on these metrics. You can visualize the resulting time series on the CloudWatch console and add them to dashboards. Using AWS Lambda metrics as an example, you could divide the `Errors` metric by the `Invocations` metric to get an error rate. Then add the resulting time series to a graph on your CloudWatch dashboard.
+  * This requires detailed monitoring to be enabled
 
 ## 5.5 AWS X-Ray
 
@@ -1017,7 +1036,7 @@ Notes:
 * CloudFront default domain name (CNAME)
   * https://d313132.cloudfront.net with 
 * SSL supported by default for *.cloudfront.net
-* If you want alternate domain names eg. cdn.catagram, generate or import in ACM per region
+* If you want alternate domain names eg. cdn.catagram, generate or import in ACM per each region
 * For global services, certificate needs to be created/added in **us-east-1**
 * Two SSL connections; both need valid public certificates
   * Viewer to CloudFront
@@ -1519,6 +1538,13 @@ Setting automatic scaling
 
 ![](Pics/PatchMgr-Arch.png)
 
+## 11.5 Things Systems Manager can do on EC2 Instances
+
+- Build automations to configure and manage instances and AWS resources.
+- Create custom runbooks or use pre-defined runbooks maintained by AWS.
+- Receive notifications about Automation tasks and runbooks by using Amazon EventBridge.
+- Monitor Automation progress and details by using the AWS Systems Manager console.
+
 # 12. Application Services, Event-Driven & Serverless
 
 ## 12.1. AWS Lambda
@@ -1917,3 +1943,15 @@ Encountered in TD exams
 
 * Using AWS Budgets, you can set a budget that alerts you when you exceed (or are forecasted to exceed) your budgeted cost or usage amount. You can also set alerts based on your RI or Savings Plans Utilization and Coverage using AWS Budgets.
 * Filtering dimensions (i.e., AWS Service, Availability Zone, and Member Account), and allows you to create budgets that are tracked on a monthly, quarterly, or yearly cadence
+
+# 4. RDS Proxy
+
+## 4.1 What use cases does RDS proxy address?
+
+- Applications with unpredictable workloads
+- Applications that frequently open and close database connections
+- Applications that keep connections open but idle
+- Applications requiring availability through transient failures
+- Improved security and centralized credentials management
+
+Amazon RDS Proxy allows applications to pool and share connections established with the database, improving database efficiency and application scalability.
