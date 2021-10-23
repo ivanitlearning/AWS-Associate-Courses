@@ -300,6 +300,7 @@ Account A might allow something but account B also needs to allow it too or it g
 * Compares your current settings with what you should have for best practices
 * Account level service, needs no agents to work.
 * Does cost optimisation, performance, security, fault tolerance and service limits.
+  * AWS Limit Monitor leverages on  Trusted Advisor's Service Limits track usage and issue notifications as you approach limits.
 * Mostly **not free**, except for **basic** or **developer** 7 core checks
 * Anything more requires Business or Enterprise plans
 
@@ -602,7 +603,7 @@ Here if EnvType is not "prod", then only "Wordpress" EC2 instance is created. If
 
 ## 6.6. CloudFormation DependsOn
 
-* CF tries to efficient, tries to do things in parallel (create, update and delete resources)
+* CFN tries to efficient, tries to do things in parallel (create, update and delete resources)
 * Determines a dependency order (VPC -> Subnet -> EC2)
 * **DependsOn** lets you explicitly define dependencies so CF will not build that resource until dependencies are met.
 
@@ -623,8 +624,8 @@ WPEIP:
 ```
 
 * Will encounter errors if 
-  * CF tries to create EIP before attaching IGW
-  * CF tries to delete attached IGW before EIP
+  * CFN tries to create EIP before attaching IGW
+  * CFN tries to delete attached IGW before EIP
 
 * Adding **DependsOn** fixes the issue
 
@@ -791,9 +792,9 @@ This gets exported as
 
 ## 6.10. CloudFormation StackSets
 
-* Allows you to deploy CF stacks across **many accounts** and **regions**
+* Allows you to deploy CFN stacks across **many accounts** and **regions**
 * StackSets are containers in an admin account containing stack instances which themselves are references for individual stacks in a region in an account.
-* Templates are just normal CF templates.
+* Templates are just normal CFN templates.
 * Permissions granted via self-managed IAM roles or service-managed within an AWS organization. 
 
 ![](Pics/CFN-StackSets.png)
@@ -1955,3 +1956,9 @@ Encountered in TD exams
 - Improved security and centralized credentials management
 
 Amazon RDS Proxy allows applications to pool and share connections established with the database, improving database efficiency and application scalability.
+
+# 5. EC2Rescue
+
+* For diagnosing and troubleshoot possible problems on both Windows and Linux.
+* Collects log files from Windows Server or syslog from Linux
+* [Windows](https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/Windows-Server-EC2Rescue.html) or [Linux](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Linux-Server-EC2Rescue.html) variants.

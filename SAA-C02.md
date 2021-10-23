@@ -996,8 +996,9 @@ To delete an object, you must delete all the versions of that object using their
 
 ### 3.4.1. MFA Delete
 
-* Enabled within version configuration in a bucket. This means MFA is required to change bucket versioning state. MFA is required to delete versions of an object.
-
+* Enabled within version configuration in a bucket. MFA now required for:
+  * Change versioning state of the bucket
+  * Delete versions of an object.
 * In order to change a version state or delete a particular version of an object, you need to provide the serial number of your MFA token as well as the code it generates. These are concatenated and passed with any API calls.
 * **Test note:** You can add lifecycle configuration rules to expire all or a subset of objects with a specific key name prefix. For example, to remove all objects in a bucket, you can set lifecycle rule to expire objects one day after creation. If your bucket has versioning enabled, you can also configure the rule to expire non-current objects.
 
@@ -4399,6 +4400,7 @@ Static| Dynamic
 
 * Much longer to provision compared to VPN.
 * DX port provisioning is quick, but cross-connect takes much longer, due to physical cable extension to premises.
+* Direct Connect connection is much more expensive than a VPN connection
 
 ## 15.3. AWS Transit Gateway (TGW)
 
@@ -4742,6 +4744,7 @@ Provides against DDoS attacks with AWS resources. This is a denial of service at
 - Can protect the private keys  for an issuing certificate authority.
 - Anything that needs to interact with non AWS products because it uses industry APIs.
   - Not suitable for anything which requires AWS integration.
+- Can publish audit logs to CloudWatch logs.
 
 ## 16.4. AWS Config
 
