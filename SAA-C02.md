@@ -5129,10 +5129,9 @@ Two services offered
   * Need < 1 ms access to data
   * Store user session state data outside of EC2
 
-**Test notes**: 
-
 * Calls to return identical or static datasets -> prefer ElastiCache over read replicas.
 * If you see "dynamic reads", ElastiCache which caches static reads is unlikely to help.
+* More expensive than deploying read replicas for read-heavy applications.
 
 # 20. Amazon Redshift [not in SOA-C02?]
 

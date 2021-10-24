@@ -969,9 +969,31 @@ Notes:
 ## 6.16. CloudFormation Stack Policy
 
 * To protect selected stack resources from update actions, define a stack policy and then set it on your stack. 
+
 * A stack policy is a JSON document that defines thestack update actions that AWS CloudFormation users can perform and the resources that the actions apply to. 
+
 * You set the stack policy when you create a stack, by specifying a text file that contains your stack policy or typing it out. 
-* When you set a stack policy on your stack, any update not explicitly allowed is denied by default.
+
+* When you set a stack policy on your stack and allow all, any update not explicitly allowed is denied by default.
+
+  ```json
+  {
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : "Update:*",
+        "Principal": "*",
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Deny",
+        "Action" : "Update:*",
+        "Principal": "*",
+        "Resource" : "LogicalResourceId/ProductionDatabase"
+      }
+    ]
+  }
+  ```
 
 # 7. Route53 and CloudFront
 
