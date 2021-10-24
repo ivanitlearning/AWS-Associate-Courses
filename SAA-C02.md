@@ -1093,6 +1093,7 @@ Encryption by itself does not prove who encrypted the data.
 - Think of them as a container for the actual physical master keys.
 - These are all backed by **physical** key material.
 - You can generate or import the key material.
+  - Note that CMKs made from imported key material cannot be automatically rotated. Must be manually rotated by pointing the key ID or alias to the CMK.
 - CMKs can be used for up to **4KB of data**.
 
 It is logical and contains
@@ -2829,10 +2830,10 @@ There could be one of three checks
 
 It will be deemed healthy or unhealthy.
 
-There are three types of checks.
+There are three types of health checks.
 
 - Endpoint checks
-- CloudWatch alarms
+- CloudWatch alarms - Monitors the same metric CW alarm monitors.
 - Checks of checks (calculated)
 
 ## 8.5. Route 53 Routing Policies
@@ -3154,12 +3155,11 @@ If any error occurs with the primary database, AWS detects this and will failove
 * **Manual snapshots don't expire**, you have to clean them yourself, even after the RDS instance is deleted.
 * Automatic Snapshots can be configured to make things easier.
   * Configure backup interval (and hence RPO)
-
 * In addition to automated backup, every 5 minutes database transaction logs are saved to S3. Transaction logs store the actual data which changes inside a database. RPO is hence 5 min.
   * After restore, 5 min interval transactions are replayed over the snapshot to bring it up to 5 min.
 * Automatic cleanups can be anywhere from *0 to 35* days. This means you can restore to any point in that time frame.
   This will use both the snapshots and the translation logs.
-
+* Setting to 0 disables automatic snapshots. Note you can't set to 0 if there are read replicas.
 * The only way to maintain backups is to create a final snapshot which will not expire automatically.
 
 #### 9.5.4.4. RDS Backup Exam PowerUp
@@ -3981,7 +3981,7 @@ Access to a queue is based on identity policies or a queue policy. Queue policie
 
 Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://aws.amazon.com/sns/) are messaging services that are suitable for anyone from startups to enterprises. If you're using messaging with existing applications, and want to move your messaging to the cloud quickly and easily, we recommend you consider Amazon MQ. It supports **industry-standard APIs and protocols** so you can switch from any standards-based message broker to Amazon MQ **without rewriting the messaging code** in your applications. If you are building **brand new applications** in the cloud, we recommend you **consider Amazon SQS and Amazon SNS**. Amazon SQS and SNS are lightweight, fully managed message queue and topic services that scale almost infinitely and provide simple, easy-to-use APIs. You can use Amazon SQS and SNS to decouple and scale microservices, distributed systems, and serverless applications, and improve reliability.
 
-## 12.8. Kinesis
+## 12.8. Kinesis Data Streams
 
 - Scalable streaming service designed to inject data from lots of devices or lots of applications.
 - Multiple producers send data into a Kinesis Stream. Streams are the basic unit of Kinesis. 
@@ -4001,6 +4001,8 @@ Amazon MQ, [Amazon SQS](https://aws.amazon.com/sqs/), and [Amazon SNS](https://a
 **Kinesis data records (1MB)** are stored across shards and are the blocks of data for a stream.
 
 **Kinesis Data Firehose** connects to a Kinesis stream. It can move the data from a stream onto S3 or another service. Kinesis Firehose allows for the long term persistence of storage of kinesis data into services like S3. Unlike Streams, it's near-realtime (~60s delay)
+
+* **Test notes:** Supports server-side encryption by using KMS keys which can be CMK.
 
 ### 12.8.1. Differences between SQS queues and Kinesis streams
 

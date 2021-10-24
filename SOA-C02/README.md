@@ -20,6 +20,7 @@ These are notes for Cantrill's SOA-C02 course.
 ### 1.1.2. Exam notes
 
 * Need for end users/customers to deploy infrastructure with tight controls in a self-service way, use Service Catalog.
+* Can be configured to automatically tag resources when created.
 
 ## 1.2. Cost Explorer
 
@@ -1470,9 +1471,10 @@ Setting automatic scaling
   * Instance hardware
   * Running services
 * Can run commands and manage desired state (ie. keep ports closed) on instances
-* Parameter store - Stores configuration and secrets
-* Session manager - Connect to EC2 instances in private VPCs
-* Systems manager endpoint runs in AWS Public Zone
+* **Parameter store** - Stores configuration and secrets
+  * Can be used to [query latest AMI ID](https://aws.amazon.com/blogs/compute/query-for-the-latest-amazon-linux-ami-ids-using-aws-systems-manager-parameter-store/) for a region; can be integrated with CFN.
+* **Session manager** - Connect to EC2 instances in private VPCs
+* Systems manager endpoint runs in AWS Public Zone; reachable via interface endpoints in private VPCs
 * **Test note:** SM supports the Raspbian OS, which runs on Raspberry Pi devices.
 
 ### 11.1.1 Make instances managed [[ref](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-managed-instance-activation.html)]
@@ -1508,7 +1510,7 @@ Setting automatic scaling
 * **Command Document** - Run Command, State Manager & Maintenance Windows
 * **Automation Document** 
   * Common maintenance and deployment tasks such as creating/updating AMI
-  * State Manager - Uses document to apply configuration to instances
+  * **State Manager** - Uses document to apply configuration to instances or keep instances or on-prem servers in a defined state.
   * **Test note:** Can create custom runbooks or use pre-defined runbooks maintained by AWS. Action types [supported for runbooks](https://docs.aws.amazon.com/systems-manager/latest/userguide/automation-documents.html) let you automate a wide variety of operations in your AWS environment. For example, using the `executeScript` action type, you can embed a python or PowerShell script directly in your runbook.
 * **Package Document** 
   * Distributor uses this to include compressed software to install on instances
@@ -1939,6 +1941,7 @@ Encountered in TD exams
 * [Service Health dashboard](https://status.aws.amazon.com/) displays the health of AWS services by Region.
 * Personal Health Dashboard offers an account-specific view of AWS services health status
   * Can be integrated with CloudWatch Events which in turn can trigger Lambda events for remediation.
+  * Also known as AWS Health.
 
 # 3. AWS Budgets
 
