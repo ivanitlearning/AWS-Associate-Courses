@@ -1,4 +1,8 @@
-These are notes for Cantrill's SOA-C02 course.
+# Notes for Cantrill's SOA-C02 course
+
+[TOC]
+
+
 
 # 1. IAM-Accounts-AWS-Organizations
 
@@ -606,7 +610,7 @@ Here if EnvType is not "prod", then only "Wordpress" EC2 instance is created. If
 
 * CFN tries to efficient, tries to do things in parallel (create, update and delete resources)
 * Determines a dependency order (VPC -> Subnet -> EC2)
-* **DependsOn** lets you explicitly define dependencies so CF will not build that resource until dependencies are met.
+* **DependsOn** lets you explicitly define dependencies so CFN will not build that resource until dependencies are met.
 
 ```yaml
 InternetGatewayAttachment:
@@ -728,7 +732,7 @@ AWS recommends CreationPolicy for most cases due to simplicity. Might have need 
 * **Root stack** - Top level stack to which all nested stacks belong
 * **Parent stack** - Stack which create the current stack
 
-Can define CF stack as a logical resource
+Can define CFN stack as a logical resource
 
 ```yaml
 VPCSTACK:

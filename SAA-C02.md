@@ -2,28 +2,9 @@
 
 These are my own notes based on the fork from [alozano-77's repo](https://github.com/alozano-77/AWS-SAA-C02-Course). Interspersed within are marked references to SOA-C02 content.
 
-# **Table of Contents**
+[TOC]
 
-- [1.2. AWS-Fundamentals](#12-aws-fundamentals)
-- [1.3. IAM-Accounts-AWS-Organizations](#13-iam-accounts-aws-organizations)
-- [1.4. Simple-Storage-Service-(S3)](#14-simple-storage-service-s3)
-- [1.5. Virtual-Private-Cloud-VPC](#15-virtual-private-cloud-vpc)
-- [1.6. Elastic-Cloud-Compute-EC2](#16-elastic-cloud-compute-ec2)
-- [1.7. Containers-and-ECS](#17-containers-and-ecs)
-- [1.8. Advanced-EC2](#18-advanced-ec2)
-- [1.9. Route-53](#19-route-53)
-- [1.10. Relational-Database-Service-RDS](#110-relational-database-service-rds)
-- [1.11. Network-Storage-EFS](#111-network-storage-efs)
-- [1.12. HA-and-Scaling](#112-ha-and-scaling)
-- [1.13. Serverless-and-App-Services](#113-serverless-and-app-services)
-- [1.14. CDN-and-Optimization](#114-cdn-and-optimization)
-- [1.15. Advanced-VPC](#115-advanced-vpc)
-- [1.16. Hybrid-and-Migration](#116-hybrid-and-migration)
-- [1.17. Security-Deployment-Operations](#117-security-deployment-operations)
-- [1.18. NoSQL-and-DynamoDB](#118-nosql-and-dynamodb)
-- [1.19. TD comparison tables](#119-td-comparison-tables)
-
----
+------
 
 # 1. AWS-Fundamentals
 
