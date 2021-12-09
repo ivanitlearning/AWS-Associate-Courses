@@ -1,30 +1,17 @@
 # Notes for Cantrill's SOA-C02 course
 [1. IAM-Accounts-AWS-Organizations](#1-iam-accounts-aws-organizations)
-
 [2. Simple Storage Service (S3)](#2-simple-storage-service--s3-)
-
 [3. Security](#3-security)
-
 [4. EC2](#4-ec2)
-
 [5. Monitoring, Logging & Auditing](#5-monitoring--logging---auditing)
-
 [6. Infrastructure as Code (CloudFormation)](#6-infrastructure-as-code--cloudformation-)
-
 [7. Route53 and CloudFront](#7-route53-and-cloudfront)
-
 [8. SQL databases](#8-sql-databases)
-
 [9. Scaling, Load balancing & High Availability](#9-scaling--load-balancing---high-availability)
-
 [10. Advanced Networking](#10-advanced-networking)
-
 [11. Systems Manager](#11-systems-manager)
-
 [12. Application Services, Event-Driven & Serverless](#12-application-services--event-driven---serverless)
-
 [13. Elastic Beanstalk](#13-elastic-beanstalk)
-
 [Topics not in Cantrill's course](#topics-not-in-cantrill-s-course)
 
 # 1. IAM-Accounts-AWS-Organizations

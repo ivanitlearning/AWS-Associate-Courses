@@ -3,47 +3,26 @@
 These are my own notes based on the fork from [alozano-77's repo](https://github.com/alozano-77/AWS-SAA-C02-Course). Interspersed within are marked references to SOA-C02 content.
 
 [1. AWS-Fundamentals](#1-aws-fundamentals)
-
 [2. IAM-Accounts-AWS-Organizations](#2-iam-accounts-aws-organizations)
-
 [3. Simple-Storage-Service-(S3)](#3-simple-storage-service--s3-)
-
 [4. Virtual-Private-Cloud-VPC](#4-virtual-private-cloud-vpc)
-
 [5. Elastic-Cloud-Compute-EC2](#5-elastic-cloud-compute-ec2)
-
 [6. Containers-and-ECS](#6-containers-and-ecs)
-
 [7. Advanced-EC2](#7-advanced-ec2)
-
 [8. Route-53](#8-route-53)
-
 [9. Relational-Database-Service-RDS](#9-relational-database-service-rds)
-
 [10. Network-Storage-EFS](#10-network-storage-efs)
-
 [11. HA-and-Scaling](#11-ha-and-scaling)
-
 [12. Serverless-and-App-Services](#12-serverless-and-app-services)
-
 [13. CDN-and-Optimization](#13-cdn-and-optimization)
-
 [14. Advanced-VPC](#14-advanced-vpc)
-
 [15. Hybrid-and-Migration](#15-hybrid-and-migration)
-
 [16. Security-Deployment-Operations](#16-security-deployment-operations)
-
 [17. NoSQL-and-DynamoDB](#17-nosql-and-dynamodb)
-
 [18. Amazon Athena](#18-amazon-athena)
-
 [19. ElastiCache](#19-elasticache)
-
 [20. Amazon Redshift [not in SOA-C02?]](#20-amazon-redshift--not-in-soa-c02--)
-
 [21. TD comparison tables](#21-td-comparison-tables)
-
 ------
 
 # 1. AWS-Fundamentals
