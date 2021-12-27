@@ -283,3 +283,27 @@ resource "random_string" "string" {
 ```
 
 Note that create_before_destroy may end up destroying the resource if only one resource can exist at any one time eg. files. New file gets created -> then gets destroyed.
+
+## 4.3 Datasources
+
+* Allow TF to read data from sources created outside its control, instead of managed resources which are provisioned by TF.
+* Block name **data** instead of **resource**
+* [Ref](https://www.terraform.io/language/data-sources)
+
+Example
+
+```terraform
+output "os-version" {
+  value = data.local_file.os.content # Format for referencing data
+}
+data "local_file" "os" {
+  filename = "/etc/os-release"
+}
+```
+
+## 4.4 Meta-Arguments
+
+* Used to contain code variables like loop arguments (eg. i in for loops)
+
+### 4.4.1 Count
+
