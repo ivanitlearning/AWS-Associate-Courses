@@ -594,6 +594,136 @@ data "aws_s3_bucket" "pixar-studios-2020" {
 
 To-do: Include bucket policy example here.
 
+## 5.4 DynamoDB with TF
+
+Every table needs a name, hash_key (partition key) and an [attribute object](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/dynamodb_table#attribute) for that primary key. The attribute object specifies the type of data the partition key is (String, Number or Binary data)
+
+```terraform
+# main.tf
+resource "aws_dynamodb_table" "project_sapphire_user_data" {
+  name           = "userdata"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "UserId"
+
+  attribute {
+    name = "UserId"
+    type = "N" # Number
+  }
+}
+# provider.tf
+provider "aws" {
+  region                      = var.region
+  s3_force_path_style = true
+  ...
+}
+# variables.tf
+variable "region" {
+    default = "us-west-2"
+  
+}
+```
+
+Another example, suppose we want to insert this data
+
+```json
+{
+"AssetID": {"N": "1"},
+"AssetName": {"S": "printer"},
+"age": {"N": "5"},
+"Hardware": {"B": "true" }
+}
+```
+
+into DynamoDB table **inventory**
+
+```terraform
+resource "aws_dynamodb_table" "project_sapphire_inventory" {
+  name           = "inventory"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "AssetID"
+
+  attribute {
+    name = "AssetID"
+    type = "N"
+  }
+  attribute {
+    name = "AssetName"
+    type = "S"
+  }
+  attribute {
+    name = "age"
+    type = "N"
+  }
+  attribute {
+    name = "Hardware"
+    type = "B"
+  }
+  global_secondary_index {
+    name             = "AssetName"
+    hash_key         = "AssetName"
+    projection_type    = "ALL"
+    
+  }
+  global_secondary_index {
+    name             = "age"
+    hash_key         = "age"
+    projection_type    = "ALL"
+    
+  }
+  global_secondary_index {
+    name             = "Hardware"
+    hash_key         = "Hardware"
+    projection_type    = "ALL"
+    
+  }
+}
+```
+
+We can just add this resource
+
+```terraform
+resource "aws_dynamodb_table_item" "upload" {
+  table_name = aws_dynamodb_table.project_sapphire_inventory.name
+  hash_key   = aws_dynamodb_table.project_sapphire_inventory.hash_key
+
+  item = <<ITEM
+  {
+  "AssetID": {"N": "1"},
+  "AssetName": {"S": "printer"},
+  "age": {"N": "5"},
+  "Hardware": {"B": "true" }
+  }
+ITEM
+}
+```
+
+After applying, TF shows
+
+```text
+# aws_dynamodb_table_item.upload:
+resource "aws_dynamodb_table_item" "upload" {
+    hash_key   = "AssetID"    
+    id         = "inventory|AssetID|||1"
+    item       = jsonencode(
+        {                   
+            AssetID   = {         
+                N = "1"           
+            }                  
+            AssetName = {         
+                S = "printer" 
+            }                 
+            Hardware  = {   
+                B = "true"              
+            }                           
+            age       = {      
+                N = "5"           
+            }                 
+        }                     
+    )                  
+    table_name = "inventory"
+}
+```
+
 # 6. Remote State
 
 * State files normally stored in the working directory where command is run.
@@ -601,3 +731,20 @@ To-do: Include bucket policy example here.
 * Github doesn't support state locking, so issues arise when multiple users access it.
 * When remote backend is configured, TF loads/unloads state file every time its required.
 * Options are S3 for state file storage and DynamoDB for locking state.
+
+## 6.1 S3 backend config
+
+Configure this for terraform block
+
+```terraform
+# terraform.tf
+terraform {
+  backend "s3" {
+    bucket = "remote-state" # bucket name
+    key    = "terraform.tfstate" # name of TF state file
+    region = "us-east-1"
+  }
+}
+```
+
+Run `terraform init` once done to store it in S3 bucket, then can delete terraform.tfstate
