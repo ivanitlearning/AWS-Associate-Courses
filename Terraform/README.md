@@ -307,3 +307,297 @@ data "local_file" "os" {
 
 ### 4.4.1 Count
 
+Simple usage: This creates the file 3 times, all overwriting.
+
+```terraform
+resource "local_file" "name" {
+    filename = "/root/user-data"
+    sensitive_content = "password: S3cr3tP@ssw0rd"
+  
+    count = 3
+}
+```
+
+Or you can have it like this
+
+```terraform
+# main.tf
+resource "local_file" "pet" {
+    filename = var.filename[count.index]
+    count = length(var.filename)
+}
+# variables.tf
+variable "filename" {
+    default = [
+        "/root/dogs.txt",
+        "/root/cats.txt"
+    ]
+}
+```
+
+This creates /root/dogs.txt and /root/cats.txt
+
+### 4.4.2 for_each
+
+This example creates files /root/user10, /root/user11, /root/user12 with the content "password: S3cr3tP@ssw0rd".
+
+```terraform
+# main.tf 
+resource "local_file" "name" {
+    filename = each.value
+    sensitive_content = var.content
+  
+    for_each = toset(var.users)
+}
+# variables.tf
+variable "users" {
+    type = list(string)
+    default = [ "/root/user10", "/root/user11", "/root/user12", "/root/user10"]
+}
+variable "content" {
+    default = "password: S3cr3tP@ssw0rd"
+  
+}
+```
+
+`This is what is displayed in `terraform show`
+
+```text
+root@iac-server:~/terraform-projects/project-shade# terraform show
+# local_file.name["/root/user11"]:
+resource "local_file" "name" {
+    directory_permission = "0777"
+    file_permission      = "0777"
+    filename             = "/root/user11"
+    id                   = "6b32344cb73c40d126d99ce62309878befca64ce"
+    sensitive_content    = (sensitive value)
+}
+
+# local_file.name["/root/user12"]:
+resource "local_file" "name" {
+    directory_permission = "0777"
+    file_permission      = "0777"
+    filename             = "/root/user12"
+    id                   = "6b32344cb73c40d126d99ce62309878befca64ce"
+    sensitive_content    = (sensitive value)
+}
+
+# local_file.name["/root/user10"]:
+resource "local_file" "name" {
+    directory_permission = "0777"
+    file_permission      = "0777"
+    filename             = "/root/user10"
+    id                   = "6b32344cb73c40d126d99ce62309878befca64ce"
+    sensitive_content    = (sensitive value)
+}
+```
+
+## 4.5 Version Constraints [[Ref](https://www.terraform.io/language/expressions/version-constraints)]
+
+`terraform init` always downloads the latest plugin versions, but we may not want that.
+
+To use a specific version of provider, go to Use Provider in the TF registry ([eg](https://registry.terraform.io/providers/hashicorp/local/1.4.0/docs/resources/file)) and add a block that resembles this to use 1.4.0
+
+```terraform
+terraform {
+  required_providers {
+    local = {
+      source = "hashicorp/local"
+      version = "1.4.0"
+    }
+  }
+}
+```
+
+* Exclude latest version with ` version = "!= 1.4.0"`
+
+* Use lower version `version = "< 1.4.0"`
+
+* Use higher version `version = "> 1.4.0"` 
+* More complex constraints `version = "> 1.2.0, < 2.0.0 != 1.4.0"`
+
+Pessimistic constraints allow only the rightmost component to increment eg. `~> 1.0.4` allows from 1.0.4 up till 1.0.9 but not 1.1.0
+
+* In general, TF downloads the highest version that meets constraints.
+
+# 5. Terraform with AWS
+
+## 5.1 IAM with TF
+
+To create a user
+
+```terraform
+resource "aws_iam_user" "users" {
+  name = "mary"
+}
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "my-access-key"
+  secret_key = "my-secret-key"
+}
+```
+
+Here we create a list of users using count. Note that the provider *aws* must be included or it'll throw an error.
+
+```terraform
+# iam-user.tf
+resource "aws_iam_user" "users" {
+  name = var.project-sapphire-users[count.index]
+  count = length(var.project-sapphire-users)
+}
+# provider.tf
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "my-access-key"
+  secret_key = "my-secret-key"
+}
+# variables.tf
+variable "project-sapphire-users" {
+     type = list(string)
+     default = [ "mary", "jack", "jill", "mack", "buzz", "mater"]
+}
+```
+
+After creating it shows
+
+```text
+root@iac-server:~/terraform-projects/IAM# terraform show
+# aws_iam_user.users[2]:
+resource "aws_iam_user" "users" {
+    arn           = "arn:aws:iam::000000000000:user/jill"
+    force_destroy = false
+    id            = "jill"
+    name          = "jill"
+    path          = "/"
+    tags_all      = {}
+    unique_id     = "d8180z4gpje966rjzkzu"
+}
+
+# aws_iam_user.users[3]:
+resource "aws_iam_user" "users" {
+    arn           = "arn:aws:iam::000000000000:user/mack"
+    force_destroy = false
+    id            = "mack"
+    name          = "mack"
+    path          = "/"
+    tags_all      = {}
+    unique_id     = "fegoztb3cggb1imvjn5v"
+}
+
+# aws_iam_user.users[4]:
+resource "aws_iam_user" "users" {
+    arn           = "arn:aws:iam::000000000000:user/buzz"
+    force_destroy = false
+    id            = "buzz"
+    name          = "buzz"
+    path          = "/"
+    tags_all      = {}
+    unique_id     = "uzwknw1793wxaaimk313"
+}
+
+# aws_iam_user.users[5]:
+resource "aws_iam_user" "users" {
+    arn           = "arn:aws:iam::000000000000:user/mater"
+    force_destroy = false
+    id            = "mater"
+    name          = "mater"
+    path          = "/"
+    tags_all      = {}
+    unique_id     = "8tyg774w4paat87tzbkc"
+}
+
+# aws_iam_user.users[0]:
+resource "aws_iam_user" "users" {
+    arn           = "arn:aws:iam::000000000000:user/mary"
+    force_destroy = false
+    id            = "mary"
+    name          = "mary"
+    path          = "/"
+    tags          = {}
+    tags_all      = {}
+    unique_id     = "dpquntk6bxndc6qqjaaq"
+}
+
+# aws_iam_user.users[1]:
+resource "aws_iam_user" "users" {
+    arn           = "arn:aws:iam::000000000000:user/jack"
+    force_destroy = false
+    id            = "jack"
+    name          = "jack"
+    path          = "/"
+    tags_all      = {}
+    unique_id     = "utcsesuqhq8ncczf8ix1"
+}
+```
+
+## 5.2 S3 with TF
+
+To upload a file **/root/woody.jpg** to an existing S3 bucket named **pixar-studios-2020**. Docs [here](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_object)
+
+```terraform
+# main.tf
+data "aws_s3_bucket" "pixar-studios-2020" {
+  bucket = "pixar-studios-2020"
+}
+
+resource "aws_s3_bucket_object" "object" {
+  bucket = data.aws_s3_bucket.pixar-studios-2020.id
+  key    = "woody.jpg"
+  source = "/root/woody.jpg"
+
+}
+# provider.tf
+provider "aws" {
+  region                      = var.region
+  s3_force_path_style         = true
+  access_key = "my-access-key"
+  secret_key = "my-secret-key"
+    
+}
+# terraform.tfvars
+region = "us-east-1"
+# variables.tf
+variable "region" {
+}
+```
+
+After applying
+
+```text
+root@iac-server:~/terraform-projects/S3-Buckets/Pixar# terraform show
+# aws_s3_bucket_object.object:
+resource "aws_s3_bucket_object" "object" {
+    acl                = "private"
+    bucket             = "pixar-studios-2020"
+    bucket_key_enabled = false
+    content_type       = "binary/octet-stream"
+    etag               = "d134df2a93e3249d0a944bed29c4a0e4"
+    force_destroy      = false
+    id                 = "woody.jpg"
+    key                = "woody.jpg"
+    source             = "/root/woody.jpg"
+    storage_class      = "STANDARD"
+    tags_all           = {}
+}
+
+# data.aws_s3_bucket.pixar-studios-2020:
+data "aws_s3_bucket" "pixar-studios-2020" {
+    arn                         = "arn:aws:s3:::pixar-studios-2020"
+    bucket                      = "pixar-studios-2020"
+    bucket_domain_name          = "pixar-studios-2020.s3.amazonaws.com"
+    bucket_regional_domain_name = "pixar-studios-2020.s3.amazonaws.com"
+    hosted_zone_id              = "Z3AQBSTGFYJSTF"
+    id                          = "pixar-studios-2020"
+    region                      = "us-east-1"
+}
+```
+
+To-do: Include bucket policy example here.
+
+# 6. Remote State
+
+* State files normally stored in the working directory where command is run.
+* Not advisable to store state file in Git because it may contain sensitive info, since it stores all info about existing infra.
+* Github doesn't support state locking, so issues arise when multiple users access it.
+* When remote backend is configured, TF loads/unloads state file every time its required.
+* Options are S3 for state file storage and DynamoDB for locking state.
