@@ -747,4 +747,133 @@ terraform {
 }
 ```
 
-Run `terraform init` once done to store it in S3 bucket, then can delete terraform.tfstate
+Run `terraform init` once done to store it in S3 bucket, then can delete file terraform.tfstate on local machine
+
+## 6.2 TF state commands
+
+List resources in TF state with `terraform state list` or append resource name at the end to select just one
+
+Print all attributes of resource with `terraform state show resource`
+
+Rename a TF resource with `terraform state mv aws_dynamodb_table.state-locking aws_dynamodb_table.state-locking-db`. If you also edited TF files to reflect this, `terraform plan` will not detect any difference.
+
+Display remote TF state with `terraform state pull`
+
+Remove resource from state file (resource not destroyed) `terraform state rm resource`. Used when you don't want TF to manage resource any more.
+
+# 7. Terraform Provisioners
+
+## 7.1 AWS EC2 with TF
+
+This provisions 
+
+```terraform
+# provider.tf
+provider "aws" {
+  region = var.region
+}
+# main.tf
+variable "region" {
+  type    = string
+  default = "eu-west-2"
+}
+
+variable "ami" {
+  type    = string
+  default = "ami-06178cf087598769c"
+}
+
+variable "instance_type" {
+  type    = string
+  default = "m5.large"
+}
+
+resource "aws_instance" "cerberus" {
+  ami           = var.ami
+  instance_type = var.instance_type
+  key_name      = "cerberus"
+  user_data     = file("/root/terraform-projects/project-cerberus/install-nginx.sh")
+
+}
+
+resource "aws_key_pair" "cerberus-key" {
+  key_name   = "cerberus"
+  public_key = file("/root/terraform-projects/project-cerberus/.ssh/cerberus.pub")
+}
+```
+
+After creating
+
+```text
+# aws_instance.cerberus:
+resource "aws_instance" "cerberus" {
+    ami                          = "ami-06178cf087598769c"
+    arn                          = "arn:aws:ec2:eu-west-2::instance/i-161187f3d0df86050"
+    associate_public_ip_address  = true
+    availability_zone            = "eu-west-2a"
+    disable_api_termination      = false
+    ebs_optimized                = false
+    get_password_data            = false
+    id                           = "i-161187f3d0df86050"
+    instance_state               = "running"
+    instance_type                = "m5.large"
+    ipv6_address_count           = 0
+    ipv6_addresses               = []
+    key_name                     = "cerberus"
+    monitoring                   = false
+    primary_network_interface_id = "eni-1b0de80a"
+    private_dns                  = "ip-10-198-49-32.eu-west-2.compute.internal"
+    private_ip                   = "10.198.49.32"
+    public_dns                   = "ec2-54-214-63-252.eu-west-2.compute.amazonaws.com"
+    public_ip                    = "54.214.63.252"
+    secondary_private_ips        = []
+    security_groups              = []
+    source_dest_check            = true
+    subnet_id                    = "subnet-73ae4073"
+    tags_all                     = {}
+    tenancy                      = "default"
+    user_data                    = "ace853dfcd5deb36a3802184e0347bf471f627ed"
+    vpc_security_group_ids       = []
+
+    root_block_device {
+        delete_on_termination = true
+        device_name           = "/dev/sda1"
+        encrypted             = false
+        iops                  = 0
+        tags                  = {}
+        throughput            = 0
+        volume_id             = "vol-e50ecace"
+        volume_size           = 8
+        volume_type           = "standard"
+    }
+}
+# aws_key_pair.cerberus-key:
+resource "aws_key_pair" "cerberus-key" {
+    arn         = "arn:aws:ec2:eu-west-2::key-pair/cerberus"
+    fingerprint = "45:1c:7b:3c:1f:cc:1a:4f:9f:e8:37:8b:76:f4:17:04"
+    id          = "cerberus"
+    key_name    = "cerberus"
+    public_key  = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDg0WB80QKTPvOKauzJdtJQKdaVs7+fdyuEUwaJlh8rWkRr5aAPDjJCrCKo8u+KlS8cE+rbGS2LRRNbmltmXgmgsjHjGCcvqZXCByNSVzVBXno0rx+qiSSXRrSIj3lZcVvXhQGWD/DKoG+2UwPxPIR2nzgDRqbz7bsoLULt2ZG8iGvEZ05sDLbfauZoxUJb/BgwpdkbfL+0R07JMuqkWTeU9ya9FgFslXLKF8SeYRYCUNx71CypB3laPjF6ySqBkKKfqnVo7AaLw+ajWcnqbWqlMvo+L0e9xav9gotoQyJt2dXKgbm5yp6O97OS+cwj9kmcTWhbaFbvRMIiIXp5wQQ9 root@iac-server"
+    tags        = {}
+    tags_all    = {}
+}
+```
+
+To create a key pair
+
+```terraform
+resource "aws_key_pair" "cerberus-key" {
+  key_name   = "cerberus"
+  public_key = file("/root/terraform-projects/project-cerberus/.ssh/cerberus.pub")
+}
+```
+
+
+
+
+
+## 7.2 TF provisioners
+
+* [remote-exec](https://www.terraform.io/language/resources/provisioners/remote-exec) allows you to run commands on the remote AWS EC2 instance similar to user-data. Requires connectivity to EC2 instance
+* [local-exec](https://www.terraform.io/language/resources/provisioners/local-exec) runs commands on the local machine with TF installed. Used for example to get public IP of EC2 instance.
+
