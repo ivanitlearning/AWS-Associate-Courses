@@ -360,7 +360,7 @@ variable "content" {
 }
 ```
 
-`This is what is displayed in `terraform show`
+This is what is displayed in `terraform show`
 
 ```text
 root@iac-server:~/terraform-projects/project-shade# terraform show
@@ -765,7 +765,7 @@ Remove resource from state file (resource not destroyed) `terraform state rm res
 
 ## 7.1 AWS EC2 with TF
 
-This provisions 
+This provisions instance in region with specified AMI and user-data
 
 ```terraform
 # provider.tf
@@ -870,10 +870,173 @@ resource "aws_key_pair" "cerberus-key" {
 
 
 
-
-
 ## 7.2 TF provisioners
 
 * [remote-exec](https://www.terraform.io/language/resources/provisioners/remote-exec) allows you to run commands on the remote AWS EC2 instance similar to user-data. Requires connectivity to EC2 instance
 * [local-exec](https://www.terraform.io/language/resources/provisioners/local-exec) runs commands on the local machine with TF installed. Used for example to get public IP of EC2 instance.
+
+This local-exec copies public_dns to a file on the local machine.
+
+```terraform
+resource "aws_eip" "eip" {
+  instance = aws_instance.cerberus.id
+  vpc      = true
+  provisioner "local-exec" {
+    command = "echo ${self.public_dns} >> /root/cerberus_public_dns.txt"
+  }
+}
+```
+
+# 8. Terraform Import, Tainting and Debugging
+
+## 8.1 Tainting
+
+When any part of resource creation fails, TF marks it as tainted, visible with `terraform plan`. Terraform will re-create the entire resource if `apply` is run again, even if most of it succeeded.
+
+Terraform will try to update the resource in place if not tainted.
+
+Can manually `terraform taint resource` to re-create. Untaint with `terraform untaint resource`
+
+## 8.2 Debugging
+
+Set `export TF_LOG=<log_lvl>` to set logging verbosity
+
+Levels:
+
+1. INFO
+2. WARNING
+3. ERROR
+4. DEBUG
+5. TRACE (most verbose)
+
+Export to log file `export TF_LOG_PATH=/path/to/log.txt`. Unset env to disable logging.
+
+## 8.3 Import
+
+Datasources lets you read or reference resources TF doesn't have in its state file. But TF still doesn't manage it and can't update it. Must import resource for TF to manage it.
+
+`terraform import resource_type.resource_name id`
+
+eg. `terraform import aws_instance.webserver-2 i-062e3432sdfsdf`
+
+Will see error when it is run because there is no config block for that resource. Create an empty resource block to hold the details so the error is not displayed
+
+```terraform
+resource "aws_instance" "webserver-2" {
+    # resource arguments
+}
+```
+
+Can get details to fill in resource with `terraform show resourcename` or by viewing the TF state file.
+
+# 9. Terraform Modules
+
+## 9.1 Modules
+This makes TF looks for a dir in the parent dir containing the TF files like main.tf and variables.tf The source specifies the path to the child module.
+
+```terraform
+module "dev-webserver" {
+    source = "../aws-instance"
+}
+```
+
+If not specified, TF takes variable names and arguments from child module otherwise it takes from root module. This allows us to customise specific arguments for each module.
+
+Can also use modules from registry
+
+## 9.2 TF registry modules
+
+This references the public TF registry [submodule here](https://registry.terraform.io/modules/terraform-aws-modules/iam/aws/latest/submodules/iam-user) and creates the IAM user max.
+
+```terraform
+module "iam_iam-user" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-user"
+  version = "3.4.0"
+  # insert the 1 required variable here
+  name = "max"
+}
+```
+
+Check the [Inputs tab](https://registry.terraform.io/modules/terraform-aws-modules/iam/aws/latest/submodules/iam-user?tab=inputs) to see what resources will be created by default and disable if necessary.
+
+# 10. Terraform functions
+
+Use `terraform console` to evaluate [TF functions](https://www.terraform.io/language/functions) like
+
+1. `file("/root/TF/main.tf")` 
+2. `length(var.region)`
+3. `toset(var.region)`
+4. `max(var.num)`
+5. `index(var.sf,"oni")` returns index of element "oni"
+
+Use `terraform console` to check what functions evaluate to
+
+```text
+> var.cloud_users
+andrew:ken:faraz:mutsumi:peter:steve:braja
+> split(":", var.cloud_users)
+[
+  "andrew",
+  "ken",
+  "faraz",
+  "mutsumi",
+  "peter",
+  "steve",
+  "braja",
+]
+```
+
+Console can also check resources
+
+```text
+> aws_iam_user.cloud[6]
+{
+  "arn" = "arn:aws:iam::000000000000:user/braja"
+  "force_destroy" = false
+  "id" = "braja"
+  "name" = "braja"
+  "path" = "/"
+  "tags_all" = {}
+  "unique_id" = "m6w6qzqytrvm1h6d6f53"
+}
+```
+
+Can use conditionals to determine arguments
+
+```terraform
+resource "aws_instance" "mario_servers" {
+  ami           = var.ami
+  instance_type = var.name == "tiny" ? "t2.nano" : "t3.large"
+
+  tags = {
+    Name = var.name
+  }
+}
+```
+
+Then apply with `terraform apply -var name=tiny` to test
+
+## 10.2 Terraform Workspaces
+
+Workspaces segregate resources, similar to k8s namespaces. Default workspace is named **default**
+
+Create workspace with `terraform workspace new ProjectA`
+
+List workspaces with `terraform workspace list`
+
+Switch workspace with `terraform workspace select ProjectA`
+
+Reference `terraform.workspace` to select the current workspace in TF files.
+
+State files stored in dir terraform.tfstate.d/ segregated by workspace names.
+
+Example of invoking terraform.workspace in TF config files
+
+```terraform
+module "payroll_app" {
+    source = "../modules/payroll-app"
+    app_region = var.region[terraform.workspace]
+    ami = var.ami[terraform.workspace]
+}
+```
 
