@@ -4626,7 +4626,7 @@ Hybrid Storage Virtual Application (On-premise)
 
 ---
 
-## 16. Security-Deployment-Operations
+# 16. Security-Deployment-Operations
 
 ## 16.1. AWS Secrets Manager
 
